@@ -112,6 +112,98 @@ Proof.
   - apply axiom1.
 Qed.
 
+(* Now we can define a tactic that does the above steps.
+   Note the difference between the tactic "hypo" and the constructor "hypo"!
+   If you type "hypo" in tactic mode, it will use the tactic defined below,
+   but if you type "apply hypo" it will use the constructor hypo. *)
+Ltac hypo := (apply hypo ; cbv in * ; auto 6).
+
+(* Упражнения *)
+Lemma T1_7ex1 {atom : Set} (Γ : @formula atom -> Prop) A : Γ |- $(~A -> A) -> A$.
+Proof.
+  (* 1 *)
+  assert (H1 : Γ |- f_axiom3 A A).
+  apply axiom3.
+  unfold f_axiom3 in H1.
+  (* 2 *)
+  assert (H2 : Γ |- $~A -> ~A$).
+  apply imply_self.
+  (* 3 *)
+  assert (H3 : Γ |- $(~A -> A) -> A$).
+  apply mp with (B := $~A -> ~A$).
+  exact H2.
+  exact H1.
+  (* 4 *)
+  exact H3.
+Qed.
+
+Lemma T1_7ex2 {atom : Set} (Γ : @formula atom -> Prop) A B C : Γ ,, $A -> B$ ,, $B -> C$ |- $A -> C$.
+Proof.
+  (* 1 *)
+  assert (H1 : Γ,, $A -> B$,, $B -> C$ |- f_axiom1 $B -> C$ A).
+  apply axiom1.
+  unfold f_axiom1 in H1.
+  (* 2 *)
+  assert (H2 : Γ,, $A -> B$,, $B -> C$ |- $A -> (B -> C)$).
+  apply mp with (B := $B -> C$).
+  hypo.
+  apply H1.
+  (* 3  *)
+  assert (H3 : Γ,, $A -> B$,, $B -> C$ |- f_axiom2 A B C).
+  apply axiom2.
+  unfold f_axiom2 in H3.
+  (* 4 *)
+  assert (H4 : Γ,, $A -> B$,, $B -> C$ |- $(A -> B) -> A -> C$).
+  apply mp with (B := $A -> B -> C$).
+  exact H2.
+  exact H3.
+  (* 5 *)
+  assert (H5 : Γ,, $A -> B$,, $B -> C$ |- $A -> C$).
+  apply mp with (B := $A -> B$).
+  hypo.
+  exact H4.
+  (* 6 *)
+  exact H5.
+Qed.
+
+Lemma T1_7ex3 {atom : Set} (Γ : @formula atom -> Prop) A B C : Γ ,, $A -> (B -> C)$ |- $B -> (A -> C)$.
+Proof.
+  (* 1 *)
+  assert (H1 : Γ,, $A -> (B -> C)$ |- $(A -> (B -> C)) -> (A -> B) -> (A -> C)$).
+  apply axiom2.
+  (* 2 *)
+  assert (H2 : Γ,, $A -> (B -> C)$ |- $(A -> B) -> (A -> C)$).
+  apply mp with (B := $A -> (B -> C)$).
+  hypo.
+  exact H1.
+  (* 3 *)
+  assert (H3 : Γ,, $A -> (B -> C)$ |- $((A -> B) -> (A -> C)) -> B -> ((A -> B) -> (A -> C))$).
+  apply axiom1.
+  (* 4 *)
+  assert (H4 : Γ,, $A -> (B -> C)$ |- $B -> ((A -> B) -> (A -> C))$).
+  apply mp with (B := $((A -> B) -> (A -> C))$).
+  exact H2.
+  exact H3.
+  (* 5 *)
+  assert (H5 : Γ,, $A -> (B -> C)$ |- $(B -> ((A -> B) -> (A -> C))) -> (B -> (A -> B)) -> (B -> (A -> C))$).
+  apply axiom2.
+  (* 6 *)
+  assert (H6 : Γ,, $A -> (B -> C)$ |- $(B -> (A -> B)) -> (B -> (A -> C))$).
+  apply mp with (B := $B -> (A -> B) -> A -> C$).
+  exact H4.
+  exact H5.
+  (* 7 *)
+  assert (H7 : Γ,, $A -> (B -> C)$ |- $B -> A -> B$).
+  apply axiom1.
+  (* 8 *)
+  assert (H8 : Γ,, $A -> (B -> C)$ |- $B -> A -> C$).
+  apply mp with (B := $B -> A -> B$).
+  exact H7.
+  exact H6.
+  (* 9 *)
+  exact H8.
+Qed.
+
 (* We conclude with the proof of the deduction theorem, just to show
    that it is quite painless to formalize. *)
 Theorem deduction {atom : Set} {Γ : @formula atom -> Prop} {A B} : extend Γ A |- B -> Γ |- $A -> B$.
@@ -139,12 +231,6 @@ Proof.
       * assumption.
       * apply axiom2.
 Qed.
-
-(* Now we can define a tactic that does the above steps.
-   Note the difference between the tactic "hypo" and the constructor "hypo"!
-   If you type "hypo" in tactic mode, it will use the tactic defined below,
-   but if you type "apply hypo" it will use the constructor hypo. *)
-Ltac hypo := (apply hypo ; cbv in * ; auto 6).
 
 Corollary transitivity {atom : Set} {Γ : @formula atom -> Prop} {A} B {C} :
   Γ |- $A -> B$ -> Γ |- $B -> C$ -> Γ |- $A -> C$.

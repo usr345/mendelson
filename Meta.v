@@ -223,6 +223,4 @@ Proof.
   - simpl in H2.
     rewrite eval_neg in Hfalse.
     rewrite Bool.negb_true_iff in Hfalse.
-
-    Search (negb ?a = true <-> ?a = false).
-    unfold get_letters_rec in H2
+    unfold get_letters_rec in H2.
