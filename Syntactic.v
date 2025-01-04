@@ -1,5 +1,5 @@
 Require Import Classical.
-Require Import Formula.
+From Mendelson Require Import Formula.
 
 Module Syntactic.
 (* We now come to main definitions. We first define a type

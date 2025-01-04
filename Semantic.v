@@ -1,5 +1,5 @@
 Require Import Classical.
-Require Import Formula.
+From Mendelson Require Import Formula.
 
 Module Semantic.
 Fixpoint eval {atom : Set} (value : atom -> bool) (f : formula) : bool :=

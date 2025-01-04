@@ -1,6 +1,6 @@
-Require Import Formula.
-Require Import Syntactic.
-Require Import Semantic.
+From Mendelson Require Import Formula.
+From Mendelson Require Import Syntactic.
+From Mendelson Require Import Semantic.
 
 Theorem axiom1_tautology {atom : Set} (A B: @formula atom) : tautology (f_axiom1 A B).
 Proof.
