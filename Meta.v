@@ -1,3 +1,4 @@
+Require Import Coq.Lists.List.
 From Mendelson Require Import Formula.
 From Mendelson Require Import Syntactic.
 From Mendelson Require Import Semantic.
@@ -67,11 +68,24 @@ Proof.
   - apply (mp_tautology B A H2 IH2).
 Qed.
 
-Definition rewriter {atom : Set} (v : atom -> bool) (F : @formula atom) : formula :=
-  match eval v F with
-  | false => $~F$
-  | true => F
+Definition fromList {A : Type} (xs : list A) : A -> Prop :=
+  fun x => In x xs.
+
+Fixpoint occurs {atom : Set} (i : atom) (p : formula) {struct p} : Prop :=
+  match p with
+  | f_atom i' => i = i'
+  | f_not p1 => occurs i p1
+  | f_imp p1 p2 => occurs i p1 \/ occurs i p2
   end.
+
+Definition rewriter {atom : Set} (v : atom -> bool) : list atom -> list formula :=
+  map (fun i => if v i then f_atom i else f_not (f_atom i)).
+
+(* Definition rewriter {atom : Set} (v : atom -> bool) (F : @formula atom) : formula := *)
+(*   match eval v F with *)
+(*   | false => $~F$ *)
+(*   | true => F *)
+(*   end. *)
 
 Lemma rewriter_neg_pos {atom : Set} (Γ : @formula atom -> Prop) (f : @formula atom) (v : atom -> bool) : (Γ |- rewriter v $~f$) -> (Γ |- rewriter v f).
 Proof.
