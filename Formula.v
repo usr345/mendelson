@@ -62,5 +62,12 @@ Definition subset {atom : Set} (Γ Δ : @formula atom -> Prop) :=
   forall A, A ∈ Γ -> A ∈ Δ.
 Infix "⊆" := subset (at level 79) : formula_scope.
 
+Fixpoint get_atom {atom : Set} (f : @formula atom) : atom :=
+  match f with
+  | f_atom a => a
+  | f_not f' => get_atom f'
+  | f_imp f1 f2 => get_atom f1
+  end.
+
 End Formula.
 Export Formula.

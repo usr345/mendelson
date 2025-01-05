@@ -78,40 +78,99 @@ Fixpoint occurs {atom : Set} (i : atom) (p : formula) {struct p} : Prop :=
   | f_imp p1 p2 => occurs i p1 \/ occurs i p2
   end.
 
-Definition rewriter {atom : Set} (v : atom -> bool) : list atom -> list formula :=
-  map (fun i => if v i then f_atom i else f_not (f_atom i)).
+Definition rewriter {atom : Set} (v : atom -> bool) (l : list atom) : list formula :=
+  map (fun i => if v i then f_atom i else f_not (f_atom i)) l.
 
-(* Definition rewriter {atom : Set} (v : atom -> bool) (F : @formula atom) : formula := *)
-(*   match eval v F with *)
-(*   | false => $~F$ *)
-(*   | true => F *)
-(*   end. *)
+(* Lemma rewriter_neg_pos {atom : Set} (Γ : @formula atom -> Prop) (f : @formula atom) (v : atom -> bool) (l : list atom) : (Γ |- rewriter v l $~f$) -> (Γ |- rewriter v l f). *)
+(* Proof. *)
+(*   unfold rewriter. *)
+(*   intro H. *)
+(*   rewrite eval_neg in H. *)
+(*   destruct (eval v f). *)
+(*   - simpl in H. *)
+(*     apply meta_neg_neg_pos in H. *)
+(*     exact H. *)
+(*   - simpl in H. *)
+(*     exact H. *)
+(* Qed. *)
 
-Lemma rewriter_neg_pos {atom : Set} (Γ : @formula atom -> Prop) (f : @formula atom) (v : atom -> bool) : (Γ |- rewriter v $~f$) -> (Γ |- rewriter v f).
+(* Lemma rewriter_pos_neg {atom : Set} (Γ : @formula atom -> Prop) (f : @formula atom) (v : atom -> bool) : (Γ |- rewriter v f) -> (Γ |- rewriter v $~f$). *)
+(* Proof. *)
+(*   unfold rewriter. *)
+(*   intro H. *)
+(*   rewrite eval_neg. *)
+(*   destruct (eval v f). *)
+(*   - simpl in H. *)
+(*     apply meta_pos_neg_neg. *)
+(*     exact H. *)
+(*   - simpl. *)
+(*     exact H. *)
+(* Qed. *)
+
+Lemma infers_dec {atom : Set} (F : formula) (literals : list atom) (v : atom -> bool) (H: forall i : atom, In i literals <-> occurs i F):
+    let Γ := fromList (rewriter v literals) in
+    match eval v F with
+    | true => Γ |- F
+    | false => Γ |- f_not F
+    end.
 Proof.
-  unfold rewriter.
-  intro H.
-  rewrite eval_neg in H.
-  destruct (eval v f).
+  induction literals as [l | b l IH].
+  - set (a := get_atom F).
+    specialize H with a.
+    simpl in H.
+    destruct H.
+    assert (H1 : occurs a F).
+    induction F as [b | G IH | F1 IH1 F2 IH2].
+    + simpl.
+      simpl in a.
+      reflexivity.
+    + simpl.
+      apply IH.
+      * simpl in H.
+        simpl in a.
+        exact H.
+      * simpl in H0.
+        simpl in a.
+        unfold a in H0.
+        exact H0.
+    + simpl.
+      simpl in a.
+      left.
+      simpl in H0.
+      simpl in H.
+      unfold a in H, H0.
+      apply IH1.
+      apply False_ind.
+      intro H1.
+      assert (Hor : occurs (get_atom F1) F1 \/ occurs (get_atom F1) F2).
+      left.
+      exact H1.
+      apply H0 in Hor.
+      exact Hor.
+    + apply H0 in H1.
+      destruct H1.
   - simpl in H.
-    apply meta_neg_neg_pos in H.
-    exact H.
-  - simpl in H.
-    exact H.
-Qed.
+    simpl.
+    induction F as [a | G IHF | F1 F2 IH1 IH2].
+    + specialize H with a.
+      assert(H1 : occurs a (f_atom a)).
+      simpl.
+      reflexivity.
+      apply H in H1 as H2.
+      destruct H2 as [name1 | name2].
 
-Lemma rewriter_pos_neg {atom : Set} (Γ : @formula atom -> Prop) (f : @formula atom) (v : atom -> bool) : (Γ |- rewriter v f) -> (Γ |- rewriter v $~f$).
-Proof.
-  unfold rewriter.
-  intro H.
-  rewrite eval_neg.
-  destruct (eval v f).
-  - simpl in H.
-    apply meta_pos_neg_neg.
-    exact H.
-  - simpl.
-    exact H.
-Qed.
+      destruct (eval v (f_atom a)).
+      *
+      + specialize (IH H).
+      simpl.
+      simpl in IH.
+
+  - unfold fromList.
+    unfold rewriter.
+    destruct (eval v (f_atom a)).
+
+    +
+    +
 
 Fixpoint get_letters_rec {atom : Set} (f : @formula atom) (v : atom -> bool) (Γ : formula -> Prop) : formula -> Prop :=
   match f with
