@@ -241,19 +241,83 @@ Proof.
         ** exact IH1.
 Qed.
 
-Lemma atom_in_rewriter_double {atom : Set} (a : atom) (v : atom -> bool) (ls : list atom) : In a ls -> fromList (rewriter v (a :: ls)) = fromList (rewriter v ls).
+Lemma or_elim (A : Prop) : A \/ A <-> A.
+Proof.
+  split.
+  - intro H.
+    destruct H ; exact H.
+  - intro.
+    apply (or_introl H).
+Qed.
+
+Lemma atom_in_rewriter_double {atom : Set} (a : atom) (v : atom -> bool) (ls : list atom) (f : formula) : In a ls -> fromList (rewriter v (a :: ls)) f <-> fromList (rewriter v ls) f.
 Proof.
   intro H.
-  induction ls as [|b ls IH].
-  - simpl in H. contradiction H.
-  - simpl in H.
-    destruct H.
-    + rewrite H.
-      simpl.
-      unfold fromList.
-
-      destruct (formula_eq x (if v a then f_atom a else f_not (f_atom a))).
-      Search In ?a (?b :: ?b :: ?ls).
+  split.
+  - intro H1.
+    induction ls as [|b ls IH].
+    + simpl in H.
+      contradiction H.
+    + simpl in H.
+      destruct H.
+      * simpl.
+        unfold fromList.
+        destruct (formula_eq f (if v b then f_atom b else f_not (f_atom b))) as [Yes | No].
+        ** rewrite <-Yes.
+           auto.
+        ** right.
+           unfold fromList in H1.
+           simpl in H1.
+           rewrite <-H in H1.
+           destruct H1.
+           *** symmetry in H0.
+               apply No in H0.
+               destruct H0.
+           *** destruct H0.
+               symmetry in H0.
+               apply No in H0.
+               destruct H0.
+               exact H0.
+      * simpl.
+        unfold fromList.
+        destruct (formula_eq f (if v b then f_atom b else f_not (f_atom b))) as [Yes | No].
+        ** left.
+           symmetry.
+           exact Yes.
+        ** right.
+           apply IH in H as H2.
+           unfold fromList in H2.
+           exact H2.
+           unfold fromList.
+           simpl.
+           destruct H1 as [H1 | [H1 | H1]].
+           *** left.
+               exact H1.
+           *** symmetry in H1.
+               apply No in H1.
+               contradiction H1.
+           *** unfold fromList in H1.
+               right.
+               exact H1.
+  - intro H1.
+    induction ls as [|b ls IH].
+    + simpl in H1.
+      contradiction H1.
+    + simpl in H.
+      destruct H.
+      * simpl.
+        rewrite <-H.
+        apply or_assoc.
+        rewrite or_elim.
+        simpl in H1.
+        exact H1.
+      * simpl.
+        simpl in H1.
+        unfold fromList.
+        unfold fromList in H1.
+        right.
+        exact H1.
+Qed.
 
 Lemma is_theorem_if_it_passes_all_cases {atom : Set} (literals : list atom) : forall f : formula,
   (forall i, In i literals -> occurs i f) ->
