@@ -29,7 +29,7 @@ Definition f_axiom3 {atom : Set} (A B : @formula atom) : formula :=
   $(~ B -> ~ A) -> (~ B -> A) -> B$.
 
 Reserved Notation "Γ |- A" (at level 98).
-Inductive entails {atom : Set} (Γ : @formula atom -> Prop) : @formula atom -> Type :=
+Inductive entails {atom : Set} (Γ : @formula atom -> Prop) : @formula atom -> Prop :=
   | hypo : forall A, A ∈ Γ -> Γ |- A (* every hypothesis is provable *)
   | axiom1 : forall A B , Γ |- f_axiom1 A B
   | axiom2 : forall A B C, Γ |- f_axiom2 A B C
@@ -73,6 +73,7 @@ Qed.
 
 (* "extend Γ A" is the set Γ ∪ {A}. *)
 Definition extend {atom : Set} (Γ : @formula atom -> Prop) A := fun B => or (B ∈ Γ) (A = B).
+Print extend.
 Notation "Γ ,, A" := (extend Γ A) (at level 32, left associativity).
 
 Lemma subset_extend {atom : Set} {Γ : @formula atom -> Prop} {A} : subset Γ (extend Γ A).

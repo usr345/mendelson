@@ -81,6 +81,166 @@ Fixpoint occurs {atom : Set} (i : atom) (p : formula) {struct p} : Prop :=
 Definition rewriter {atom : Set} (v : atom -> bool) (l : list atom) : list formula :=
   map (fun i => if v i then f_atom i else f_not (f_atom i)) l.
 
+Lemma rewriter_append {atom : Set } (v : atom -> bool) (F : formula) (l1 l2 : list atom) : In F (rewriter v (l1 ++ l2)) <-> In F (rewriter v l1) \/ In F (rewriter v l2).
+Proof.
+  unfold rewriter.
+  rewrite map_app.
+  apply in_app_iff.
+Qed.
+
+(* Lemma rewriter_neg_pos {atom : Set} (Γ : @formula atom -> Prop) (f : @formula atom) (v : atom -> bool) (l : list atom) : (fromList (rewriter v l) |- $~f$) -> (fromList (rewriter v l) |- f). *)
+(* Proof. *)
+(*   unfold fromList. *)
+(*   intro H. *)
+
+(*   unfold rewriter. *)
+(*   unfold rewriter in H. *)
+(*   rewrite eval_neg in H. *)
+
+Lemma rewriter_subset_left {atom : Set } (v : atom -> bool) (l1 l2 : list atom) : fromList (rewriter v l1) ⊆ fromList (rewriter v (l1 ++ l2)).
+Proof.
+  unfold subset.
+  unfold elem.
+  intros A H.
+  apply rewriter_append.
+  left.
+  exact H.
+Qed.
+
+Lemma rewriter_subset_right {atom : Set } (v : atom -> bool) (l1 l2 : list atom) : fromList (rewriter v l2) ⊆ fromList (rewriter v (l1 ++ l2)).
+Proof.
+  unfold subset.
+  unfold elem.
+  intros A H.
+  apply rewriter_append.
+  right.
+  exact H.
+Qed.
+
+Create HintDb Kalmar.
+Hint Resolve rewriter_subset_left : Kalmar.
+Hint Resolve rewriter_subset_right : Kalmar.
+
+Lemma rewriter_true {atom : Set} (p : formula) :
+  { literals : list atom
+  | ( forall i, In i literals <-> occurs i p ) /\
+    ( forall e,
+      let Γ := fromList (rewriter e literals) in
+      if eval e p then Γ |- p else Γ |- f_not p
+    )
+  }.
+Proof.
+  induction p as [a | G IH | F1 IH1 F2 IH2].
+  (* F = f_atom a *)
+  - exists (cons a nil).
+    split.
+    + intro b.
+      destruct (atom_eq a b) as [YES | NO].
+      rewrite <-YES.
+      simpl.
+      split.
+      * intros _.
+        reflexivity.
+      * intros _.
+        auto.
+      * simpl.
+        split.
+        ** intro H.
+           destruct H.
+           contradiction.
+           destruct H.
+        ** intro H.
+           symmetry in H.
+           contradiction.
+    + intros.
+      simpl in Γ.
+      unfold eval.
+      destruct (e a).
+      * unfold Γ.
+        hypo.
+      * unfold Γ.
+        hypo.
+  (* F = f_not F' *)
+  - destruct IH as [l IH].
+    exists l.
+    destruct IH as [HIn IH].
+    simpl.
+    split.
+    + exact HIn.
+    + intro v.
+      specialize IH with v.
+      destruct (eval v G).
+      * simpl.
+        simpl in IH.
+        apply meta_pos_neg_neg.
+        exact IH.
+      * simpl.
+        exact IH.
+  (* F = f_impl F1 F2 *)
+  - destruct IH1 as [l1 IH1].
+    destruct IH1 as [HIn1 IH1].
+    destruct IH2 as [l2 IH2].
+    destruct IH2 as [HIn2 IH2].
+    exists (l1 ++ l2).
+    split.
+    + intro b.
+      split.
+      * simpl.
+        rewrite in_app_iff.
+        intro H.
+        destruct H.
+        ** left.
+           specialize HIn1 with b.
+           apply HIn1 in H.
+           exact H.
+        ** right.
+           specialize HIn2 with b.
+           apply HIn2 in H.
+           exact H.
+      * simpl.
+        intro H.
+        rewrite in_app_iff.
+        destruct H.
+        ** specialize HIn1 with b.
+           left.
+           apply HIn1 in H.
+           exact H.
+        ** specialize HIn2 with b.
+           right.
+           apply HIn2 in H.
+           exact H.
+    + intro v.
+      specialize (IH1 v).
+      specialize (IH2 v).
+      rewrite eval_implication.
+      destruct (eval v F1), (eval v F2) ; simpl.
+      (* F1 = T, F2 = T *)
+      * apply drop_antecedent.
+        apply (weaken (fromList (rewriter v l2))).
+        ** auto with Kalmar.
+        ** exact IH2.
+      (* F1 = T, F2 = F *)
+      * apply conj_not_not_impl.
+        apply meta_conj_intro.
+        ** apply (weaken (fromList (rewriter v l1))).
+           auto with Kalmar.
+           apply IH1.
+        ** apply (weaken (fromList (rewriter v l2))).
+           auto with Kalmar.
+           apply IH2.
+      (* F1 = F, F2 = T *)
+      *
+        apply drop_antecedent.
+        apply (weaken (fromList (rewriter v l2))).
+        ** auto with Kalmar.
+        ** apply IH2.
+      (* F1 = F, F2 = F *)
+      * apply meta_neg_a_impl_a_b with (B := F2) in IH1.
+        apply (weaken (fromList (rewriter v l1))).
+        ** auto with Kalmar.
+        ** exact IH1.
+Qed.
+
 (* Lemma rewriter_neg_pos {atom : Set} (Γ : @formula atom -> Prop) (f : @formula atom) (v : atom -> bool) (l : list atom) : (Γ |- rewriter v l $~f$) -> (Γ |- rewriter v l f). *)
 (* Proof. *)
 (*   unfold rewriter. *)
@@ -106,151 +266,6 @@ Definition rewriter {atom : Set} (v : atom -> bool) (l : list atom) : list formu
 (*   - simpl. *)
 (*     exact H. *)
 (* Qed. *)
-
-Lemma infers_dec {atom : Set} (F : formula) (literals : list atom) (v : atom -> bool) (H: forall i : atom, In i literals <-> occurs i F):
-    let Γ := fromList (rewriter v literals) in
-    match eval v F with
-    | true => Γ |- F
-    | false => Γ |- f_not F
-    end.
-Proof.
-  induction literals as [l | b l IH].
-  - set (a := get_atom F).
-    specialize H with a.
-    simpl in H.
-    destruct H.
-    assert (H1 : occurs a F).
-    induction F as [b | G IH | F1 IH1 F2 IH2].
-    + simpl.
-      simpl in a.
-      reflexivity.
-    + simpl.
-      apply IH.
-      * simpl in H.
-        simpl in a.
-        exact H.
-      * simpl in H0.
-        simpl in a.
-        unfold a in H0.
-        exact H0.
-    + simpl.
-      simpl in a.
-      left.
-      simpl in H0.
-      simpl in H.
-      unfold a in H, H0.
-      apply IH1.
-      apply False_ind.
-      intro H1.
-      assert (Hor : occurs (get_atom F1) F1 \/ occurs (get_atom F1) F2).
-      left.
-      exact H1.
-      apply H0 in Hor.
-      exact Hor.
-    + apply H0 in H1.
-      destruct H1.
-  - simpl in H.
-    simpl.
-    induction F as [a | G IHF | F1 F2 IH1 IH2].
-    + specialize H with a.
-      assert(H1 : occurs a (f_atom a)).
-      simpl.
-      reflexivity.
-      apply H in H1 as H2.
-      destruct H2 as [name1 | name2].
-
-      destruct (eval v (f_atom a)).
-      *
-      + specialize (IH H).
-      simpl.
-      simpl in IH.
-
-  - unfold fromList.
-    unfold rewriter.
-    destruct (eval v (f_atom a)).
-
-    +
-    +
-
-Fixpoint get_letters_rec {atom : Set} (f : @formula atom) (v : atom -> bool) (Γ : formula -> Prop) : formula -> Prop :=
-  match f with
-  | f_atom f' => extend Γ (rewriter v (f_atom f'))
-  | f_not f' => get_letters_rec f' v Γ
-  | f_imp f1 f2 => (get_letters_rec f1 v Γ) ∪ (get_letters_rec f2 v Γ)
-  end.
-
-Definition get_letters_rewrite {atom : Set} (f : @formula atom) (v : atom -> bool) : formula -> Prop :=
-  get_letters_rec f v empty.
-
-Lemma rewriter_true {atom : Set} (f : @formula atom) (v : atom -> bool) : get_letters_rewrite f v |- rewriter v f.
-Proof.
-  induction f.
-  - unfold get_letters_rewrite.
-    unfold get_letters_rec.
-    unfold rewriter.
-    destruct (eval v (f_atom a)).
-    + hypo.
-    + hypo.
-  - unfold get_letters_rewrite.
-    simpl.
-    apply rewriter_pos_neg.
-    unfold get_letters_rewrite in IHf.
-    assumption.
-  - unfold get_letters_rewrite.
-    unfold get_letters_rewrite in IHf1.
-    unfold get_letters_rewrite in IHf2.
-    unfold rewriter.
-    unfold rewriter in IHf1.
-    unfold rewriter in IHf2.
-    rewrite eval_implication.
-    destruct (eval v f1), (eval v f2) ; simpl.
-    + apply (weaken (get_letters_rec f2 v empty)).
-      * unfold union.
-        unfold subset.
-        intros A H.
-        unfold elem.
-        unfold elem in H.
-        right.
-        exact H.
-      * apply drop_antecedent.
-        exact IHf2.
-    + apply conj_not_not_impl.
-      apply meta_conj_intro.
-      * apply (weaken (get_letters_rec f1 v empty)).
-        ** unfold subset.
-           intros A H.
-           unfold elem.
-           unfold union.
-           left.
-           exact H.
-        ** exact IHf1.
-      * apply (weaken (get_letters_rec f2 v empty)).
-        ** unfold subset.
-           intros A H.
-           unfold elem.
-           unfold union.
-           right.
-           exact H.
-        ** exact IHf2.
-    + apply drop_antecedent.
-      apply (weaken (get_letters_rec f2 v empty)).
-      * unfold subset.
-        intros A H.
-        unfold elem.
-        unfold union.
-        right.
-        exact H.
-      * exact IHf2.
-    + apply meta_neg_a_impl_a_b with (B := f2) in IHf1.
-      apply (weaken (get_letters_rec f1 v empty)).
-      * unfold subset.
-        intros A H.
-        unfold elem.
-        unfold union.
-        left.
-        exact H.
-      * exact IHf1.
-Qed.
 
 Theorem semantic_completeness {atom : Set} (A : @formula atom) (v : atom -> bool) : tautology A -> theorem A.
 Proof.
