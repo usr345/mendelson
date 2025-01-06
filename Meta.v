@@ -241,6 +241,44 @@ Proof.
         ** exact IH1.
 Qed.
 
+Lemma atom_in_rewriter_double {atom : Set} (a : atom) (v : atom -> bool) (ls : list atom) : In a ls -> fromList (rewriter v (a :: ls)) = fromList (rewriter v ls).
+Proof.
+  intro H.
+  induction ls as [|b ls IH].
+  - simpl in H. contradiction H.
+  - simpl in H.
+    destruct H.
+    + rewrite H.
+      simpl.
+      unfold fromList.
+
+      destruct (formula_eq x (if v a then f_atom a else f_not (f_atom a))).
+      Search In ?a (?b :: ?b :: ?ls).
+
+Lemma is_theorem_if_it_passes_all_cases {atom : Set} (literals : list atom) : forall f : formula,
+  (forall i, In i literals -> occurs i f) ->
+  (forall e, fromList (rewriter e literals) |- f) ->
+  fromList nil |- f.
+Proof.
+  intros f H1 H2.
+  unfold fromList.
+  simpl.
+  induction literals as [ | A ls IH]; simpl.
+  - apply H2 with (e := fun _ => false).
+  - pose proof (List.in_dec atom_eq A ls) as [YES | NO].
+    + apply IH.
+      * intros a HIn.
+        specialize H1 with a.
+        apply H1.
+        simpl.
+        right.
+        exact HIn.
+      * intro v.
+        specialize H2 with v.
+        simpl in H2.
+        unfold fromList in H2.
+
+
 (* Lemma rewriter_neg_pos {atom : Set} (Γ : @formula atom -> Prop) (f : @formula atom) (v : atom -> bool) (l : list atom) : (Γ |- rewriter v l $~f$) -> (Γ |- rewriter v l f). *)
 (* Proof. *)
 (*   unfold rewriter. *)
