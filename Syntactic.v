@@ -29,7 +29,7 @@ Definition f_axiom3 {atom : Set} (A B : @formula atom) : formula :=
   $(~ B -> ~ A) -> (~ B -> A) -> B$.
 
 Reserved Notation "Γ |- A" (at level 98).
-Inductive entails {atom : Set} (Γ : @formula atom -> Prop) : @formula atom -> Type :=
+Inductive entails {atom : Set} (Γ : @formula atom -> Prop) : @formula atom -> Prop :=
   | hypo : forall A, A ∈ Γ -> Γ |- A (* every hypothesis is provable *)
   | axiom1 : forall A B , Γ |- f_axiom1 A B
   | axiom2 : forall A B C, Γ |- f_axiom2 A B C
@@ -73,6 +73,7 @@ Qed.
 
 (* "extend Γ A" is the set Γ ∪ {A}. *)
 Definition extend {atom : Set} (Γ : @formula atom -> Prop) A := fun B => or (B ∈ Γ) (A = B).
+
 Notation "Γ ,, A" := (extend Γ A) (at level 32, left associativity).
 
 Lemma subset_extend {atom : Set} {Γ : @formula atom -> Prop} {A} : subset Γ (extend Γ A).
@@ -122,17 +123,12 @@ Ltac hypo := (apply hypo ; cbv in * ; auto 6).
 Lemma T1_7ex1 {atom : Set} (Γ : @formula atom -> Prop) A : Γ |- $(~A -> A) -> A$.
 Proof.
   (* 1 *)
-  assert (H1 : Γ |- f_axiom3 A A).
-  apply axiom3.
-  unfold f_axiom3 in H1.
+  pose proof (@axiom3 _ Γ A A) as H1.
   (* 2 *)
-  assert (H2 : Γ |- $~A -> ~A$).
-  apply imply_self.
+  pose proof (@imply_self _ Γ $~A$) as H2.
   (* 3 *)
   assert (H3 : Γ |- $(~A -> A) -> A$).
-  apply mp with (B := $~A -> ~A$).
-  exact H2.
-  exact H1.
+  apply (@mp _ Γ _ $~A -> ~A$ H2 H1).
   (* 4 *)
   exact H3.
 Qed.
@@ -140,23 +136,17 @@ Qed.
 Lemma T1_7ex2 {atom : Set} (Γ : @formula atom -> Prop) A B C : Γ ,, $A -> B$ ,, $B -> C$ |- $A -> C$.
 Proof.
   (* 1 *)
-  assert (H1 : Γ,, $A -> B$,, $B -> C$ |- f_axiom1 $B -> C$ A).
-  apply axiom1.
-  unfold f_axiom1 in H1.
+  pose proof (@axiom1 _ (Γ ,, $A -> B$ ,, $B -> C$) $B -> C$ A) as H1.
   (* 2 *)
   assert (H2 : Γ,, $A -> B$,, $B -> C$ |- $A -> (B -> C)$).
   apply mp with (B := $B -> C$).
   hypo.
   apply H1.
   (* 3  *)
-  assert (H3 : Γ,, $A -> B$,, $B -> C$ |- f_axiom2 A B C).
-  apply axiom2.
-  unfold f_axiom2 in H3.
+  pose proof (@axiom2 _ (Γ ,, $A -> B$ ,, $B -> C$) A B C) as H3.
   (* 4 *)
   assert (H4 : Γ,, $A -> B$,, $B -> C$ |- $(A -> B) -> A -> C$).
-  apply mp with (B := $A -> B -> C$).
-  exact H2.
-  exact H3.
+  apply (@mp _ (Γ,, $A -> B$,, $B -> C$) _ $A -> B -> C$ H2 H3).
   (* 5 *)
   assert (H5 : Γ,, $A -> B$,, $B -> C$ |- $A -> C$).
   apply mp with (B := $A -> B$).
@@ -169,37 +159,31 @@ Qed.
 Lemma T1_7ex3 {atom : Set} (Γ : @formula atom -> Prop) A B C : Γ ,, $A -> (B -> C)$ |- $B -> (A -> C)$.
 Proof.
   (* 1 *)
-  assert (H1 : Γ,, $A -> (B -> C)$ |- $(A -> (B -> C)) -> (A -> B) -> (A -> C)$).
-  apply axiom2.
+  pose proof (@axiom2 _ (Γ,, $A -> (B -> C)$) A B C) as H1.
   (* 2 *)
   assert (H2 : Γ,, $A -> (B -> C)$ |- $(A -> B) -> (A -> C)$).
   apply mp with (B := $A -> (B -> C)$).
   hypo.
   exact H1.
   (* 3 *)
-  assert (H3 : Γ,, $A -> (B -> C)$ |- $((A -> B) -> (A -> C)) -> B -> ((A -> B) -> (A -> C))$).
-  apply axiom1.
+  pose proof (@axiom1 _ (Γ,, $A -> (B -> C)$) $((A -> B) -> (A -> C))$ B) as H3.
   (* 4 *)
   assert (H4 : Γ,, $A -> (B -> C)$ |- $B -> ((A -> B) -> (A -> C))$).
   apply mp with (B := $((A -> B) -> (A -> C))$).
   exact H2.
   exact H3.
   (* 5 *)
-  assert (H5 : Γ,, $A -> (B -> C)$ |- $(B -> ((A -> B) -> (A -> C))) -> (B -> (A -> B)) -> (B -> (A -> C))$).
-  apply axiom2.
+  pose proof (@axiom2 _ (Γ,, $A -> (B -> C)$) B $A -> B$ $A -> C$) as H5.
   (* 6 *)
   assert (H6 : Γ,, $A -> (B -> C)$ |- $(B -> (A -> B)) -> (B -> (A -> C))$).
   apply mp with (B := $B -> (A -> B) -> A -> C$).
   exact H4.
   exact H5.
   (* 7 *)
-  assert (H7 : Γ,, $A -> (B -> C)$ |- $B -> A -> B$).
-  apply axiom1.
+  pose proof (@axiom1 _ (Γ,, $A -> B -> C$) B A) as H7.
   (* 8 *)
   assert (H8 : Γ,, $A -> (B -> C)$ |- $B -> A -> C$).
-  apply mp with (B := $B -> A -> B$).
-  exact H7.
-  exact H6.
+  apply (@mp _ (Γ,, $A -> B -> C$) _ $B -> A -> B$ H7 H6).
   (* 9 *)
   exact H8.
 Qed.
@@ -364,21 +348,13 @@ Theorem meta_neg_a_impl_a_b {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |
 Proof.
   intro H1.
   (* 1 *)
-  assert (H2 : Γ |- $(~A -> ~B -> ~A)$).
-  apply axiom1.
+  pose proof (@axiom1 _ Γ $~A$ $~B$) as H2.
   (* 2 *)
-  assert (H3 : Γ |- $~B -> ~A$).
-  apply mp with (B := $~A$).
-  exact H1.
-  exact H2.
+  pose proof (@mp _ Γ _ $~A$ H1 H2) as H3.
   (* 3 *)
-  assert (H4 : Γ |- $(~B -> ~A) -> A -> B$).
-  apply contraposition2.
+  pose proof (@contraposition2 _ Γ A B) as H4.
   (* 4 *)
-  assert (H5 : Γ |- $A -> B$).
-  apply mp with (B := $~ B -> ~ A$).
-  exact H3.
-  exact H4.
+  pose proof (@mp _ Γ _ $~B -> ~A$ H3 H4) as H5.
   (* 5 *)
   exact H5.
 Qed.
@@ -433,25 +409,18 @@ Theorem meta_T_1_10_7 {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $A -
 Proof.
   intros H1 H2.
   (* 1 *)
-  assert (H3 : Γ |- $(A -> B) -> (~ A -> B) -> B$).
-  apply T_1_10_7.
+  pose proof (@T_1_10_7 _ Γ A B) as H3.
   (* 2 *)
-  assert (H4 : Γ |- $(~ A -> B) -> B$).
-  apply mp with (B := $A -> B$).
-  exact H1.
-  exact H3.
+  pose proof (@mp _ Γ _ $A -> B$ H1 H3) as H4.
   (* 3 *)
-  assert (H5 : Γ |- B).
-  apply mp with (B := $~A -> B$).
-  exact H2.
-  exact H4.
+  pose proof (@mp _ Γ _ $~A -> B$ H2 H4) as H5.
   (* 5 *)
   exact H5.
 Qed.
 
 (* Задачи *)
 (* 1 *)
-Theorem T_48_1 {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $A -> (A \/ B)$.
+Theorem disj_intro_left {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $A -> (A \/ B)$.
 Proof.
   unfold disjunction.
   apply meta_flip.
@@ -459,7 +428,7 @@ Proof.
 Qed.
 
 (* 2 *)
-Theorem T_48_2 {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $A -> (B \/ A)$.
+Theorem disj_intro_right {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $A -> (B \/ A)$.
 Proof.
   unfold disjunction.
   apply deduction.
@@ -472,7 +441,7 @@ Theorem disj_comm {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $(A \/ B
 Proof.
    unfold disjunction.
    apply deduction.
-  (* (~B -> ~~A) -> (~~A -> A) -> (~B -> A) *)
+   (* (~B -> ~~A) -> (~~A -> A) -> (~B -> A) *)
    apply transitivity with (B := $~~A$).
    - apply mp with (B := $~A -> B$).
      + hypo.
@@ -485,36 +454,21 @@ Theorem conj_elim_left {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $(A
 Proof.
   unfold conjunction.
   apply deduction.
-  set (Γ' := Γ,, $~(A -> ~B)$).
   (* 1 *)
-  (* (~A -> ~(A -> ~B)) -> (~A -> ~(A -> ~B)) -> A *)
-  assert (H1 : Γ' |- f_axiom3 $(A -> ~B)$ A).
-  apply axiom3.
-  unfold f_axiom3 in H1.
+  pose proof (@axiom3 _ (Γ,, $~ (A -> ~ B)$) $(A -> ~B)$ A) as H1.
   (* 2 *)
-  (* ~(A -> ~B) -> ~A -> ~(A -> ~B) *)
-  assert (H2 : Γ' |- f_axiom1 $~(A -> ~B)$ $~A$).
-  apply axiom1.
-  unfold f_axiom1 in H2.
+  pose proof (@axiom1 _ (Γ,, $~ (A -> ~ B)$) $~(A -> ~B)$ $~A$) as H2.
   (* 3 *)
-  (* ~(A -> ~B) |- ~A -> ~(A -> ~B) *)
-  assert (H3 : Γ' |- $~A -> ~(A -> ~B)$).
+  assert (H3 : Γ,, $~ (A -> ~ B)$ |- $~A -> ~(A -> ~B)$).
   apply mp with (B := $~(A -> ~B)$).
   hypo.
   apply H2.
   (* 4 *)
-  assert (H4 : Γ' |- $(~A -> A -> ~ B) -> A$).
-  apply mp with (B := $~A -> ~(A -> ~B)$).
-  apply H3.
-  apply H1.
+  pose proof (@mp _ (Γ,, $~ (A -> ~ B)$) _ $~A -> ~(A -> ~B)$ H3 H1) as H4.
   (* 5 *)
-  assert (H5 : Γ' |- $~ A -> A -> ~ B$).
-  apply neg_a_impl_a_b.
+  pose proof (@neg_a_impl_a_b _ (Γ,, $~ (A -> ~ B)$) A $~B$) as H5.
   (* 6 *)
-  assert (H6 : Γ' |- A).
-  apply mp with (B := $~ A -> A -> ~ B$).
-  apply H5.
-  apply H4.
+  pose proof (@mp _ (Γ,, $~ (A -> ~ B)$) _ $~ A -> A -> ~ B$ H5 H4) as H6.
   exact H6.
 Qed.
 
@@ -524,29 +478,20 @@ Proof.
   unfold conjunction.
   apply deduction.
   (* 1 *)
-  assert (H1 : Γ,, $~(A -> ~B)$ |- $(~B -> ~(A -> ~B)) -> (~B -> (A -> ~B)) -> B$).
-  apply axiom3.
+  pose proof (@axiom3 _ (Γ,, $~(A -> ~B)$) $A -> ~B$ B) as H1.
   (* 2 *)
-  assert (H2 : Γ,, $~(A -> ~B)$ |- $~(A -> ~B) -> ~B -> ~(A -> ~B)$).
-  apply axiom1.
+  pose proof (@axiom1 _ (Γ,, $~(A -> ~B)$) $~(A -> ~B)$ $~B$) as H2.
   (* 3 *)
   assert (H3 : Γ,, $~(A -> ~B)$ |- $~B -> ~(A -> ~B)$).
   apply mp with (B := $~(A -> ~B)$).
   hypo.
   apply H2.
   (* 4 *)
-  assert (H4 : Γ,, $~(A -> ~B)$ |- $(~ B -> A -> ~ B) -> B$).
-  apply mp with (B := $~B -> ~(A -> ~B)$).
-  apply H3.
-  apply H1.
+  pose proof (@mp _ (Γ,, $~(A -> ~B)$) _ $~B -> ~(A -> ~B)$ H3 H1) as H4.
   (* 5 *)
-  assert (H5 : Γ,, $~(A -> ~B)$ |- $~B -> A -> ~B$).
-  apply axiom1.
+  pose proof (@axiom1 _ (Γ,, $~(A -> ~B)$) $~B$ A) as H5.
   (* 6 *)
-  assert (H6 : Γ,, $~(A -> ~B)$ |- B).
-  apply mp with (B := $~B -> A -> ~B$).
-  apply H5.
-  apply H4.
+  pose proof (@mp _ (Γ,, $~(A -> ~B)$) _ $~B -> A -> ~B$ H5 H4) as H6.
   exact H6.
 Qed.
 
@@ -571,29 +516,20 @@ Theorem T_48_7 {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $((A -> B) 
 Proof.
   apply deduction.
   (* 1 *)
-  assert (H1 : Γ,, $((A -> B) -> A)$ |- $((A -> B) -> A) -> ~A -> ~(A -> B)$).
-  apply contraposition.
+  pose proof (@contraposition _ (Γ,, $((A -> B) -> A)$) $A -> B$ A) as H1.
   (* 2 *)
   assert (H2 : Γ,, $((A -> B) -> A)$ |- $~A -> ~(A -> B)$).
   apply mp with (B := $(A -> B) -> A$).
   hypo.
   apply H1.
   (* 3 *)
-  assert (H3 : Γ,, $((A -> B) -> A)$ |- $(~A -> ~(A -> B)) -> (~A -> (A -> B)) -> A$).
-  apply axiom3.
+  pose proof (@axiom3 _ (Γ,, $((A -> B) -> A)$) $A -> B$ A) as H3.
   (* 4 *)
-  assert (H4 : Γ,, $((A -> B) -> A)$ |- $(~A -> (A -> B)) -> A$).
-  apply mp with (B := $~A -> ~(A -> B)$).
-  apply H2.
-  apply H3.
+  pose proof (@mp _ (Γ,, $((A -> B) -> A)$) _ $~A -> ~(A -> B)$ H2 H3) as H4.
   (* 5 *)
-  assert (H5 : Γ,, $((A -> B) -> A)$ |- $~A -> A -> B$).
-  apply neg_a_impl_a_b.
+  pose proof (@neg_a_impl_a_b _ (Γ,, $((A -> B) -> A)$) A B) as H5.
   (* 6 *)
-  assert (H6 : Γ,, $((A -> B) -> A)$ |- A).
-  apply mp with (B := $~A -> A -> B$).
-  apply H5.
-  apply H4.
+  pose proof (@mp _ (Γ,, $((A -> B) -> A)$) _ $~A -> A -> B$ H5 H4) as H6.
   exact H6.
 Qed.
 
@@ -616,19 +552,11 @@ Theorem meta_conj_intro {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- A 
 Proof.
   intros H1 H2.
   (* 1 *)
-  assert (H3 : Γ |- $A -> B -> (A /\ B)$).
-  apply conj_intro.
+  pose proof (@conj_intro _ Γ A B) as H3.
   (* 2 *)
-  assert (H4 : Γ |- $B -> (A /\ B)$).
-  apply mp with (B := A).
-  exact H1.
-  exact H3.
+  pose proof (@mp _ Γ _ A H1 H3) as H4.
   (* 3 *)
-  assert (H5 : Γ |- $A /\ B$).
-  apply mp with (B := B).
-  exact H2.
-  exact H4.
-  (* 4 *)
+  pose proof (@mp _ Γ _ B H2 H4) as H5.
   exact H5.
 Qed.
 
@@ -639,8 +567,7 @@ Proof.
   apply mp with (B := $~ (A -> B)$).
   exact H.
   (* 1 *)
-  assert (H1 : Γ |- $((A -> ~~B) -> A -> B) -> ~(A -> B) -> ~(A -> ~~B)$).
-  apply contraposition.
+  pose proof (@contraposition _ Γ $A -> ~~B$ $A -> B$) as H1.
   (* 2 *)
   assert (H2 : Γ |- $((A -> ~~B) -> A -> B)$).
   apply deduction.
@@ -650,11 +577,7 @@ Proof.
   hypo.
   hypo.
   (* 3 *)
-  assert (H3 : Γ |- $~(A -> B) -> ~(A -> ~~B)$).
-  apply mp with (B := $(A -> ~ ~ B) -> A -> B$).
-  exact H2.
-  exact H1.
-  (* 4 *)
+  pose proof (@mp _ Γ _ $(A -> ~ ~ B) -> A -> B$ H2 H1) as H3.
   exact H3.
 Qed.
 
@@ -665,8 +588,7 @@ Proof.
   apply mp with (B := $~(A -> ~~ B)$).
   exact H.
   (* 1 *)
-  assert (H1 : Γ |- $((A -> B) -> A -> ~~B) -> ~(A -> ~~B) -> ~(A -> B)$).
-  apply contraposition.
+  pose proof (@contraposition _ Γ $A -> B$ $A -> ~~B$) as H1.
   (* 2 *)
   assert (H2 : Γ |- $((A -> B) -> A -> ~ ~ B)$).
   apply deduction.
@@ -674,11 +596,7 @@ Proof.
   apply meta_pos_neg_neg.
   apply mp with (B := A) ; hypo.
   (* 3 *)
-  assert (H3 : Γ |- $~ (A -> ~ ~ B) -> ~ (A -> B)$).
-  apply mp with (B := $(A -> B) -> A -> ~ ~ B$).
-  exact H2.
-  exact H1.
-  (* 4 *)
+  pose proof (@mp _ Γ _ $(A -> B) -> A -> ~ ~ B$ H2 H1) as H3.
   exact H3.
 Qed.
 
