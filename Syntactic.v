@@ -29,7 +29,7 @@ Definition f_axiom3 {atom : Set} (A B : @formula atom) : formula :=
   $(~ B -> ~ A) -> (~ B -> A) -> B$.
 
 Reserved Notation "Γ |- A" (at level 98).
-Inductive entails {atom : Set} (Γ : @formula atom -> Prop) : @formula atom -> Prop :=
+Inductive entails {atom : Set} (Γ : @formula atom -> Prop) : @formula atom -> Type :=
   | hypo : forall A, A ∈ Γ -> Γ |- A (* every hypothesis is provable *)
   | axiom1 : forall A B , Γ |- f_axiom1 A B
   | axiom2 : forall A B C, Γ |- f_axiom2 A B C
