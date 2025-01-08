@@ -72,7 +72,7 @@ Proof.
 Qed.
 
 (* "extend Γ A" is the set Γ ∪ {A}. *)
-Definition extend {atom : Set} (Γ : @formula atom -> Prop) A := fun B => or (B ∈ Γ) (A = B).
+Definition extend {atom : Set} (Γ : @formula atom -> Prop) (A : formula) : formula -> Prop := fun B => or (B ∈ Γ) (A = B).
 
 Notation "Γ ,, A" := (extend Γ A) (at level 32, left associativity).
 

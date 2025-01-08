@@ -304,32 +304,68 @@ Proof.
       * exact IH1.
 Qed.
 
-Theorem semantic_completeness {atom : Set} (A : @formula atom) (v : atom -> bool) : tautology A -> theorem A.
+Lemma or_idempotent (A : Prop) : A \/ A <-> A.
+Proof.
+  split.
+  - intro H.
+    destruct H ; exact H.
+  - intro.
+    apply (or_introl H).
+Qed.
+
+Lemma or_identity (A : Prop) : A \/ False <-> A.
+Proof.
+  split.
+  - intro H.
+    destruct H.
+    + exact H.
+    + contradiction H.
+  - intro.
+    left.
+    exact H.
+Qed.
+
+Theorem semantic_completeness {atom : Set} (F : @formula atom) (v : atom -> bool) : tautology F -> theorem F.
 Proof.
   unfold tautology, theorem.
-  intro H.
-  specialize (H v) as Hv.
+  intro Htauto.
+  specialize (Htauto v) as Hv.
   unfold is_true in Hv.
   intro Γ.
   (* 1 *)
-  assert (H1 : get_letters_rewrite A v |- rewriter v A).
-  apply rewriter_true.
-  unfold rewriter in H1.
-  rewrite Hv in H1.
-  unfold get_letters_rewrite in H1.
+  pose proof (rewriter_true F v) as Hletters.
+  unfold rewriter in Hletters.
+  rewrite Hv in Hletters.
   (* 2 *)
-  set (F := (fun _ : atom => false) : atom -> bool).
-  assert (H2 : get_letters_rewrite A F |- rewriter F A).
-  apply rewriter_true.
-  specialize (H F) as Hfalse.
-  unfold is_true in Hfalse.
-  unfold rewriter in H2.
-  rewrite Hfalse in H2.
-  unfold get_letters_rewrite in H2.
+  set (FalseFun := (fun _ : atom => false) : atom -> bool).
+  set (TrueFun := (fun _ : atom => true) : atom -> bool).
   (* 3 *)
-  induction A as [| A IH | IH1 IH2].
-  - simpl in H1.
-    simpl in H2.
+  specialize (Htauto FalseFun) as F_true_in_false.
+  unfold is_true in F_true_in_false.
+  specialize (Htauto TrueFun) as F_true_in_truth.
+  unfold is_true in F_true_in_truth.
+  (* 3 *)
+  induction F as [| F IH | F1 IH1 F2 IH2].
+  - simpl in Htauto.
+    unfold is_true in Htauto.
+    simpl in Hletters.
+    pose proof (rewriter_true (f_atom a) FalseFun) as HFalse.
+    unfold rewriter in HFalse.
+    unfold In_flip in HFalse.
+    rewrite F_true_in_false in HFalse.
+    cbn in HFalse.
+
+    apply deduction in HFalse.
+
+    pose proof (rewriter_true (f_atom a) TrueFun) as HTrue.
+    unfold rewriter in HTrue.
+    unfold In_flip in HTrue.
+    rewrite F_true_in_truth in HTrue.
+    cbn in HTrue.
+
+    rewrite or_identity in HFalse.
+    Search (?a \/ False).
+
     unfold rewriter in H1.
     rewrite H in H1.
     apply deduction in H1.
