@@ -69,6 +69,36 @@ Proof.
   - apply (mp_tautology B A H2 IH2).
 Qed.
 
+(* Если формула F --- тавтология, то ~F --- не тавтология *)
+Lemma tautology_F_not_F_not_tautology {atom : Set} (A : @formula atom) : tautology A -> ~ tautology $~A$.
+Proof.
+  intro H.
+  intro HNot.
+  unfold tautology in H.
+  unfold tautology in HNot.
+  simpl in HNot.
+  set (v := fun _ : atom => true).
+  specialize (H v).
+  specialize (HNot v).
+  destruct (eval v A).
+  - simpl in HNot.
+    unfold is_true in HNot.
+    discriminate HNot.
+  - unfold is_true in H.
+    discriminate H.
+Qed.
+
+(* Система L непротиворечива, т.е. не существует формулы A, такой, чтобы A и ~A были теоремами в L *)
+Theorem consistency {atom : Set} (A : @formula atom) : theorem A -> theorem $~A$ -> False.
+Proof.
+  intros H1 H2.
+  apply semantic_non_contradictionness in H1.
+  apply semantic_non_contradictionness in H2.
+  apply tautology_F_not_F_not_tautology in H1.
+  apply H1 in H2.
+  exact H2.
+Qed.
+
 Definition rewriter {atom : Set} (v : atom -> bool) (F : @formula atom) : formula :=
   match eval v F with
   | false => $~F$
