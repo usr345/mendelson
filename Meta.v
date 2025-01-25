@@ -32,6 +32,7 @@ Proof.
 Qed.
 
 Proposition mp_tautology {atom : Set} (A B: @formula atom) : tautology A -> tautology $A -> B$ -> tautology B.
+Proof.
   intros H_A H_AB.
   unfold tautology.
   intro v.
@@ -67,6 +68,36 @@ Proof.
   - apply axiom2_tautology.
   - apply axiom3_tautology.
   - apply (mp_tautology B A H2 IH2).
+Qed.
+
+(* Если формула F --- тавтология, то ~F --- не тавтология *)
+Lemma tautology_F_not_F_not_tautology {atom : Set} (A : @formula atom) : tautology A -> ~ tautology $~A$.
+Proof.
+  intro H.
+  intro HNot.
+  unfold tautology in H.
+  unfold tautology in HNot.
+  simpl in HNot.
+  set (v := fun _ : atom => true).
+  specialize (H v).
+  specialize (HNot v).
+  destruct (eval v A).
+  - simpl in HNot.
+    unfold is_true in HNot.
+    discriminate HNot.
+  - unfold is_true in H.
+    discriminate H.
+Qed.
+
+(* Система L непротиворечива, т.е. не существует формулы A, такой, чтобы A и ~A были теоремами в L *)
+Theorem consistency {atom : Set} (A : @formula atom) : theorem A -> theorem $~A$ -> False.
+Proof.
+  intros H1 H2.
+  apply semantic_non_contradictionness in H1.
+  apply semantic_non_contradictionness in H2.
+  apply tautology_F_not_F_not_tautology in H1.
+  apply H1 in H2.
+  exact H2.
 Qed.
 
 Definition rewriter {atom : Set} (v : atom -> bool) (F : @formula atom) : formula :=
@@ -163,11 +194,53 @@ Proof.
         exact H.
 Qed.
 
-Definition LettersList {atom : Set} (f : @formula atom) : Type := { ls : list atom | forall x : atom, In x ls <-> occurs x f }.
+Lemma length_concat_zero {A : Type} (l1 l2 : list A) : length (l1 ++ l2) = 0 <-> length l1 = 0 /\ length l2 = 0.
+Proof.
+  split.
+  - intro H.
+    induction l1 as [| l' IH].
+    + simpl.
+      simpl in H.
+      split.
+      * reflexivity.
+      * exact H.
+    + simpl in H.
+      discriminate H.
+  - intro H.
+    destruct H as [H1 H2].
+    induction l1 as [| h t IH].
+    + simpl.
+      exact H2.
+    + simpl in H1.
+      discriminate H1.
+Qed.
+
+Lemma letters_list_not_empty {atom : Set} (f : @formula atom) :
+  ~ (length (get_letters f) = 0).
+Proof.
+  induction f as [| A IH | f1 IH1 f2 IH2].
+  - simpl. intro H. discriminate H.
+  - intro H.
+    unfold get_letters in H.
+    cbn in H.
+    unfold get_letters in IH.
+    apply IH in H.
+    exact H.
+  - intro H.
+    unfold get_letters in H.
+    unfold get_letters in IH1.
+    cbn in H.
+    rewrite length_concat_zero in H.
+    destruct H as [H1 H2].
+    apply IH1 in H1.
+    exact H1.
+Qed.
+
+Definition LettersList {atom : Set} (f : @formula atom) : Type := { ls : list atom | (forall x : atom, In x ls <-> occurs x f) /\ ~ (length ls = 0) }.
 
 Definition get_letters_from_formula {atom : Set} (f : @formula atom) : LettersList f :=
   let lst := get_letters f in
-  exist _ lst (all_letters_exist_in_get_letters f).
+  exist _ lst (conj (all_letters_exist_in_get_letters f) (letters_list_not_empty f)).
 
 Definition get_list {atom : Set} {f : @formula atom} (lst : LettersList f) : list atom :=
   match lst with
@@ -332,6 +405,7 @@ Proof.
   specialize (Htauto v) as Hv.
   unfold is_true in Hv.
   intro Γ.
+  unfold is_true in H.
   (* 1 *)
   pose proof (rewriter_true F v) as Hletters.
   unfold rewriter in Hletters.
