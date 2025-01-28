@@ -85,6 +85,25 @@ Proof.
   exact H.
 Qed.
 
+Theorem eq_entails {atom : Set} (Γ Γ' : @formula atom -> Prop) (A: @formula atom) :
+  (forall A, Γ A = Γ' A) -> (Γ |- A) -> Γ' |- A.
+Proof.
+  intros H1 H2.
+  induction H2 as [A H|?|?|?|A B HΓ HΓ' IH1 IH2].
+  - apply hypo.
+    unfold elem.
+    unfold elem in H.
+    specialize H1 with A.
+    rewrite <-H1.
+    exact H.
+  - apply axiom1.
+  - apply axiom2.
+  - apply axiom3.
+  - apply mp with (B := B).
+    + apply HΓ'.
+    + apply IH2.
+Qed.
+
 (* The cut rule is admissible. *)
 Theorem CutRule {atom : Set} (A : @formula atom) {Γ B} : Γ |- A -> extend Γ A |- B -> Γ |- B.
 Proof.
