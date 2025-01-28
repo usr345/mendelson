@@ -396,6 +396,35 @@ Proof.
       * exact IH1.
 Qed.
 
+Theorem contexts_or_equal {atom : Set} (Γ : @formula atom -> Prop) : forall A: @formula atom, ((fun x => (A = x) \/ (x ∈ Γ)) A) <-> ((fun x => (x ∈ Γ) \/ (A = x)) A).
+Proof.
+  intro A.
+  simpl.
+  apply or_comm.
+Qed.
+
+Theorem test3 {atom : Set} (Γ : @formula atom -> Prop) (A B: @formula atom) :
+  (fun x => (A = x) \/ (x ∈ Γ)) |- B -> Γ |- $A -> B$.
+Proof.
+  intro H.
+  assert (Heq : forall A0, (fun x => A = x \/ x ∈ Γ) A0 <-> (fun x => x ∈ Γ \/ A = x) A0).
+  {
+    intros.
+    split.
+    - rewrite or_comm.
+      intro H1.
+      exact H1.
+    - rewrite or_comm.
+      intro H1.
+      exact H1.
+  }
+  set (H1 := (eq_entails (fun x => A = x \/ x ∈ Γ) (fun x => x ∈ Γ \/ A = x) B Heq)).
+  apply H1 in H.
+  clear H1.
+  apply deduction in H.
+  exact H.
+Qed.
+
 Lemma is_theorem_if_it_passes_all_cases {atom : Set} {f : @formula atom} (letters : LettersList f) :
   (forall v : atom -> bool, generate_context v letters |- f) -> empty |- f.
 Proof.
@@ -422,13 +451,31 @@ Proof.
     specialize H with TrueFun as HTrue.
     unfold rewriter in HTrue.
     simpl in HTrue.
-    assert (H4 : forall B : @formula atom, (fun x : formula => f_atom A = x \/ In x (map (fun a : atom => f_atom a) ls)) B = (fun x : formula => In x (map (fun a : atom => f_atom a) ls) \/ (f_atom A = x)) B).
-    { admit. }
+    assert (H4 : forall B : @formula atom, (fun x : formula => f_atom A = x \/ In x (map (fun a : atom => f_atom a) ls)) B <-> (fun x : formula => In x (map (fun a : atom => f_atom a) ls) \/ (f_atom A = x)) B).
+    {
+      intros B.
+      split.
+      - intro Temp.
+        rewrite or_comm.
+        exact Temp.
+      - intro Temp.
+        rewrite or_comm.
+        exact Temp.
+    }
     apply eq_entails with (Γ' := (fun x : formula => In x (map (fun a : atom => f_atom a) ls) \/ (f_atom A = x))) in HTrue.
     apply deduction in HTrue.
     assert (H5 : forall B : @formula atom, (fun x : formula =>
-     f_not (f_atom A) = x \/ In x (map (fun a : atom => f_not (f_atom a)) ls)) B = (fun x : formula => In x (map (fun a : atom => f_not (f_atom a)) ls) \/ f_not (f_atom A) = x) B).
-    { admit. }
+     f_not (f_atom A) = x \/ In x (map (fun a : atom => f_not (f_atom a)) ls)) B <-> (fun x : formula => In x (map (fun a : atom => f_not (f_atom a)) ls) \/ f_not (f_atom A) = x) B).
+    {
+      intros B.
+      split.
+      - intro Temp.
+        rewrite or_comm.
+        exact Temp.
+      - intro Temp.
+        rewrite or_comm.
+        exact Temp.
+    }
     apply eq_entails with (Γ' := (fun x : formula => In x (map (fun a : atom => f_not (f_atom a)) ls) \/ f_not (f_atom A) = x)) in HFalse.
     apply deduction in HFalse.
     assert (Hf : (fun x : formula => In x (map (fun a : atom => f_atom a) ls))

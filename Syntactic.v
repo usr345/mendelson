@@ -86,7 +86,7 @@ Proof.
 Qed.
 
 Theorem eq_entails {atom : Set} (Γ Γ' : @formula atom -> Prop) (A: @formula atom) :
-  (forall A, Γ A = Γ' A) -> (Γ |- A) -> Γ' |- A.
+  (forall A, Γ A <-> Γ' A) -> (Γ |- A) -> Γ' |- A.
 Proof.
   intros H1 H2.
   induction H2 as [A H|?|?|?|A B HΓ HΓ' IH1 IH2].
