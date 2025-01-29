@@ -278,6 +278,12 @@ Proof.
   exact (exist _ letters2 (conj (all_letters_exist_in_get_letters f2) (letters_list_not_empty f2))).
 Qed.
 
+Lemma formula_in_generate_context_is_in_list {atom : Set } (v : atom -> bool) {f : @formula atom} (letters : LettersList f) (F : @formula atom) : (generate_context v letters F) -> exists a : atom, In a (get_list letters).
+Proof.
+  intro HContext.
+  destruct letters as [letters H].
+  destruct H as [H1 H2].
+
 Lemma rewriter_subset_left {atom : Set } (v : atom -> bool) (f1 f2 : @formula atom) (letters1 : LettersList f1) (letters2 : LettersList $f1 -> f2$) :
   (generate_context v letters1) ⊆ (generate_context v letters2).
 Proof.
