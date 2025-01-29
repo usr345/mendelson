@@ -443,7 +443,7 @@ Proof.
     unfold generate_context.
     unfold In_flip.
     simpl.
-    set (FalseFun := (fun _ : atom => false) : atom -> bool).
+    set (FalseFun := (fun x : atom => false) : atom -> bool).
     set (TrueFun := (fun _ : atom => true) : atom -> bool).
     specialize H with FalseFun as HFalse.
     unfold rewriter in HFalse.
