@@ -250,9 +250,19 @@ Definition get_list {atom : Set} {f : @formula atom} (lst : LettersList f) : lis
 Definition In_flip {A : Type} (xs : list A) : A -> Prop :=
   fun x => In x xs.
 
+Fixpoint apply_rewriter {atom : Set } (v : atom -> bool) (f : @formula atom) (letters : list atom) : formula -> Prop :=
+  match letters with
+      | nil => empty
+      | h :: t => extend (apply_rewriter v f t) (rewriter v (f_atom h))
+  end.
+
+Check in_map_iff.
+
 Definition generate_context {atom : Set } (v : atom -> bool) {f : @formula atom} (letters : LettersList f) : formula -> Prop :=
   let lst := get_list letters in
-  In_flip (map (fun a : atom => rewriter v (f_atom a)) lst).
+  apply_rewriter v f lst.
+
+(* Lemma T1 {atom : Set} {f : @formula atom} (letters : LettersList f) : generate_context *)
 
 Lemma letters_f1_from_letters_impl {atom : Set } (v : atom -> bool) (f1 f2 : @formula atom): (LettersList $f1 -> f2$) -> (LettersList f1).
 Proof.
@@ -268,24 +278,22 @@ Proof.
   exact (exist _ letters2 (conj (all_letters_exist_in_get_letters f2) (letters_list_not_empty f2))).
 Qed.
 
-
 Lemma rewriter_subset_left {atom : Set } (v : atom -> bool) (f1 f2 : @formula atom) (letters1 : LettersList f1) (letters2 : LettersList $f1 -> f2$) :
   (generate_context v letters1) ⊆ (generate_context v letters2).
 Proof.
   unfold subset.
   unfold elem.
   unfold generate_context.
-  unfold In_flip.
   intros A H.
-  rewrite in_map_iff in *.
-  destruct H as [x H].
-  exists x.
-  destruct H as [H1 H2].
+  destruct letters1 as [list1 H1].
+  destruct letters2 as [list2 H2].
+  unfold occurs in H2.
+
   split.
   - exact H1.
   - destruct letters1 as [letters_f1 H3].
     destruct letters2 as [letters_impl H4].
-    unfold get_list.
+
     unfold get_list in H2.
     destruct H3 as [H3 _].
     specialize H3 with x.
