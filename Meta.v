@@ -256,13 +256,54 @@ Fixpoint apply_rewriter {atom : Set } (v : atom -> bool) (f : @formula atom) (le
       | h :: t => extend (apply_rewriter v f t) (rewriter v (f_atom h))
   end.
 
-Check in_map_iff.
-
 Definition generate_context {atom : Set } (v : atom -> bool) {f : @formula atom} (letters : LettersList f) : formula -> Prop :=
   let lst := get_list letters in
   apply_rewriter v f lst.
 
-(* Lemma T1 {atom : Set} {f : @formula atom} (letters : LettersList f) : generate_context *)
+Lemma T1 {atom : Set} (v : atom -> bool) (f : @formula atom) (letters : list atom) (A : @formula atom) :
+  apply_rewriter v f letters A <-> exists x, In x letters /\ rewriter v (f_atom x) = A.
+Proof.
+  split.
+  - intros H.
+    induction letters as [| h tail IH].
+    + simpl in H.
+      unfold empty in H.
+      destruct H.
+    + simpl in H.
+      unfold extend in H.
+      unfold elem in H.
+      destruct H.
+      * specialize (IH H).
+        destruct IH as [x [H1 H2]].
+        exists x.
+        split.
+        ** simpl.
+           right.
+           exact H1.
+        ** exact H2.
+      * exists h.
+        split.
+        ** simpl.
+           left.
+           reflexivity.
+        ** exact H.
+  - intro H.
+    destruct H as [x [H1 H2]].
+    induction letters as [| h tail IH].
+    + simpl in H1.
+      destruct H1.
+    + simpl.
+      unfold extend.
+      unfold elem.
+      simpl in H1.
+      destruct H1.
+      * rewrite <-H in H2.
+        right.
+        exact H2.
+      * apply IH in H.
+        left.
+        exact H.
+Qed.
 
 Lemma letters_f1_from_letters_impl {atom : Set } (v : atom -> bool) (f1 f2 : @formula atom): (LettersList $f1 -> f2$) -> (LettersList f1).
 Proof.
@@ -285,25 +326,26 @@ Proof.
   unfold elem.
   unfold generate_context.
   intros A H.
-  destruct letters1 as [list1 H1].
-  destruct letters2 as [list2 H2].
-  unfold occurs in H2.
-
+  rewrite T1 in H.
+  destruct H as [x [H1 H2]].
+  destruct letters1 as [list1 H3].
+  destruct letters2 as [list2 H4].
+  simpl.
+  simpl in H1.
+  simpl in H4.
+  destruct H4 as [H4 _].
+  destruct H3 as [H3 _].
+  rewrite T1.
+  exists x.
+  specialize H3 with x.
+  specialize H4 with x.
+  rewrite H3 in H1.
+  assert (H5 : occurs x f1 \/ occurs x f2).
+  { exact (or_introl (occurs x f2) H1). }
+  rewrite <-H4 in H5.
   split.
-  - exact H1.
-  - destruct letters1 as [letters_f1 H3].
-    destruct letters2 as [letters_impl H4].
-
-    unfold get_list in H2.
-    destruct H3 as [H3 _].
-    specialize H3 with x.
-    destruct H4 as [H4 _].
-    specialize H4 with x.
-    rewrite H3 in H2.
-    rewrite H4.
-    simpl.
-    left.
-    exact H2.
+  - exact H5.
+  - exact H2.
 Qed.
 
 Lemma rewriter_subset_right {atom : Set } (v : atom -> bool) {f1 f2 : @formula atom} (letters1 : LettersList f2) (letters2 : LettersList $f1 -> f2$) :
@@ -312,27 +354,27 @@ Proof.
   unfold subset.
   unfold elem.
   unfold generate_context.
-  unfold In_flip.
   intros A H.
-  rewrite in_map_iff in *.
-  destruct H as [x H].
+  rewrite T1 in H.
+  destruct H as [x [H1 H2]].
+  destruct letters1 as [list1 H3].
+  destruct letters2 as [list2 H4].
+  simpl.
+  simpl in H1.
+  simpl in H4.
+  destruct H4 as [H4 _].
+  destruct H3 as [H3 _].
+  rewrite T1.
   exists x.
-  destruct H as [H1 H2].
+  specialize H3 with x.
+  specialize H4 with x.
+  rewrite H3 in H1.
+  assert (H5 : occurs x f1 \/ occurs x f2).
+  { exact (or_intror (occurs x f1) H1). }
+  rewrite <-H4 in H5.
   split.
-  - exact H1.
-  - destruct letters1 as [letters_f1 H3].
-    destruct letters2 as [letters_impl H4].
-    unfold get_list.
-    unfold get_list in H2.
-    destruct H3 as [H3 _].
-    specialize H3 with x.
-    destruct H4 as [H4 _].
-    specialize H4 with x.
-    rewrite H3 in H2.
-    rewrite H4.
-    simpl.
-    right.
-    exact H2.
+  - exact H5.
+  - exact H2.
 Qed.
 
 Create HintDb Kalmar.
