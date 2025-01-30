@@ -260,7 +260,7 @@ Definition generate_context {atom : Set } (v : atom -> bool) {f : @formula atom}
   let lst := get_list letters in
   apply_rewriter v f lst.
 
-Lemma T1 {atom : Set} (v : atom -> bool) (f : @formula atom) (letters : list atom) (A : @formula atom) :
+Lemma apply_rewriter_iff_exists {atom : Set} (v : atom -> bool) (f : @formula atom) (letters : list atom) (A : @formula atom) :
   apply_rewriter v f letters A <-> exists x, In x letters /\ rewriter v (f_atom x) = A.
 Proof.
   split.
@@ -326,7 +326,7 @@ Proof.
   unfold elem.
   unfold generate_context.
   intros A H.
-  rewrite T1 in H.
+  rewrite apply_rewriter_iff_exists in H.
   destruct H as [x [H1 H2]].
   destruct letters1 as [list1 H3].
   destruct letters2 as [list2 H4].
@@ -335,7 +335,7 @@ Proof.
   simpl in H4.
   destruct H4 as [H4 _].
   destruct H3 as [H3 _].
-  rewrite T1.
+  rewrite apply_rewriter_iff_exists.
   exists x.
   specialize H3 with x.
   specialize H4 with x.
@@ -355,7 +355,7 @@ Proof.
   unfold elem.
   unfold generate_context.
   intros A H.
-  rewrite T1 in H.
+  rewrite apply_rewriter_iff_exists in H.
   destruct H as [x [H1 H2]].
   destruct letters1 as [list1 H3].
   destruct letters2 as [list2 H4].
@@ -364,7 +364,7 @@ Proof.
   simpl in H4.
   destruct H4 as [H4 _].
   destruct H3 as [H3 _].
-  rewrite T1.
+  rewrite apply_rewriter_iff_exists.
   exists x.
   specialize H3 with x.
   specialize H4 with x.
