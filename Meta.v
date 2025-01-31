@@ -256,9 +256,16 @@ Fixpoint apply_rewriter {atom : Set } (v : atom -> bool) (f : @formula atom) (le
       | h :: t => extend (apply_rewriter v f t) (rewriter v (f_atom h))
   end.
 
-Definition generate_context {atom : Set } (v : atom -> bool) {f : @formula atom} (letters : LettersList f) : formula -> Prop :=
+Definition generate_context {atom : Set } (v : atom -> bool) (f : @formula atom) (letters : LettersList f) : formula -> Prop :=
   let lst := get_list letters in
   apply_rewriter v f lst.
+
+Lemma letters_f_eq_leters_not_f {atom : Set} (f : @formula atom) : LettersList f = LettersList $~f$.
+Proof.
+  unfold LettersList.
+  simpl.
+  reflexivity.
+Qed.
 
 Lemma apply_rewriter_iff_exists {atom : Set} (v : atom -> bool) (f : @formula atom) (letters : list atom) (A : @formula atom) :
   apply_rewriter v f letters A <-> exists x, In x letters /\ rewriter v (f_atom x) = A.
@@ -305,6 +312,28 @@ Proof.
         exact H.
 Qed.
 
+Lemma generate_context_f_iff_generate_context_not_f {atom : Set } (v : atom -> bool) (f : @formula atom) (letters : LettersList f) (letters_not : LettersList $~f$) (A : @formula atom) : generate_context v f letters A <-> generate_context v $~f$ letters_not A.
+Proof.
+  split.
+  - intro H.
+    destruct letters_not as [letters_not [H1 H2]].
+    simpl.
+    simpl in H1.
+    induction letters_not as [| h tail IH].
+    + simpl in H2.
+      destruct H2.
+      reflexivity.
+    + unfold generate_context.
+      simpl.
+      unfold extend.
+      unfold elem.
+      unfold generate_context in IH.
+      simpl in IH.
+      destruct letters as [letters [H3 H4]].
+      left.
+
+
+
 Lemma letters_f1_from_letters_impl {atom : Set } (v : atom -> bool) (f1 f2 : @formula atom): (LettersList $f1 -> f2$) -> (LettersList f1).
 Proof.
   intro letters.
@@ -318,12 +347,6 @@ Proof.
   set (letters2 := get_letters f2).
   exact (exist _ letters2 (conj (all_letters_exist_in_get_letters f2) (letters_list_not_empty f2))).
 Qed.
-
-Lemma formula_in_generate_context_is_in_list {atom : Set } (v : atom -> bool) {f : @formula atom} (letters : LettersList f) (F : @formula atom) : (generate_context v letters F) -> exists a : atom, In a (get_list letters).
-Proof.
-  intro HContext.
-  destruct letters as [letters H].
-  destruct H as [H1 H2].
 
 Lemma rewriter_subset_left {atom : Set } (v : atom -> bool) (f1 f2 : @formula atom) (letters1 : LettersList f1) (letters2 : LettersList $f1 -> f2$) :
   (generate_context v letters1) ⊆ (generate_context v letters2).
@@ -403,13 +426,21 @@ Proof.
     rewrite <-H1 in H3.
     apply hypo.
     unfold elem.
-    apply in_map_iff.
+    apply apply_rewriter_iff_exists.
     exists a.
     split.
-    + reflexivity.
     + exact H3.
+    + reflexivity.
   (* F = f_not F' *)
-  - apply rewriter_pos_neg.
+  - destruct letters as [list H].
+    simpl in H.
+    simpl.
+    apply rewriter_pos_neg.
+    assert (letters : LettersList f).
+    { exact (exist _ list H). }
+    specialize (IH letters).
+    Set Printing All.
+    destruct letters.
     apply IH.
   - (* F = f_impl F1 F2 *)
     unfold rewriter.
