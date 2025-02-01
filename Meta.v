@@ -4,6 +4,25 @@ From Mendelson Require Import Semantic.
 Require Import Coq.Lists.List.
 Import ListNotations.
 
+(* Lemma lists_eq : forall {atom : Set} (l1 l2 : list atom), *)
+(*   (forall x, In x l1 <-> In x l2) -> l1 = l2. *)
+(* Proof. *)
+(*   intros A l1 l2 H. *)
+(*   induction l1. *)
+(*   - destruct l2. *)
+(*     + reflexivity. *)
+(*     + simpl in H. *)
+(*       exfalso. *)
+(*       specialize H with a. *)
+(*       assert (H1 : a = a \/ In a l2). *)
+(*       { left. reflexivity. } *)
+(*       rewrite <-H in H1. *)
+(*       exact H1. *)
+(*   - specialize H with a as Ha. *)
+(*     assert (H1 : In a (a :: l1)). *)
+(*     { apply List.in_eq. } *)
+(*     rewrite Ha in H1. *)
+
 Theorem axiom1_tautology {atom : Set} (A B: @formula atom) : tautology (f_axiom1 A B).
 Proof.
   unfold f_axiom1, tautology.
