@@ -4,25 +4,6 @@ From Mendelson Require Import Semantic.
 Require Import Coq.Lists.List.
 Import ListNotations.
 
-(* Lemma lists_eq : forall {atom : Set} (l1 l2 : list atom), *)
-(*   (forall x, In x l1 <-> In x l2) -> l1 = l2. *)
-(* Proof. *)
-(*   intros A l1 l2 H. *)
-(*   induction l1. *)
-(*   - destruct l2. *)
-(*     + reflexivity. *)
-(*     + simpl in H. *)
-(*       exfalso. *)
-(*       specialize H with a. *)
-(*       assert (H1 : a = a \/ In a l2). *)
-(*       { left. reflexivity. } *)
-(*       rewrite <-H in H1. *)
-(*       exact H1. *)
-(*   - specialize H with a as Ha. *)
-(*     assert (H1 : In a (a :: l1)). *)
-(*     { apply List.in_eq. } *)
-(*     rewrite Ha in H1. *)
-
 Theorem axiom1_tautology {atom : Set} (A B: @formula atom) : tautology (f_axiom1 A B).
 Proof.
   unfold f_axiom1, tautology.
@@ -275,7 +256,7 @@ Fixpoint apply_rewriter {atom : Set } (v : atom -> bool) (f : @formula atom) (le
       | h :: t => extend (apply_rewriter v f t) (rewriter v (f_atom h))
   end.
 
-Definition generate_context {atom : Set } (v : atom -> bool) (f : @formula atom) (letters : LettersList f) : formula -> Prop :=
+Definition generate_context {atom : Set } (v : atom -> bool) {f : @formula atom} (letters : LettersList f) : formula -> Prop :=
   let lst := get_list letters in
   apply_rewriter v f lst.
 
@@ -331,27 +312,48 @@ Proof.
         exact H.
 Qed.
 
-Lemma generate_context_f_iff_generate_context_not_f {atom : Set } (v : atom -> bool) (f : @formula atom) (letters : LettersList f) (letters_not : LettersList $~f$) (A : @formula atom) : generate_context v f letters A <-> generate_context v $~f$ letters_not A.
+Lemma generate_context_f_iff_generate_context_not_f {atom : Set } (v : atom -> bool) (f : @formula atom) (letters : LettersList f) (letters_not : LettersList $~f$) (A : @formula atom) : generate_context v letters A <-> generate_context v letters_not A.
 Proof.
   split.
   - intro H.
     destruct letters_not as [letters_not [H1 H2]].
+    destruct letters as [letters [H3 H4]].
+    simpl in H1.
+    unfold generate_context.
+    simpl.
+    unfold generate_context in H.
+    simpl in H.
+    apply apply_rewriter_iff_exists.
+    apply apply_rewriter_iff_exists in H.
+    destruct H as [x [H5 H6]].
+    exists x.
+    specialize (H1 x).
+    specialize (H3 x).
+    split.
+    + rewrite H1.
+      rewrite <-H3.
+      exact H5.
+    + exact H6.
+  - intro H.
+    destruct letters_not as [letters_not [H1 H2]].
+    destruct letters as [letters [H3 H4]].
+    unfold generate_context.
     simpl.
     simpl in H1.
-    induction letters_not as [| h tail IH].
-    + simpl in H2.
-      destruct H2.
-      reflexivity.
-    + unfold generate_context.
-      simpl.
-      unfold extend.
-      unfold elem.
-      unfold generate_context in IH.
-      simpl in IH.
-      destruct letters as [letters [H3 H4]].
-      left.
-
-
+    unfold generate_context in H.
+    simpl in H.
+    apply apply_rewriter_iff_exists.
+    apply apply_rewriter_iff_exists in H.
+    destruct H as [x [H5 H6]].
+    exists x.
+    specialize (H1 x).
+    specialize (H3 x).
+    split.
+    + rewrite H3.
+      rewrite <-H1.
+      exact H5.
+    + exact H6.
+Qed.
 
 Lemma letters_f1_from_letters_impl {atom : Set } (v : atom -> bool) (f1 f2 : @formula atom): (LettersList $f1 -> f2$) -> (LettersList f1).
 Proof.
@@ -451,16 +453,17 @@ Proof.
     + exact H3.
     + reflexivity.
   (* F = f_not F' *)
-  - destruct letters as [list H].
-    simpl in H.
-    simpl.
-    apply rewriter_pos_neg.
-    assert (letters : LettersList f).
-    { exact (exist _ list H). }
-    specialize (IH letters).
-    Set Printing All.
-    destruct letters.
-    apply IH.
+  - apply rewriter_pos_neg.
+    set (lettersF := get_letters_from_formula f).
+    apply (weaken (generate_context v lettersF)).
+    + unfold subset.
+      unfold elem.
+      intros A H1.
+      rewrite <-generate_context_f_iff_generate_context_not_f with (letters := lettersF).
+      exact H1.
+    + rewrite <-letters_f_eq_leters_not_f in letters.
+      specialize IH with lettersF.
+      exact IH.
   - (* F = f_impl F1 F2 *)
     unfold rewriter.
     rewrite eval_implication.
