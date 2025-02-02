@@ -534,68 +534,68 @@ Proof.
   exact H.
 Qed.
 
-Lemma is_theorem_if_it_passes_all_cases {atom : Set} {f : @formula atom} (letters : LettersList f) :
-  (forall v : atom -> bool, generate_context v letters |- f) -> empty |- f.
-Proof.
-  intros H.
-  destruct letters as [letters H1].
-  destruct H1 as [H1 H2].
-  induction letters as [| A ls IH].
-  - simpl in H2.
-    exfalso.
-    apply H2.
-    reflexivity.
-  - eapply IH.
-    unfold generate_context in H.
-    unfold In_flip in H.
-    simpl in H.
-    unfold generate_context.
-    unfold In_flip.
-    simpl.
-    set (FalseFun := (fun x : atom => false) : atom -> bool).
-    set (TrueFun := (fun _ : atom => true) : atom -> bool).
-    specialize H with FalseFun as HFalse.
-    unfold rewriter in HFalse.
-    simpl in HFalse.
-    specialize H with TrueFun as HTrue.
-    unfold rewriter in HTrue.
-    simpl in HTrue.
-    assert (H4 : forall B : @formula atom, (fun x : formula => f_atom A = x \/ In x (map (fun a : atom => f_atom a) ls)) B <-> (fun x : formula => In x (map (fun a : atom => f_atom a) ls) \/ (f_atom A = x)) B).
-    {
-      intros B.
-      split.
-      - intro Temp.
-        rewrite or_comm.
-        exact Temp.
-      - intro Temp.
-        rewrite or_comm.
-        exact Temp.
-    }
-    apply eq_entails with (Γ' := (fun x : formula => In x (map (fun a : atom => f_atom a) ls) \/ (f_atom A = x))) in HTrue.
-    apply deduction in HTrue.
-    assert (H5 : forall B : @formula atom, (fun x : formula =>
-     f_not (f_atom A) = x \/ In x (map (fun a : atom => f_not (f_atom a)) ls)) B <-> (fun x : formula => In x (map (fun a : atom => f_not (f_atom a)) ls) \/ f_not (f_atom A) = x) B).
-    {
-      intros B.
-      split.
-      - intro Temp.
-        rewrite or_comm.
-        exact Temp.
-      - intro Temp.
-        rewrite or_comm.
-        exact Temp.
-    }
-    apply eq_entails with (Γ' := (fun x : formula => In x (map (fun a : atom => f_not (f_atom a)) ls) \/ f_not (f_atom A) = x)) in HFalse.
-    apply deduction in HFalse.
-    assert (Hf : (fun x : formula => In x (map (fun a : atom => f_atom a) ls))
-         |- f).
-    apply (meta_T_1_10_7 (f_atom A)).
-    apply HTrue.
-    apply HFalse.
+(* Lemma is_theorem_if_it_passes_all_cases {atom : Set} {f : @formula atom} (letters : LettersList f) : *)
+(*   (forall v : atom -> bool, generate_context v letters |- f) -> empty |- f. *)
+(* Proof. *)
+(*   intros H. *)
+(*   destruct letters as [letters H1]. *)
+(*   destruct H1 as [H1 H2]. *)
+(*   induction letters as [| A ls IH]. *)
+(*   - simpl in H2. *)
+(*     exfalso. *)
+(*     apply H2. *)
+(*     reflexivity. *)
+(*   - eapply IH. *)
+(*     unfold generate_context in H. *)
+(*     unfold In_flip in H. *)
+(*     simpl in H. *)
+(*     unfold generate_context. *)
+(*     unfold In_flip. *)
+(*     simpl. *)
+(*     set (FalseFun := (fun x : atom => false) : atom -> bool). *)
+(*     set (TrueFun := (fun _ : atom => true) : atom -> bool). *)
+(*     specialize H with FalseFun as HFalse. *)
+(*     unfold rewriter in HFalse. *)
+(*     simpl in HFalse. *)
+(*     specialize H with TrueFun as HTrue. *)
+(*     unfold rewriter in HTrue. *)
+(*     simpl in HTrue. *)
+(*     assert (H4 : forall B : @formula atom, (fun x : formula => f_atom A = x \/ In x (map (fun a : atom => f_atom a) ls)) B <-> (fun x : formula => In x (map (fun a : atom => f_atom a) ls) \/ (f_atom A = x)) B). *)
+(*     { *)
+(*       intros B. *)
+(*       split. *)
+(*       - intro Temp. *)
+(*         rewrite or_comm. *)
+(*         exact Temp. *)
+(*       - intro Temp. *)
+(*         rewrite or_comm. *)
+(*         exact Temp. *)
+(*     } *)
+(*     apply eq_entails with (Γ' := (fun x : formula => In x (map (fun a : atom => f_atom a) ls) \/ (f_atom A = x))) in HTrue. *)
+(*     apply deduction in HTrue. *)
+(*     assert (H5 : forall B : @formula atom, (fun x : formula => *)
+(*      f_not (f_atom A) = x \/ In x (map (fun a : atom => f_not (f_atom a)) ls)) B <-> (fun x : formula => In x (map (fun a : atom => f_not (f_atom a)) ls) \/ f_not (f_atom A) = x) B). *)
+(*     { *)
+(*       intros B. *)
+(*       split. *)
+(*       - intro Temp. *)
+(*         rewrite or_comm. *)
+(*         exact Temp. *)
+(*       - intro Temp. *)
+(*         rewrite or_comm. *)
+(*         exact Temp. *)
+(*     } *)
+(*     apply eq_entails with (Γ' := (fun x : formula => In x (map (fun a : atom => f_not (f_atom a)) ls) \/ f_not (f_atom A) = x)) in HFalse. *)
+(*     apply deduction in HFalse. *)
+(*     assert (Hf : (fun x : formula => In x (map (fun a : atom => f_atom a) ls)) *)
+(*          |- f). *)
+(*     apply (meta_T_1_10_7 (f_atom A)). *)
+(*     apply HTrue. *)
+(*     apply HFalse. *)
 
-    unfold rewriter in H.
-    destruct (eval v (f_atom A)).
-    +
+(*     unfold rewriter in H. *)
+(*     destruct (eval v (f_atom A)). *)
+(*     + *)
 
 Lemma or_idempotent (A : Prop) : A \/ A <-> A.
 Proof.
@@ -618,7 +618,17 @@ Proof.
     exact H.
 Qed.
 
-Theorem semantic_completeness {atom : Set} (F : @formula atom) (v : atom -> bool) : tautology F -> theorem F.
+Lemma forall_or_split (A : Set) (h : A) (tail : list A) (P : Prop): (forall x, In x (h :: tail) <-> P) -> (forall x, (x = h <-> P) \/ In x tail <-> P).
+Proof.
+  intro H.
+  intro x.
+  simpl in H.
+  specialize (H x).
+  destruct (atom_eq x = h) as [Heq|Hneq].
+
+  - left.
+
+Theorem semantic_completeness {atom : Set} (Hatom: inhabited atom) (F : @formula atom) (v : atom -> bool) : tautology F -> theorem F.
 Proof.
   unfold tautology, theorem.
   intro Htauto.
@@ -637,25 +647,27 @@ Proof.
   unfold is_true in HFun_True.
   rewrite HFun_False in HFalse.
   rewrite HFun_True in HTrue.
-  destruct letters as [letters H].
-  destruct H as [H1 H2].
+  destruct letters as [letters [H1 H2]].
   (* 2 *)
-  induction letters as [|a t IH].
+  induction letters as [|h tail IH].
   - simpl in H2.
     exfalso.
     apply H2.
     reflexivity.
-  - unfold generate_context in HFalse.
-    unfold In_flip in HFalse.
+  - simpl in H1.
+    unfold generate_context in HFalse.
+    simpl in HFalse.
     unfold rewriter in HFalse.
     simpl in HFalse.
-    Unset Printing Notations.
-    Search (?a \/ ?b).
-    rewrite or_comm in HFalse.
+    unfold generate_context in HTrue.
+    simpl in HTrue.
+    unfold rewriter in HTrue.
+    simpl in HTrue.
+    apply deduction in HFalse.
+    apply deduction in HTrue.
 
-    simpl in H1.
-    specialize (IH H1).
 
+    apply IH.
 
   (* 3 *)
   specialize (Htauto FalseFun) as F_true_in_false.
