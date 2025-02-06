@@ -260,15 +260,52 @@ Fixpoint n_impl {atom : Set} (consequent : @formula atom) (lst : list formula) {
 Definition In_flip {A : Type} (xs : list A) : A -> Prop :=
   fun x => In x xs.
 
-Fixpoint apply_rewriter {atom : Set } (v : atom -> bool) (f : @formula atom) (letters : list atom) : formula -> Prop :=
+Fixpoint apply_rewriter {atom : Set } (v : atom -> bool) (letters : list atom) : formula -> Prop :=
   match letters with
       | nil => empty
-      | h :: t => extend (apply_rewriter v f t) (rewriter v (f_atom h))
+      | h :: t => extend (apply_rewriter v t) (rewriter v (f_atom h))
+  end.
+
+Fixpoint rewriters_list {atom : Set} (v : atom -> bool) (letters : list atom) : list formula :=
+  match letters with
+  | nil => nil
+  | a :: tail => (rewriter v (f_atom a)) :: (rewriters_list v tail)
   end.
 
 Definition generate_context {atom : Set } (v : atom -> bool) {f : @formula atom} (letters : LettersList f) : formula -> Prop :=
   let lst := get_list letters in
-  apply_rewriter v f lst.
+  apply_rewriter v lst.
+
+Lemma rewriter_impl {atom : Set} (v : atom -> bool) (letters : list atom) : forall F : formula, (apply_rewriter v letters) |- F -> empty |- n_impl F (rewriters_list v letters).
+Proof.
+  induction letters as [| A tail IH].
+  - intros F H.
+    simpl.
+    simpl in H.
+    exact H.
+  - intros F H.
+    simpl.
+    simpl in H.
+    apply deduction in H.
+    specialize (IH (f_imp (rewriter v (f_atom A)) F)).
+    specialize (IH H).
+    exact IH.
+Qed.
+
+Lemma letters_not_letters {atom : Set } {f : @formula atom} (letters : list atom) : (apply_rewriter (fun _ => true) letters |- f) -> (apply_rewriter (fun _ => false) letters |- f) -> empty |- f.
+Proof.
+  unfold generate_context.
+  intros HTrue HFalse.
+  simpl.
+  simpl in HTrue.
+  simpl in HFalse.
+  apply rewriter_impl in HTrue.
+  apply rewriter_impl in HFalse.
+  induction letters.
+  - simpl in HTrue.
+    exact HTrue.
+  - simpl in HTrue.
+    simpl in HFalse.
 
 Lemma letters_f_eq_leters_not_f {atom : Set} (f : @formula atom) : LettersList f = LettersList $~f$.
 Proof.
