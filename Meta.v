@@ -306,6 +306,10 @@ Proof.
     exact HTrue.
   - simpl in HTrue.
     simpl in HFalse.
+    unfold rewriter in HTrue.
+    simpl in HTrue.
+    unfold rewriter in HFalse.
+    simpl in HFalse.
 
 Lemma letters_f_eq_leters_not_f {atom : Set} (f : @formula atom) : LettersList f = LettersList $~f$.
 Proof.
