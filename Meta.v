@@ -247,6 +247,16 @@ Definition get_list {atom : Set} {f : @formula atom} (lst : LettersList f) : lis
   | exist _ res p => res
   end.
 
+Definition length {atom : Set} {f : @formula atom} (letters : LettersList f) : nat :=
+  let lst := get_list letters in
+  length lst.
+
+Fixpoint n_impl {atom : Set} (consequent : @formula atom) (lst : list formula) {struct lst} : @formula atom:=
+  match lst with
+  | nil => consequent
+  | A :: tail => n_impl (f_imp A consequent) tail
+  end.
+
 Definition In_flip {A : Type} (xs : list A) : A -> Prop :=
   fun x => In x xs.
 
