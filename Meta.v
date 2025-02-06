@@ -618,16 +618,6 @@ Proof.
     exact H.
 Qed.
 
-Lemma forall_or_split (A : Set) (h : A) (tail : list A) (P : Prop): (forall x, In x (h :: tail) <-> P) -> (forall x, (x = h <-> P) \/ In x tail <-> P).
-Proof.
-  intro H.
-  intro x.
-  simpl in H.
-  specialize (H x).
-  destruct (atom_eq x = h) as [Heq|Hneq].
-
-  - left.
-
 Theorem semantic_completeness {atom : Set} (Hatom: inhabited atom) (F : @formula atom) (v : atom -> bool) : tautology F -> theorem F.
 Proof.
   unfold tautology, theorem.
@@ -665,53 +655,3 @@ Proof.
     simpl in HTrue.
     apply deduction in HFalse.
     apply deduction in HTrue.
-
-
-    apply IH.
-
-  (* 3 *)
-  specialize (Htauto FalseFun) as F_true_in_false.
-  unfold is_true in F_true_in_false.
-  specialize (Htauto TrueFun) as F_true_in_truth.
-  unfold is_true in F_true_in_truth.
-  (* 3 *)
-  induction F as [| F IH | F1 IH1 F2 IH2].
-  - simpl in Htauto.
-    unfold is_true in Htauto.
-    simpl in Hletters.
-    pose proof (rewriter_true (f_atom a) FalseFun) as HFalse.
-    unfold rewriter in HFalse.
-    unfold In_flip in HFalse.
-    rewrite F_true_in_false in HFalse.
-    cbn in HFalse.
-
-    apply deduction in HFalse.
-
-    pose proof (rewriter_true (f_atom a) TrueFun) as HTrue.
-    unfold rewriter in HTrue.
-    unfold In_flip in HTrue.
-    rewrite F_true_in_truth in HTrue.
-    cbn in HTrue.
-
-    rewrite or_identity in HFalse.
-    Search (?a \/ False).
-
-    unfold rewriter in H1.
-    rewrite H in H1.
-    apply deduction in H1.
-    unfold rewriter in H2.
-    simpl in H2.
-    apply deduction in H2.
-    apply (weaken empty).
-    + unfold subset.
-      intros A Hempty.
-      unfold elem in Hempty.
-      unfold empty in Hempty.
-      destruct Hempty.
-    + apply meta_T_1_10_7 with (A := f_atom a).
-      exact H1.
-      exact H2.
-  - simpl in H2.
-    rewrite eval_neg in Hfalse.
-    rewrite Bool.negb_true_iff in Hfalse.
-    unfold get_letters_rec in H2.
