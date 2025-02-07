@@ -292,6 +292,24 @@ Proof.
     exact IH.
 Qed.
 
+Lemma last_elem_impl {atom : Set } (v : atom -> bool) (A : atom) (tail : list atom) (Γ : @formula atom -> Prop) :
+  let An := last tail A in
+  forall F : formula, Γ |- n_impl F (rewriters_list v (A :: tail)) ->
+                 Γ |- f_imp (rewriter v (f_atom An)) (n_impl F (rewriters_list v (removelast (A :: tail)))).
+Proof.
+  intro An.
+  induction tail as [| B tail' IH].
+  - intros F H.
+    simpl.
+    simpl in H.
+    simpl in An.
+    exact H.
+  - intros F H.
+    simpl.
+    simpl in H.
+    simpl in IH.
+    simpl in An.
+
 Lemma letters_not_letters {atom : Set } {f : @formula atom} (letters : list atom) : (apply_rewriter (fun _ => true) letters |- f) -> (apply_rewriter (fun _ => false) letters |- f) -> empty |- f.
 Proof.
   unfold generate_context.
