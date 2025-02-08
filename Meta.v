@@ -292,42 +292,60 @@ Proof.
     exact IH.
 Qed.
 
-Lemma last_elem_impl {atom : Set } (v : atom -> bool) (A : atom) (tail : list atom) (Γ : @formula atom -> Prop) :
-  let An := last tail A in
-  forall F : formula, Γ |- n_impl F (rewriters_list v (A :: tail)) ->
-                 Γ |- f_imp (rewriter v (f_atom An)) (n_impl F (rewriters_list v (removelast (A :: tail)))).
+Lemma last_elem_impl {atom : Set } (v : atom -> bool) (Dummy : atom) (letters : list atom) (Hletters : ~(Coq.Lists.List.length letters) = 0) (Γ : @formula atom -> Prop) :
+  let An := last letters Dummy in
+  forall F : formula, Γ |- n_impl F (rewriters_list v letters) ->
+                 Γ |- f_imp (rewriter v (f_atom An)) (n_impl F (rewriters_list v (removelast letters))).
 Proof.
   intro An.
-  induction tail as [| B tail' IH].
+  induction letters as [| A1 tail IH].
   - intros F H.
-    simpl.
-    simpl in H.
-    simpl in An.
-    exact H.
+    simpl in Hletters.
+    destruct Hletters.
+    reflexivity.
   - intros F H.
-    simpl.
-    simpl in H.
-    simpl in IH.
-    simpl in An.
+    destruct tail as [|A2 tail'].
+    + simpl.
+      simpl in H.
+      simpl in An.
+      exact H.
+    + simpl.
+      simpl in H.
+      assert (H1 : Datatypes.length (A2 :: tail') <> 0).
+      {
+        simpl.
+        discriminate.
+      }
+      specialize (IH H1).
+      simpl in An.
+      specialize (IH (f_imp (rewriter v (f_atom A1)) F)).
+      specialize (IH H).
+      simpl in IH.
+      exact IH.
+Qed.
 
-Lemma letters_not_letters {atom : Set } {f : @formula atom} (letters : list atom) : (apply_rewriter (fun _ => true) letters |- f) -> (apply_rewriter (fun _ => false) letters |- f) -> empty |- f.
+
+Lemma all_values_true {atom : Set } {f : @formula atom} (letters : list atom) : (forall v : atom -> bool, (apply_rewriter v letters |- f)) -> empty |- f.
 Proof.
-  unfold generate_context.
-  intros HTrue HFalse.
-  simpl.
-  simpl in HTrue.
-  simpl in HFalse.
-  apply rewriter_impl in HTrue.
-  apply rewriter_impl in HFalse.
   induction letters.
-  - simpl in HTrue.
-    exact HTrue.
-  - simpl in HTrue.
+  - intros H.
+    specialize (H (fun _ => true)).
+    simpl in H.
+    exact H.
+  - intros H.
+    simpl in H.
     simpl in HFalse.
     unfold rewriter in HTrue.
     simpl in HTrue.
     unfold rewriter in HFalse.
     simpl in HFalse.
+    apply (last_elem_impl (fun _ => false) a letters) in HFalse.
+    unfold rewriter in HFalse.
+    simpl in HFalse.
+    apply (last_elem_impl (fun _ => true) a letters) in HTrue.
+    unfold rewriter in HTrue.
+    simpl in HTrue.
+
 
 Lemma letters_f_eq_leters_not_f {atom : Set} (f : @formula atom) : LettersList f = LettersList $~f$.
 Proof.
