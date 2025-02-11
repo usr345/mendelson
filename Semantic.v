@@ -2,49 +2,49 @@ Require Import Classical.
 From Mendelson Require Import Formula.
 
 Module Semantic.
-Fixpoint eval {atom : Set} (value : atom -> bool) (f : formula) : bool :=
+Fixpoint eval (value : atom -> bool) (f : formula) : bool :=
   match f with
   | f_atom a => value a
   | f_not f => negb (eval value f)
   | f_imp f1 f2 => implb (eval value f1) (eval value f2)
 end.
 
-Lemma eval_neg {atom : Set} (v : atom -> bool) (A : formula) :
+Lemma eval_neg (v : atom -> bool) (A : formula) :
   (eval v $~A$) = negb (eval v A).
 Proof.
   simpl.
   destruct (eval v A) ; reflexivity.
 Qed.
 
-Lemma eval_implication {atom : Set} (v : atom -> bool) (A B : formula) :
+Lemma eval_implication (v : atom -> bool) (A B : formula) :
   (eval v $A -> B$) = implb (eval v A) (eval v B).
 Proof.
   simpl.
   destruct (eval v A), (eval v B) ; reflexivity.
 Qed.
 
-Lemma eval_disjunction {atom : Set} (v : atom -> bool) (A B : formula) :
+Lemma eval_disjunction (v : atom -> bool) (A B : formula) :
   (eval v $A \/ B$) = orb (eval v A) (eval v B).
 Proof.
   simpl.
   destruct (eval v A), (eval v B) ; reflexivity.
 Qed.
 
-Lemma eval_conjunction {atom : Set} (v : atom -> bool) (A B : formula) :
+Lemma eval_conjunction (v : atom -> bool) (A B : formula) :
   (eval v $A /\ B$) = andb (eval v A) (eval v B).
 Proof.
   simpl.
   destruct (eval v A), (eval v B) ; reflexivity.
 Qed.
 
-Lemma eval_equivalence {atom : Set} (v : atom -> bool) (A B : formula) :
+Lemma eval_equivalence (v : atom -> bool) (A B : formula) :
   (eval v $A <-> B$) = andb (implb (eval v A) (eval v B)) (implb (eval v B) (eval v A)).
 Proof.
   simpl.
   destruct (eval v A), (eval v B) ; reflexivity.
 Qed.
 
-Lemma impl_false {atom : Set} (v : atom -> bool) (A B : formula) :
+Lemma impl_false (v : atom -> bool) (A B : formula) :
   (eval v $A -> B$) = false <-> (eval v A) = true /\ (eval v B) = false.
 Proof.
   split.
@@ -60,7 +60,7 @@ Proof.
     reflexivity.
 Qed.
 
-Lemma disj_false {atom : Set} (v : atom -> bool) (A B : formula) :
+Lemma disj_false (v : atom -> bool) (A B : formula) :
   (eval v $A \/ B$) = false <-> (eval v A) = false /\ (eval v B) = false.
 Proof.
   split.
@@ -76,7 +76,7 @@ Proof.
     reflexivity.
 Qed.
 
-Lemma conj_true {atom : Set} (v : atom -> bool) (A B : formula) :
+Lemma conj_true (v : atom -> bool) (A B : formula) :
   (eval v $A /\ B$) = true <-> (eval v A) = true /\ (eval v B) = true.
 Proof.
   split.
@@ -92,19 +92,19 @@ Proof.
     reflexivity.
 Qed.
 
-Definition tautology {atom : Set} (f : formula) :=
+Definition tautology (f : formula) :=
   forall v : atom -> bool, is_true (eval v f).
 
-Definition contradictory {atom : Set} (f : formula) :=
+Definition contradictory (f : formula) :=
   forall v : atom -> bool, (eval v f) = false.
 
-Definition logically_implies {atom : Set} (A : formula) (B : formula) :=
+Definition logically_implies (A : formula) (B : formula) :=
   forall v : atom -> bool, is_true (eval v A) -> is_true (eval v B).
 
-Definition logically_equivalent {atom : Set} (A : formula) (B : formula) :=
+Definition logically_equivalent (A : formula) (B : formula) :=
   forall v : atom -> bool, (eval v A) = (eval v B).
 
-Proposition P1_1 {atom : Set} (A B: @formula atom) : logically_implies A B <-> tautology $A -> B$.
+Proposition P1_1 (A B: formula) : logically_implies A B <-> tautology $A -> B$.
 Proof.
   unfold logically_implies, tautology.
   split.
@@ -135,7 +135,7 @@ Proof.
       exact H.
 Qed.
 
-Proposition P1_2 {atom : Set} (A B: @formula atom) : logically_equivalent A B <-> tautology $A <-> B$.
+Proposition P1_2 (A B: formula) : logically_equivalent A B <-> tautology $A <-> B$.
 Proof.
   unfold logically_equivalent.
   unfold tautology.
@@ -167,7 +167,7 @@ Proof.
     * reflexivity.
 Qed.
 
-Proposition P1_3 {atom : Set} (A B C: @formula atom) : tautology $(A <-> (~B \/ C)) -> (~A -> B)$.
+Proposition P1_3 (A B C: formula) : tautology $(A <-> (~B \/ C)) -> (~A -> B)$.
 Proof.
   unfold tautology.
   intros.
@@ -176,7 +176,7 @@ Proof.
   destruct (eval v A), (eval v B), (eval v C) ; reflexivity.
 Qed.
 
-Proposition P1_4 {atom : Set} (v : atom -> bool) (Hatom: inhabited atom) : exists (A B C : @formula atom), ~(tautology $(A -> (B \/ C)) \/ (A -> B)$).
+Proposition P1_4 (v : atom -> bool) (Hatom: inhabited atom) : exists (A B C : formula), ~(tautology $(A -> (B \/ C)) \/ (A -> B)$).
 Proof.
   destruct Hatom as [x].
   pose (T := f_imp (f_atom x) (f_atom x)).
@@ -192,7 +192,7 @@ Proof.
   discriminate H.
 Qed.
 
-Proposition P1_27 {atom : Set} (A B C: @formula atom) : logically_equivalent $A -> B -> C$ $(A /\ B) -> C$.
+Proposition P1_27 (A B C: formula) : logically_equivalent $A -> B -> C$ $(A /\ B) -> C$.
 Proof.
   unfold logically_equivalent.
   intros.
@@ -200,7 +200,7 @@ Proof.
   destruct (eval v A), (eval v B), (eval v C); simpl ; reflexivity.
 Qed.
 
-Proposition P1_27_2 {atom : Set} (A B C: @formula atom) : logically_equivalent $A /\ (B \/ C)$ $(A /\ B) \/ (A /\ C)$.
+Proposition P1_27_2 (A B C: formula) : logically_equivalent $A /\ (B \/ C)$ $(A /\ B) \/ (A /\ C)$.
 Proof.
   unfold logically_equivalent.
   intros.
@@ -208,7 +208,7 @@ Proof.
   destruct (eval v A), (eval v B), (eval v C); simpl ; reflexivity.
 Qed.
 
-Proposition P1_27_3 {atom : Set} (T A: @formula atom) : tautology T -> logically_equivalent $T /\ A$ A.
+Proposition P1_27_3 (T A: formula) : tautology T -> logically_equivalent $T /\ A$ A.
 Proof.
   unfold tautology.
   unfold logically_equivalent.
@@ -222,7 +222,7 @@ Proof.
   - simpl. reflexivity.
 Qed.
 
-Proposition P1_27_4 {atom : Set} (T A: @formula atom) : tautology T -> logically_equivalent $T \/ A$ T.
+Proposition P1_27_4 (T A: formula) : tautology T -> logically_equivalent $T \/ A$ T.
 Proof.
   unfold tautology.
   unfold logically_equivalent.
@@ -237,7 +237,7 @@ Proof.
   - simpl. reflexivity.
 Qed.
 
-Proposition P1_27_5 {atom : Set} (T A: @formula atom) : contradictory T -> logically_equivalent $T /\ A$ T.
+Proposition P1_27_5 (T A: formula) : contradictory T -> logically_equivalent $T /\ A$ T.
 Proof.
   unfold contradictory.
   unfold logically_equivalent.
@@ -252,7 +252,7 @@ Proof.
   - simpl. reflexivity.
 Qed.
 
-Proposition P1_27_6 {atom : Set} (T A: @formula atom) : contradictory T -> logically_equivalent $T \/ A$ A.
+Proposition P1_27_6 (T A: formula) : contradictory T -> logically_equivalent $T \/ A$ A.
 Proof.
   unfold contradictory.
   unfold logically_equivalent.

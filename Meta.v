@@ -2,9 +2,10 @@ From Mendelson Require Import Formula.
 From Mendelson Require Import Syntactic.
 From Mendelson Require Import Semantic.
 Require Import Coq.Lists.List.
+Require Import Coq.Init.Nat.
 Import ListNotations.
 
-Theorem axiom1_tautology {atom : Set} (A B: @formula atom) : tautology (f_axiom1 A B).
+Theorem axiom1_tautology (A B: formula) : tautology (f_axiom1 A B).
 Proof.
   unfold f_axiom1, tautology.
   intro v.
@@ -13,7 +14,7 @@ Proof.
   destruct (eval v A), (eval v B) ; reflexivity.
 Qed.
 
-Theorem axiom2_tautology {atom : Set} (A B C: @formula atom) : tautology (f_axiom2 A B C).
+Theorem axiom2_tautology (A B C: formula) : tautology (f_axiom2 A B C).
 Proof.
   unfold f_axiom2, tautology.
   intro v.
@@ -22,7 +23,7 @@ Proof.
   destruct (eval v A), (eval v B), (eval v C) ; reflexivity.
 Qed.
 
-Theorem axiom3_tautology {atom : Set} (A B: @formula atom) : tautology (f_axiom3 A B).
+Theorem axiom3_tautology (A B: formula) : tautology (f_axiom3 A B).
 Proof.
   unfold f_axiom3, tautology.
   intro v.
@@ -31,7 +32,7 @@ Proof.
   destruct (eval v A), (eval v B) ; reflexivity.
 Qed.
 
-Proposition mp_tautology {atom : Set} (A B: @formula atom) : tautology A -> tautology $A -> B$ -> tautology B.
+Proposition mp_tautology (A B: formula) : tautology A -> tautology $A -> B$ -> tautology B.
 Proof.
   intros H_A H_AB.
   unfold tautology.
@@ -52,10 +53,10 @@ Proof.
     discriminate H_A.
 Qed.
 
-Definition theorem {atom : Set} (A : @formula atom) :=
+Definition theorem (A : formula) :=
   forall Γ : (formula -> Prop), Γ |- A.
 
-Theorem semantic_non_contradictionness {atom : Set} (A : @formula atom) : theorem A -> tautology A.
+Theorem semantic_non_contradictionness (A : formula) : theorem A -> tautology A.
 Proof.
   unfold theorem.
   intro H.
@@ -71,7 +72,7 @@ Proof.
 Qed.
 
 (* Если формула F --- тавтология, то ~F --- не тавтология *)
-Lemma tautology_F_not_F_not_tautology {atom : Set} (A : @formula atom) : tautology A -> ~ tautology $~A$.
+Lemma tautology_F_not_F_not_tautology (A : formula) : tautology A -> ~ tautology $~A$.
 Proof.
   intro H.
   intro HNot.
@@ -90,7 +91,7 @@ Proof.
 Qed.
 
 (* Система L непротиворечива, т.е. не существует формулы A, такой, чтобы A и ~A были теоремами в L *)
-Theorem consistency {atom : Set} (A : @formula atom) : theorem A -> theorem $~A$ -> False.
+Theorem consistency (A : formula) : theorem A -> theorem $~A$ -> False.
 Proof.
   intros H1 H2.
   apply semantic_non_contradictionness in H1.
@@ -100,13 +101,41 @@ Proof.
   exact H2.
 Qed.
 
-Definition rewriter {atom : Set} (v : atom -> bool) (F : @formula atom) : formula :=
+Fixpoint max_atom (f : formula) : nat :=
+  match f with
+  | f_atom a => a
+  | f_not f' => max_atom f'
+  | f_imp f1 f2 =>
+      let a1 := max_atom f1 in
+      let a2 := max_atom f2 in
+      if (ltb a1 a2) then a2 else a1
+  end.
+
+Definition assignment : Type := nat -> bool.
+
+(* Formulas of the form (f_atom i) if v i = true or (f_not (f_atom i)) if v i = false, for i < n. *)
+Definition atomize (v : assignment) (n : nat) : formula -> Prop :=
+  fun f => exists i, i < n /\ ((v i = true /\ f = f_atom i) \/ v i = false /\ f = f_not (f_atom i)).
+
+Lemma kalmar_lemma : forall f v, eval v f = true -> atomize v (1 + max_atom f) |- f.
+Proof.
+  induction f.
+  intros f v H.
+  - simpl.
+    unfold atomize.
+    hypo.
+    exists 0.
+
+
+Definition rewriter (v : atom -> bool) (F : formula) : formula :=
   match eval v F with
   | false => $~F$
   | true => F
   end.
 
-Lemma rewriter_neg_pos {atom : Set} (Γ : @formula atom -> Prop) (f : @formula atom) (v : atom -> bool) : (Γ |- rewriter v $~f$) -> (Γ |- rewriter v f).
+
+
+Lemma rewriter_neg_pos (Γ : formula -> Prop) (f : formula) (v : atom -> bool) : (Γ |- rewriter v $~f$) -> (Γ |- rewriter v f).
 Proof.
   unfold rewriter.
   intro H.
@@ -119,7 +148,7 @@ Proof.
     exact H.
 Qed.
 
-Lemma rewriter_pos_neg {atom : Set} (Γ : @formula atom -> Prop) (f : @formula atom) (v : atom -> bool) : (Γ |- rewriter v f) -> (Γ |- rewriter v $~f$).
+Lemma rewriter_pos_neg (Γ : formula -> Prop) (f : formula) (v : atom -> bool) : (Γ |- rewriter v f) -> (Γ |- rewriter v $~f$).
 Proof.
   unfold rewriter.
   intro H.
@@ -132,24 +161,26 @@ Proof.
     exact H.
 Qed.
 
-Fixpoint occurs {atom : Set} (i : atom) (p : formula) {struct p} : Prop :=
+Eval compute in (max_atom (f_imp (f_atom 1) (f_not (f_atom 2)))).
+
+Fixpoint occurs (i : atom) (p : formula) {struct p} : Prop :=
   match p with
   | f_atom i' => i = i'
   | f_not p1 => occurs i p1
   | f_imp p1 p2 => occurs i p1 \/ occurs i p2
   end.
 
-Fixpoint get_letters_rec {atom : Set} (f : @formula atom) (accum : list atom) {struct f} : list atom :=
+Fixpoint get_letters_rec (f : formula) (accum : list atom) {struct f} : list atom :=
   match f with
   | f_atom f' => f' :: accum
   | f_not f' => get_letters_rec f' accum
   | f_imp f1 f2 => (get_letters_rec f1 accum) ++ (get_letters_rec f2 accum)
   end.
 
-Definition get_letters {atom : Set} (f : @formula atom) : list atom :=
+Definition get_letters (f : formula) : list atom :=
   get_letters_rec f nil.
 
-Lemma all_letters_exist_in_get_letters {atom : Set} (f : @formula atom) :
+Lemma all_letters_exist_in_get_letters (f : formula) :
   forall x : atom, In x (get_letters f) <-> occurs x f.
 Proof.
   intro x.
@@ -215,7 +246,7 @@ Proof.
       discriminate H1.
 Qed.
 
-Lemma letters_list_not_empty {atom : Set} (f : @formula atom) :
+Lemma letters_list_not_empty (f : formula) :
   ~ (length (get_letters f) = 0).
 Proof.
   induction f as [| A IH | f1 IH1 f2 IH2].
@@ -236,22 +267,22 @@ Proof.
     exact H1.
 Qed.
 
-Definition LettersList {atom : Set} (f : @formula atom) : Type := { ls : list atom | (forall x : atom, In x ls <-> occurs x f) /\ ~ (length ls = 0) }.
+Definition LettersList (f : formula) : Type := { ls : list atom | (forall x : atom, In x ls <-> occurs x f) /\ ~ (length ls = 0) }.
 
-Definition get_letters_from_formula {atom : Set} (f : @formula atom) : LettersList f :=
+Definition get_letters_from_formula (f : formula) : LettersList f :=
   let lst := get_letters f in
   exist _ lst (conj (all_letters_exist_in_get_letters f) (letters_list_not_empty f)).
 
-Definition get_list {atom : Set} {f : @formula atom} (lst : LettersList f) : list atom :=
+Definition get_list {f : formula} (lst : LettersList f) : list atom :=
   match lst with
   | exist _ res p => res
   end.
 
-Definition length {atom : Set} {f : @formula atom} (letters : LettersList f) : nat :=
+Definition length {f : formula} (letters : LettersList f) : nat :=
   let lst := get_list letters in
   length lst.
 
-Fixpoint n_impl {atom : Set} (consequent : @formula atom) (lst : list formula) {struct lst} : @formula atom:=
+Fixpoint n_impl (consequent : formula) (lst : list formula) {struct lst} : formula:=
   match lst with
   | nil => consequent
   | A :: tail => n_impl (f_imp A consequent) tail
@@ -266,17 +297,17 @@ Fixpoint apply_rewriter {atom : Set } (v : atom -> bool) (letters : list atom) :
       | h :: t => extend (apply_rewriter v t) (rewriter v (f_atom h))
   end.
 
-Fixpoint rewriters_list {atom : Set} (v : atom -> bool) (letters : list atom) : list formula :=
+Fixpoint rewriters_list (v : atom -> bool) (letters : list atom) : list formula :=
   match letters with
   | nil => nil
   | a :: tail => (rewriter v (f_atom a)) :: (rewriters_list v tail)
   end.
 
-Definition generate_context {atom : Set } (v : atom -> bool) {f : @formula atom} (letters : LettersList f) : formula -> Prop :=
+Definition generate_context {atom : Set } (v : atom -> bool) {f : formula} (letters : LettersList f) : formula -> Prop :=
   let lst := get_list letters in
   apply_rewriter v lst.
 
-Lemma rewriter_impl {atom : Set} (v : atom -> bool) (letters : list atom) : forall F : formula, (apply_rewriter v letters) |- F -> empty |- n_impl F (rewriters_list v letters).
+Lemma rewriter_impl (v : atom -> bool) (letters : list atom) : forall F : formula, (apply_rewriter v letters) |- F -> empty |- n_impl F (rewriters_list v letters).
 Proof.
   induction letters as [| A tail IH].
   - intros F H.
@@ -292,7 +323,7 @@ Proof.
     exact IH.
 Qed.
 
-Lemma last_elem_impl {atom : Set } (v : atom -> bool) (A : atom) (tail : list atom) (Γ : @formula atom -> Prop) :
+Lemma last_elem_impl {atom : Set } (v : atom -> bool) (A : atom) (tail : list atom) (Γ : formula -> Prop) :
   let An := last tail A in
   forall F : formula, Γ |- n_impl F (rewriters_list v (A :: tail)) ->
                  Γ |- f_imp (rewriter v (f_atom An)) (n_impl F (rewriters_list v (removelast (A :: tail)))).
@@ -310,7 +341,7 @@ Proof.
     simpl in IH.
     simpl in An.
 
-Lemma letters_not_letters {atom : Set } {f : @formula atom} (letters : list atom) : (apply_rewriter (fun _ => true) letters |- f) -> (apply_rewriter (fun _ => false) letters |- f) -> empty |- f.
+Lemma letters_not_letters {atom : Set } {f : formula} (letters : list atom) : (apply_rewriter (fun _ => true) letters |- f) -> (apply_rewriter (fun _ => false) letters |- f) -> empty |- f.
 Proof.
   unfold generate_context.
   intros HTrue HFalse.
@@ -329,14 +360,14 @@ Proof.
     unfold rewriter in HFalse.
     simpl in HFalse.
 
-Lemma letters_f_eq_leters_not_f {atom : Set} (f : @formula atom) : LettersList f = LettersList $~f$.
+Lemma letters_f_eq_leters_not_f (f : formula) : LettersList f = LettersList $~f$.
 Proof.
   unfold LettersList.
   simpl.
   reflexivity.
 Qed.
 
-Lemma apply_rewriter_iff_exists {atom : Set} (v : atom -> bool) (f : @formula atom) (letters : list atom) (A : @formula atom) :
+Lemma apply_rewriter_iff_exists (v : atom -> bool) (f : formula) (letters : list atom) (A : formula) :
   apply_rewriter v f letters A <-> exists x, In x letters /\ rewriter v (f_atom x) = A.
 Proof.
   split.
@@ -381,7 +412,7 @@ Proof.
         exact H.
 Qed.
 
-Lemma generate_context_f_iff_generate_context_not_f {atom : Set } (v : atom -> bool) (f : @formula atom) (letters : LettersList f) (letters_not : LettersList $~f$) (A : @formula atom) : generate_context v letters A <-> generate_context v letters_not A.
+Lemma generate_context_f_iff_generate_context_not_f {atom : Set } (v : atom -> bool) (f : formula) (letters : LettersList f) (letters_not : LettersList $~f$) (A : formula) : generate_context v letters A <-> generate_context v letters_not A.
 Proof.
   split.
   - intro H.
@@ -424,21 +455,21 @@ Proof.
     + exact H6.
 Qed.
 
-Lemma letters_f1_from_letters_impl {atom : Set } (v : atom -> bool) (f1 f2 : @formula atom): (LettersList $f1 -> f2$) -> (LettersList f1).
+Lemma letters_f1_from_letters_impl {atom : Set } (v : atom -> bool) (f1 f2 : formula): (LettersList $f1 -> f2$) -> (LettersList f1).
 Proof.
   intro letters.
   set (letters1 := get_letters f1).
   exact (exist _ letters1 (conj (all_letters_exist_in_get_letters f1) (letters_list_not_empty f1))).
 Qed.
 
-Lemma letters_f2_from_letters_impl {atom : Set } (v : atom -> bool) (f1 f2 : @formula atom): (LettersList $f1 -> f2$) -> (LettersList f2).
+Lemma letters_f2_from_letters_impl {atom : Set } (v : atom -> bool) (f1 f2 : formula): (LettersList $f1 -> f2$) -> (LettersList f2).
 Proof.
   intro letters.
   set (letters2 := get_letters f2).
   exact (exist _ letters2 (conj (all_letters_exist_in_get_letters f2) (letters_list_not_empty f2))).
 Qed.
 
-Lemma rewriter_subset_left {atom : Set } (v : atom -> bool) (f1 f2 : @formula atom) (letters1 : LettersList f1) (letters2 : LettersList $f1 -> f2$) :
+Lemma rewriter_subset_left {atom : Set } (v : atom -> bool) (f1 f2 : formula) (letters1 : LettersList f1) (letters2 : LettersList $f1 -> f2$) :
   (generate_context v letters1) ⊆ (generate_context v letters2).
 Proof.
   unfold subset.
@@ -467,7 +498,7 @@ Proof.
   - exact H2.
 Qed.
 
-Lemma rewriter_subset_right {atom : Set } (v : atom -> bool) {f1 f2 : @formula atom} (letters1 : LettersList f2) (letters2 : LettersList $f1 -> f2$) :
+Lemma rewriter_subset_right {atom : Set } (v : atom -> bool) {f1 f2 : formula} (letters1 : LettersList f2) (letters2 : LettersList $f1 -> f2$) :
   (generate_context v letters1) ⊆ (generate_context v letters2).
 Proof.
   unfold subset.
@@ -500,7 +531,7 @@ Create HintDb Kalmar.
 Hint Resolve rewriter_subset_left : Kalmar.
 Hint Resolve rewriter_subset_right : Kalmar.
 
-Lemma rewriter_true {atom : Set} (v : atom -> bool) {f : @formula atom} (letters : LettersList f) : (generate_context v letters) |- rewriter v f.
+Lemma rewriter_true (v : atom -> bool) {f : formula} (letters : LettersList f) : (generate_context v letters) |- rewriter v f.
 Proof.
   induction f as [a | f IH | f1 IH1 f2 IH2].
   (* F = f_atom a *)
@@ -574,14 +605,14 @@ Proof.
       * exact IH1.
 Qed.
 
-Theorem contexts_or_equal {atom : Set} (Γ : @formula atom -> Prop) : forall A: @formula atom, ((fun x => (A = x) \/ (x ∈ Γ)) A) <-> ((fun x => (x ∈ Γ) \/ (A = x)) A).
+Theorem contexts_or_equal (Γ : formula -> Prop) : forall A: formula, ((fun x => (A = x) \/ (x ∈ Γ)) A) <-> ((fun x => (x ∈ Γ) \/ (A = x)) A).
 Proof.
   intro A.
   simpl.
   apply or_comm.
 Qed.
 
-Theorem test3 {atom : Set} (Γ : @formula atom -> Prop) (A B: @formula atom) :
+Theorem test3 (Γ : formula -> Prop) (A B: formula) :
   (fun x => (A = x) \/ (x ∈ Γ)) |- B -> Γ |- $A -> B$.
 Proof.
   intro H.
@@ -603,7 +634,7 @@ Proof.
   exact H.
 Qed.
 
-(* Lemma is_theorem_if_it_passes_all_cases {atom : Set} {f : @formula atom} (letters : LettersList f) : *)
+(* Lemma is_theorem_if_it_passes_all_cases {f : formula} (letters : LettersList f) : *)
 (*   (forall v : atom -> bool, generate_context v letters |- f) -> empty |- f. *)
 (* Proof. *)
 (*   intros H. *)
@@ -629,7 +660,7 @@ Qed.
 (*     specialize H with TrueFun as HTrue. *)
 (*     unfold rewriter in HTrue. *)
 (*     simpl in HTrue. *)
-(*     assert (H4 : forall B : @formula atom, (fun x : formula => f_atom A = x \/ In x (map (fun a : atom => f_atom a) ls)) B <-> (fun x : formula => In x (map (fun a : atom => f_atom a) ls) \/ (f_atom A = x)) B). *)
+(*     assert (H4 : forall B : formula, (fun x : formula => f_atom A = x \/ In x (map (fun a : atom => f_atom a) ls)) B <-> (fun x : formula => In x (map (fun a : atom => f_atom a) ls) \/ (f_atom A = x)) B). *)
 (*     { *)
 (*       intros B. *)
 (*       split. *)
@@ -642,7 +673,7 @@ Qed.
 (*     } *)
 (*     apply eq_entails with (Γ' := (fun x : formula => In x (map (fun a : atom => f_atom a) ls) \/ (f_atom A = x))) in HTrue. *)
 (*     apply deduction in HTrue. *)
-(*     assert (H5 : forall B : @formula atom, (fun x : formula => *)
+(*     assert (H5 : forall B : formula, (fun x : formula => *)
 (*      f_not (f_atom A) = x \/ In x (map (fun a : atom => f_not (f_atom a)) ls)) B <-> (fun x : formula => In x (map (fun a : atom => f_not (f_atom a)) ls) \/ f_not (f_atom A) = x) B). *)
 (*     { *)
 (*       intros B. *)
@@ -687,7 +718,7 @@ Proof.
     exact H.
 Qed.
 
-Theorem semantic_completeness {atom : Set} (Hatom: inhabited atom) (F : @formula atom) (v : atom -> bool) : tautology F -> theorem F.
+Theorem semantic_completeness (Hatom: inhabited atom) (F : formula) (v : atom -> bool) : tautology F -> theorem F.
 Proof.
   unfold tautology, theorem.
   intro Htauto.
