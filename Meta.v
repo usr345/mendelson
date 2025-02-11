@@ -117,12 +117,24 @@ Definition assignment : Type := nat -> bool.
 Definition atomize (v : assignment) (n : nat) : formula -> Prop :=
   fun f => exists i, i < n /\ ((v i = true /\ f = f_atom i) \/ v i = false /\ f = f_not (f_atom i)).
 
+(* Lemma atomize_neg_pos (Γ : formula -> Prop) (f : formula) (v : atom -> bool) : (Γ |- rewriter v $~f$) -> (Γ |- rewriter v f). *)
+(* Proof. *)
+(*   unfold rewriter. *)
+(*   intro H. *)
+(*   rewrite eval_neg in H. *)
+(*   destruct (eval v f). *)
+(*   - simpl in H. *)
+(*     apply meta_neg_neg_pos in H. *)
+(*     exact H. *)
+(*   - simpl in H. *)
+(*     exact H. *)
+(* Qed. *)
+
 Lemma kalmar_lemma : forall f v, eval v f = true -> atomize v (1 + max_atom f) |- f.
 Proof.
+  intros f v H.
   induction f.
-  intros v H.
   - simpl.
-    unfold atomize.
     hypo.
     exists a.
     split.
@@ -131,7 +143,10 @@ Proof.
       split.
       exact H.
       reflexivity.
-  -
+  - simpl.
+    simpl in H.
+    simpl in IHf.
+    rewrite Bool.negb_true_iff in H.
 
 
 
@@ -140,8 +155,6 @@ Definition rewriter (v : atom -> bool) (F : formula) : formula :=
   | false => $~F$
   | true => F
   end.
-
-
 
 Lemma rewriter_neg_pos (Γ : formula -> Prop) (f : formula) (v : atom -> bool) : (Γ |- rewriter v $~f$) -> (Γ |- rewriter v f).
 Proof.
