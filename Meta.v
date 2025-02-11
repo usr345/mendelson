@@ -120,11 +120,19 @@ Definition atomize (v : assignment) (n : nat) : formula -> Prop :=
 Lemma kalmar_lemma : forall f v, eval v f = true -> atomize v (1 + max_atom f) |- f.
 Proof.
   induction f.
-  intros f v H.
+  intros v H.
   - simpl.
     unfold atomize.
     hypo.
-    exists 0.
+    exists a.
+    split.
+    + reflexivity.
+    + left.
+      split.
+      exact H.
+      reflexivity.
+  -
+
 
 
 Definition rewriter (v : atom -> bool) (F : formula) : formula :=
