@@ -304,25 +304,11 @@ Proof.
     destruct Hletters.
     reflexivity.
   - intros F H.
-    destruct tail as [|A2 tail'].
-    + simpl.
-      simpl in H.
-      simpl in An.
-      exact H.
-    + simpl.
-      simpl in H.
-      assert (H1 : Datatypes.length (A2 :: tail') <> 0).
-      {
-        simpl.
-        discriminate.
-      }
-      specialize (IH H1).
-      simpl in An.
-      specialize (IH (f_imp (rewriter v (f_atom A1)) F)).
-      specialize (IH H).
-      simpl in IH.
-      exact IH.
-Qed.
+    simpl.
+    simpl in H.
+    simpl in IH.
+    simpl in An.
+Abort.
 
 
 Lemma all_values_true {atom : Set } {f : @formula atom} (letters : list atom) : (forall v : atom -> bool, (apply_rewriter v letters |- f)) -> empty |- f.
@@ -339,13 +325,7 @@ Proof.
     simpl in HTrue.
     unfold rewriter in HFalse.
     simpl in HFalse.
-    apply (last_elem_impl (fun _ => false) a letters) in HFalse.
-    unfold rewriter in HFalse.
-    simpl in HFalse.
-    apply (last_elem_impl (fun _ => true) a letters) in HTrue.
-    unfold rewriter in HTrue.
-    simpl in HTrue.
-
+Abort.
 
 Lemma letters_f_eq_leters_not_f {atom : Set} (f : @formula atom) : LettersList f = LettersList $~f$.
 Proof.
@@ -354,8 +334,10 @@ Proof.
   reflexivity.
 Qed.
 
+Check apply_rewriter.
+
 Lemma apply_rewriter_iff_exists {atom : Set} (v : atom -> bool) (f : @formula atom) (letters : list atom) (A : @formula atom) :
-  apply_rewriter v f letters A <-> exists x, In x letters /\ rewriter v (f_atom x) = A.
+  apply_rewriter v letters A <-> exists x, In x letters /\ rewriter v (f_atom x) = A.
 Proof.
   split.
   - intros H.
@@ -410,8 +392,8 @@ Proof.
     simpl.
     unfold generate_context in H.
     simpl in H.
-    apply apply_rewriter_iff_exists.
-    apply apply_rewriter_iff_exists in H.
+    apply (apply_rewriter_iff_exists v A).
+    apply (apply_rewriter_iff_exists v A) in H.
     destruct H as [x [H5 H6]].
     exists x.
     specialize (H1 x).
@@ -429,8 +411,8 @@ Proof.
     simpl in H1.
     unfold generate_context in H.
     simpl in H.
-    apply apply_rewriter_iff_exists.
-    apply apply_rewriter_iff_exists in H.
+    apply (apply_rewriter_iff_exists v A).
+    apply (apply_rewriter_iff_exists v A) in H.
     destruct H as [x [H5 H6]].
     exists x.
     specialize (H1 x).
@@ -463,7 +445,7 @@ Proof.
   unfold elem.
   unfold generate_context.
   intros A H.
-  rewrite apply_rewriter_iff_exists in H.
+  rewrite (apply_rewriter_iff_exists v A) in H.
   destruct H as [x [H1 H2]].
   destruct letters1 as [list1 H3].
   destruct letters2 as [list2 H4].
@@ -472,7 +454,7 @@ Proof.
   simpl in H4.
   destruct H4 as [H4 _].
   destruct H3 as [H3 _].
-  rewrite apply_rewriter_iff_exists.
+  rewrite (apply_rewriter_iff_exists v A).
   exists x.
   specialize H3 with x.
   specialize H4 with x.
@@ -492,7 +474,7 @@ Proof.
   unfold elem.
   unfold generate_context.
   intros A H.
-  rewrite apply_rewriter_iff_exists in H.
+  rewrite (apply_rewriter_iff_exists v A) in H.
   destruct H as [x [H1 H2]].
   destruct letters1 as [list1 H3].
   destruct letters2 as [list2 H4].
@@ -501,7 +483,7 @@ Proof.
   simpl in H4.
   destruct H4 as [H4 _].
   destruct H3 as [H3 _].
-  rewrite apply_rewriter_iff_exists.
+  rewrite (apply_rewriter_iff_exists v A).
   exists x.
   specialize H3 with x.
   specialize H4 with x.
@@ -526,7 +508,6 @@ Proof.
     destruct H as [H1 H2].
     unfold generate_context.
     simpl.
-    unfold In_flip.
     specialize H1 with a.
     unfold occurs in H1.
     assert (H3 : a = a).
@@ -534,7 +515,7 @@ Proof.
     rewrite <-H1 in H3.
     apply hypo.
     unfold elem.
-    apply apply_rewriter_iff_exists.
+    apply (apply_rewriter_iff_exists v (f_atom a)).
     exists a.
     split.
     + exact H3.
@@ -705,25 +686,41 @@ Proof.
     exact H.
 Qed.
 
-Theorem semantic_completeness {atom : Set} (Hatom: inhabited atom) (F : @formula atom) (v : atom -> bool) : tautology F -> theorem F.
+Compute atom_eq 1 1.
+Print sumbool.
+Class Eq A :=
+  {
+    eqb: A -> A -> bool;
+  }.
+
+(* Фунция возвращает:
+  * vhead, если v = голове списка или список пуст
+  * vtail, если v = любому элементу из хвоста списка
+*)
+Fixpoint anytail {atom: Set} `{Eq atom} (tail: list atom) (vhead: bool) (vtail: bool) (v: atom): bool :=
+   match tail with
+   | [] => vhead
+   | (h::t) =>
+       match eqb v h with
+       | true => vtail
+       | false => anytail t vhead vtail v
+       end
+   end.
+
+#[local] Instance eqNat : Eq nat :=
+  {
+    eqb := Nat.eqb
+  }.
+
+Eval simpl in (@anytail nat eqNat [1; 2; 3; 4] true false 1).
+
+Theorem semantic_completeness {atom : Set} `{Eq atom} (Hatom: inhabited atom) (F : @formula atom) (v : atom -> bool) : tautology F -> theorem F.
 Proof.
   unfold tautology, theorem.
   intro Htauto.
   intro Γ.
   (* 1 *)
   set (letters := get_letters_from_formula F).
-  set (FalseFun := (fun _ : atom => false) : atom -> bool).
-  set (TrueFun := (fun _ : atom => true) : atom -> bool).
-  pose proof (rewriter_true FalseFun letters) as HFalse.
-  pose proof (rewriter_true TrueFun letters) as HTrue.
-  unfold rewriter in HFalse.
-  unfold rewriter in HTrue.
-  specialize (Htauto FalseFun) as HFun_False.
-  specialize (Htauto TrueFun) as HFun_True.
-  unfold is_true in HFun_False.
-  unfold is_true in HFun_True.
-  rewrite HFun_False in HFalse.
-  rewrite HFun_True in HTrue.
   destruct letters as [letters [H1 H2]].
   (* 2 *)
   induction letters as [|h tail IH].
@@ -731,14 +728,39 @@ Proof.
     exfalso.
     apply H2.
     reflexivity.
-  - simpl in H1.
-    unfold generate_context in HFalse.
-    simpl in HFalse.
+  - set (FalseFun := anytail (h :: tail) false true : atom -> bool).
+    set (TrueFun := anytail (h :: tail) true true : atom -> bool).
+    Check exist.
+    assert (letters : LettersList F).
+    {
+      eapply exist.
+      split.
+      + apply H1.
+      + apply H2.
+    }
+
+    pose proof (rewriter_true FalseFun letters) as HFalse.
+    pose proof (rewriter_true TrueFun letters) as HTrue.
     unfold rewriter in HFalse.
+    unfold rewriter in HTrue.
+    specialize (Htauto FalseFun) as HFun_False.
+    specialize (Htauto TrueFun) as HFun_True.
+    unfold is_true in HFun_False.
+    unfold is_true in HFun_True.
+    rewrite HFun_False in HFalse.
+    rewrite HFun_True in HTrue.
+
+    unfold generate_context in HFalse.
+    unfold FalseFun in HFalse.
+    unfold get_list in HFalse.
+    unfold apply_rewriter in HFalse.
     simpl in HFalse.
-    unfold generate_context in HTrue.
+
+    apply deduction in HFalse.
+
+      unfold generate_context in HTrue.
     simpl in HTrue.
     unfold rewriter in HTrue.
     simpl in HTrue.
-    apply deduction in HFalse.
+
     apply deduction in HTrue.
