@@ -692,37 +692,39 @@ Qed.
 
 Compute atom_eq 1 1.
 Print sumbool.
-Fixpoint anytail {atom: Set} (tail: list atom) (vhead: bool) (vtail: bool) (v: atom): bool :=
+Class Eq A :=
+  {
+    eqb: A -> A -> bool;
+  }.
+
+(* Фунция возвращает:
+  * vhead, если v = голове списка или список пуст
+  * vtail, если v = любому элементу из хвоста списка
+*)
+Fixpoint anytail {atom: Set} `{Eq atom} (tail: list atom) (vhead: bool) (vtail: bool) (v: atom): bool :=
    match tail with
    | [] => vhead
    | (h::t) =>
-       match atom_eq v h with
-       | left p => vtail
-       | right n => anytail t vhead vtail v
+       match eqb v h with
+       | true => vtail
+       | false => anytail t vhead vtail v
        end
    end.
 
-Eval simpl in (@anytail nat [1; 2; 3; 4] true false 1).
+#[local] Instance eqNat : Eq nat :=
+  {
+    eqb := Nat.eqb
+  }.
 
-Theorem semantic_completeness {atom : Set} (Hatom: inhabited atom) (F : @formula atom) (v : atom -> bool) : tautology F -> theorem F.
+Eval simpl in (@anytail nat eqNat [1; 2; 3; 4] true false 1).
+
+Theorem semantic_completeness {atom : Set} `{Eq atom} (Hatom: inhabited atom) (F : @formula atom) (v : atom -> bool) : tautology F -> theorem F.
 Proof.
   unfold tautology, theorem.
   intro Htauto.
   intro Γ.
   (* 1 *)
   set (letters := get_letters_from_formula F).
-  set (FalseFun := (fun _ : atom => false) : atom -> bool).
-  set (TrueFun := (fun _ : atom => true) : atom -> bool).
-  pose proof (rewriter_true FalseFun letters) as HFalse.
-  pose proof (rewriter_true TrueFun letters) as HTrue.
-  unfold rewriter in HFalse.
-  unfold rewriter in HTrue.
-  specialize (Htauto FalseFun) as HFun_False.
-  specialize (Htauto TrueFun) as HFun_True.
-  unfold is_true in HFun_False.
-  unfold is_true in HFun_True.
-  rewrite HFun_False in HFalse.
-  rewrite HFun_True in HTrue.
   destruct letters as [letters [H1 H2]].
   (* 2 *)
   induction letters as [|h tail IH].
@@ -730,14 +732,39 @@ Proof.
     exfalso.
     apply H2.
     reflexivity.
-  - simpl in H1.
-    unfold generate_context in HFalse.
-    simpl in HFalse.
+  - set (FalseFun := anytail (h :: tail) false true : atom -> bool).
+    set (TrueFun := anytail (h :: tail) true true : atom -> bool).
+    Check exist.
+    assert (letters : LettersList F).
+    {
+      eapply exist.
+      split.
+      + apply H1.
+      + apply H2.
+    }
+
+    pose proof (rewriter_true FalseFun letters) as HFalse.
+    pose proof (rewriter_true TrueFun letters) as HTrue.
     unfold rewriter in HFalse.
+    unfold rewriter in HTrue.
+    specialize (Htauto FalseFun) as HFun_False.
+    specialize (Htauto TrueFun) as HFun_True.
+    unfold is_true in HFun_False.
+    unfold is_true in HFun_True.
+    rewrite HFun_False in HFalse.
+    rewrite HFun_True in HTrue.
+
+    unfold generate_context in HFalse.
+    unfold FalseFun in HFalse.
+    unfold get_list in HFalse.
+    unfold apply_rewriter in HFalse.
     simpl in HFalse.
-    unfold generate_context in HTrue.
+
+    apply deduction in HFalse.
+
+      unfold generate_context in HTrue.
     simpl in HTrue.
     unfold rewriter in HTrue.
     simpl in HTrue.
-    apply deduction in HFalse.
+
     apply deduction in HTrue.
