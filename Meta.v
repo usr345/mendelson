@@ -309,6 +309,7 @@ Proof.
     simpl in H.
     simpl in IH.
     simpl in An.
+Abort.
 
 Lemma letters_not_letters {atom : Set } {f : @formula atom} (letters : list atom) : (apply_rewriter (fun _ => true) letters |- f) -> (apply_rewriter (fun _ => false) letters |- f) -> empty |- f.
 Proof.
@@ -328,6 +329,7 @@ Proof.
     simpl in HTrue.
     unfold rewriter in HFalse.
     simpl in HFalse.
+Abort.
 
 Lemma letters_f_eq_leters_not_f {atom : Set} (f : @formula atom) : LettersList f = LettersList $~f$.
 Proof.
@@ -336,8 +338,10 @@ Proof.
   reflexivity.
 Qed.
 
+Check apply_rewriter.
+
 Lemma apply_rewriter_iff_exists {atom : Set} (v : atom -> bool) (f : @formula atom) (letters : list atom) (A : @formula atom) :
-  apply_rewriter v f letters A <-> exists x, In x letters /\ rewriter v (f_atom x) = A.
+  apply_rewriter v letters A <-> exists x, In x letters /\ rewriter v (f_atom x) = A.
 Proof.
   split.
   - intros H.
@@ -392,8 +396,8 @@ Proof.
     simpl.
     unfold generate_context in H.
     simpl in H.
-    apply apply_rewriter_iff_exists.
-    apply apply_rewriter_iff_exists in H.
+    apply (apply_rewriter_iff_exists v A).
+    apply (apply_rewriter_iff_exists v A) in H.
     destruct H as [x [H5 H6]].
     exists x.
     specialize (H1 x).
@@ -411,8 +415,8 @@ Proof.
     simpl in H1.
     unfold generate_context in H.
     simpl in H.
-    apply apply_rewriter_iff_exists.
-    apply apply_rewriter_iff_exists in H.
+    apply (apply_rewriter_iff_exists v A).
+    apply (apply_rewriter_iff_exists v A) in H.
     destruct H as [x [H5 H6]].
     exists x.
     specialize (H1 x).
@@ -445,7 +449,7 @@ Proof.
   unfold elem.
   unfold generate_context.
   intros A H.
-  rewrite apply_rewriter_iff_exists in H.
+  rewrite (apply_rewriter_iff_exists v A) in H.
   destruct H as [x [H1 H2]].
   destruct letters1 as [list1 H3].
   destruct letters2 as [list2 H4].
@@ -454,7 +458,7 @@ Proof.
   simpl in H4.
   destruct H4 as [H4 _].
   destruct H3 as [H3 _].
-  rewrite apply_rewriter_iff_exists.
+  rewrite (apply_rewriter_iff_exists v A).
   exists x.
   specialize H3 with x.
   specialize H4 with x.
@@ -474,7 +478,7 @@ Proof.
   unfold elem.
   unfold generate_context.
   intros A H.
-  rewrite apply_rewriter_iff_exists in H.
+  rewrite (apply_rewriter_iff_exists v A) in H.
   destruct H as [x [H1 H2]].
   destruct letters1 as [list1 H3].
   destruct letters2 as [list2 H4].
@@ -483,7 +487,7 @@ Proof.
   simpl in H4.
   destruct H4 as [H4 _].
   destruct H3 as [H3 _].
-  rewrite apply_rewriter_iff_exists.
+  rewrite (apply_rewriter_iff_exists v A).
   exists x.
   specialize H3 with x.
   specialize H4 with x.
@@ -508,7 +512,6 @@ Proof.
     destruct H as [H1 H2].
     unfold generate_context.
     simpl.
-    unfold In_flip.
     specialize H1 with a.
     unfold occurs in H1.
     assert (H3 : a = a).
@@ -516,7 +519,7 @@ Proof.
     rewrite <-H1 in H3.
     apply hypo.
     unfold elem.
-    apply apply_rewriter_iff_exists.
+    apply (apply_rewriter_iff_exists v (f_atom a)).
     exists a.
     split.
     + exact H3.
@@ -686,6 +689,20 @@ Proof.
     left.
     exact H.
 Qed.
+
+Compute atom_eq 1 1.
+Print sumbool.
+Fixpoint anytail {atom: Set} (tail: list atom) (vhead: bool) (vtail: bool) (v: atom): bool :=
+   match tail with
+   | [] => vhead
+   | (h::t) =>
+       match atom_eq v h with
+       | left p => vtail
+       | right n => anytail t vhead vtail v
+       end
+   end.
+
+Eval simpl in (@anytail nat [1; 2; 3; 4] true false 1).
 
 Theorem semantic_completeness {atom : Set} (Hatom: inhabited atom) (F : @formula atom) (v : atom -> bool) : tautology F -> theorem F.
 Proof.
