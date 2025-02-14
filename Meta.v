@@ -1,6 +1,7 @@
 From Mendelson Require Import Formula.
 From Mendelson Require Import Syntactic.
 From Mendelson Require Import Semantic.
+Require Import Coq.Bool.BoolEq.
 Require Import Coq.Lists.List.
 Import ListNotations.
 
@@ -139,17 +140,136 @@ Fixpoint occurs {atom : Set} (i : atom) (p : formula) {struct p} : Prop :=
   | f_imp p1 p2 => occurs i p1 \/ occurs i p2
   end.
 
-Fixpoint get_letters_rec {atom : Set} (f : @formula atom) (accum : list atom) {struct f} : list atom :=
-  match f with
-  | f_atom f' => f' :: accum
-  | f_not f' => get_letters_rec f' accum
-  | f_imp f1 f2 => (get_letters_rec f1 accum) ++ (get_letters_rec f2 accum)
+Class EqDec A :=
+  {
+    eqb: A -> A -> bool;
+    eqb_eq : forall x y, (eqb x y) = true <-> x = y
+  }.
+
+(* Check if an element is in the list *)
+Fixpoint exists_in {A: Type} `{EqDec A} (x: A) (l: list A) : bool :=
+  match l with
+  | [] => false
+  | h :: t => if eqb x h then true else exists_in x t
   end.
 
-Definition get_letters {atom : Set} (f : @formula atom) : list atom :=
+Lemma not_In_exists_false {A: Type} `{Heq: EqDec A} (x : A) (lst : list A) : ~ In x lst <-> (exists_in x lst) = false.
+Proof.
+  split.
+  - intro H.
+    induction lst as [|h tail IH].
+    + simpl.
+      reflexivity.
+    + simpl.
+      simpl in H.
+      apply Decidable.not_or in H.
+      destruct H as [H1 H2].
+      apply IH in H2.
+      destruct (eqb x h) eqn:H.
+      * apply eqb_eq in H.
+        assert (H3 : true = true).
+        { reflexivity. }
+        symmetry in H.
+        apply H1 in H.
+        destruct H.
+      * exact H2.
+  - intro H.
+    induction lst as [|h tail IH].
+    + simpl.
+      intro H1.
+      exact H1.
+    + intro H1.
+      simpl in H1.
+      simpl in H.
+      destruct H1 as [H1 | H1].
+      * symmetry in H1.
+        rewrite <-eqb_eq in H1.
+        rewrite H1 in H.
+        discriminate H.
+      * apply IH.
+        destruct (eqb x h) eqn:H2.
+        ** discriminate H.
+        ** exact H.
+        ** exact H1.
+Qed.
+
+(* Function to remove duplicates from a list *)
+Fixpoint remove_duplicates {A : Type} `{EqDec A} (l : list A) : list A :=
+  match l with
+  | [] => []
+  | h :: t => if exists_in h (remove_duplicates t)
+              then remove_duplicates t
+              else h :: remove_duplicates t
+  end.
+
+(* Predicate to check if all elements in a list are unique *)
+Fixpoint unique {A : Type} (l : list A) : Prop :=
+  match l with
+  | [] => True
+  | x :: xs => ~ In x xs /\ unique xs
+  end.
+
+Lemma unique_remove_duplicates_unique {A : Set} `{Heq: EqDec A} (lst : list A) (H : unique lst):
+  unique (remove_duplicates lst) -> unique lst.
+Proof.
+  induction lst as [|h tail IH].
+  - simpl.
+    intro H1.
+    exact H1.
+  - intros _.
+    simpl in H.
+    destruct H as [H2 H3].
+    simpl.
+    split.
+    + exact H2.
+    + exact H3.
+Qed.
+
+Lemma unique_remove_duplicates_same {A : Set} `{Heq: EqDec A} (lst : list A) (H : unique lst):
+  remove_duplicates lst = lst.
+Proof.
+  induction lst as [|h tail IH].
+  - simpl.
+    reflexivity.
+  - simpl in H.
+    destruct H as [H1 H2].
+    apply IH in H2.
+    simpl.
+    rewrite H2.
+    rewrite not_In_exists_false in H1.
+    rewrite H1.
+    reflexivity.
+Qed.
+
+Lemma unique_lists_unique_concat {A : Set} `{Heq: EqDec A} (lst1 lst2 : list A) (H1 : unique lst1)  (H2 : unique lst2):
+  unique (remove_duplicates (lst1 ++ lst2)).
+Proof.
+  induction lst1 as [|h tail IH].
+  - simpl.
+    rewrite (unique_remove_duplicates_same lst2 H2).
+    exact H2.
+  - simpl in H1.
+    destruct H1 as [H11 H12].
+    apply IH in H12.
+    simpl.
+    destruct (exists_in h (remove_duplicates (tail ++ lst2))).
+    + exact H12.
+    + split.
+      * admit.
+      * exact H12.
+Qed.
+
+Fixpoint get_letters_rec {atom : Set} `{Eq atom} (f : @formula atom) (accum : list atom) {struct f} : list atom :=
+  match f with
+  | f_atom f' => if (exists_in f' accum) then accum else f' :: accum
+  | f_not f' => get_letters_rec f' accum
+  | f_imp f1 f2 => remove_duplicates (get_letters_rec f1 accum) ++ (get_letters_rec f2 accum)
+  end.
+
+Definition get_letters {atom : Set} `{Eq atom} (f : @formula atom) : list atom :=
   get_letters_rec f nil.
 
-Lemma all_letters_exist_in_get_letters {atom : Set} (f : @formula atom) :
+Lemma all_letters_exist_in_get_letters {atom : Set} `{Heq: Eq atom} (f : @formula atom) :
   forall x : atom, In x (get_letters f) <-> occurs x f.
 Proof.
   intro x.
@@ -215,7 +335,7 @@ Proof.
       discriminate H1.
 Qed.
 
-Lemma letters_list_not_empty {atom : Set} (f : @formula atom) :
+Lemma letters_list_not_empty {atom : Set} `{Heq: Eq atom} (f : @formula atom) :
   ~ (length (get_letters f) = 0).
 Proof.
   induction f as [| A IH | f1 IH1 f2 IH2].
@@ -236,7 +356,21 @@ Proof.
     exact H1.
 Qed.
 
-Definition LettersList {atom : Set} (f : @formula atom) : Type := { ls : list atom | (forall x : atom, In x ls <-> occurs x f) /\ ~ (length ls = 0) }.
+Lemma get_letters_unique {atom : Set} `{Heq: Eq atom} (f : @formula atom) :
+  let lst := (get_letters f) in
+  unique lst.
+Proof.
+  intro lst.
+  unfold get_letters in lst.
+  induction f ; simpl in lst.
+  - simpl.
+    unfold not.
+    rewrite Decidable.not_false_iff.
+    split ; exact I.
+  - apply IHf.
+  -
+
+Definition LettersList {atom : Set} (f : @formula atom) : Type := { ls : list atom | (forall x : atom, In x ls <-> occurs x f) /\ ~ (length ls = 0) /\ unique ls }.
 
 Definition get_letters_from_formula {atom : Set} (f : @formula atom) : LettersList f :=
   let lst := get_letters f in
@@ -692,10 +826,6 @@ Qed.
 
 Compute atom_eq 1 1.
 Print sumbool.
-Class Eq A :=
-  {
-    eqb: A -> A -> bool;
-  }.
 
 (* Фунция возвращает:
   * vhead, если v = голове списка или список пуст
