@@ -426,18 +426,17 @@ Proof.
     exact IH.
 Qed.
 
-Lemma last_elem_impl {atom : Set } (v : atom -> bool) (A : atom) (tail : list atom) (Γ : @formula atom -> Prop) :
-  let An := last tail A in
-  forall F : formula, Γ |- n_impl F (rewriters_list v (A :: tail)) ->
-                 Γ |- f_imp (rewriter v (f_atom An)) (n_impl F (rewriters_list v (removelast (A :: tail)))).
+Lemma last_elem_impl {atom : Set } (v : atom -> bool) (Dummy : atom) (letters : list atom) (Hletters : ~(Coq.Lists.List.length letters) = 0) (Γ : @formula atom -> Prop) :
+  let An := last letters Dummy in
+  forall F : formula, Γ |- n_impl F (rewriters_list v letters) ->
+                 Γ |- f_imp (rewriter v (f_atom An)) (n_impl F (rewriters_list v (removelast letters))).
 Proof.
   intro An.
-  induction tail as [| B tail' IH].
+  induction letters as [| A1 tail IH].
   - intros F H.
-    simpl.
-    simpl in H.
-    simpl in An.
-    exact H.
+    simpl in Hletters.
+    destruct Hletters.
+    reflexivity.
   - intros F H.
     simpl.
     simpl in H.
@@ -445,24 +444,16 @@ Proof.
     simpl in An.
 Abort.
 
-Lemma letters_not_letters {atom : Set } {f : @formula atom} (letters : list atom) : (apply_rewriter (fun _ => true) letters |- f) -> (apply_rewriter (fun _ => false) letters |- f) -> empty |- f.
+
+Lemma all_values_true {atom : Set } {f : @formula atom} (letters : list atom) : (forall v : atom -> bool, (apply_rewriter v letters |- f)) -> empty |- f.
 Proof.
-  unfold generate_context.
-  intros HTrue HFalse.
-  simpl.
-  simpl in HTrue.
-  simpl in HFalse.
-  apply rewriter_impl in HTrue.
-  apply rewriter_impl in HFalse.
   induction letters.
-  - simpl in HTrue.
-    exact HTrue.
-  - simpl in HTrue.
-    simpl in HFalse.
-    unfold rewriter in HTrue.
-    simpl in HTrue.
-    unfold rewriter in HFalse.
-    simpl in HFalse.
+  - intros H.
+    specialize (H (fun _ => true)).
+    simpl in H.
+    exact H.
+  - intros H.
+    simpl in H.
 Abort.
 
 Lemma letters_f_eq_leters_not_f {atom : Set} (f : @formula atom) : LettersList f = LettersList $~f$.
@@ -638,78 +629,82 @@ Create HintDb Kalmar.
 Hint Resolve rewriter_subset_left : Kalmar.
 Hint Resolve rewriter_subset_right : Kalmar.
 
-Lemma rewriter_true {atom : Set} (v : atom -> bool) {f : @formula atom} (letters : LettersList f) : (generate_context v letters) |- rewriter v f.
+Lemma rewriter_true {atom : Set} (v : atom -> bool) {f : @formula atom} (letters : list atom) (H1 : forall x : atom, In x letters <-> occurs x f) (H2 : ~ (Coq.Lists.List.length letters = 0)) : (apply_rewriter v letters) |- rewriter v f.
 Proof.
-  induction f as [a | f IH | f1 IH1 f2 IH2].
-  (* F = f_atom a *)
-  - destruct letters as [letters H].
-    destruct H as [H1 H2].
-    unfold generate_context.
-    simpl.
-    specialize H1 with a.
-    unfold occurs in H1.
-    assert (H3 : a = a).
-    { reflexivity. }
-    rewrite <-H1 in H3.
-    apply hypo.
-    unfold elem.
-    apply (apply_rewriter_iff_exists v (f_atom a)).
-    exists a.
-    split.
-    + exact H3.
-    + reflexivity.
-  (* F = f_not F' *)
-  - apply rewriter_pos_neg.
-    set (lettersF := get_letters_from_formula f).
-    apply (weaken (generate_context v lettersF)).
-    + unfold subset.
-      unfold elem.
-      intros A H1.
-      rewrite <-generate_context_f_iff_generate_context_not_f with (letters := lettersF).
-      exact H1.
-    + rewrite <-letters_f_eq_leters_not_f in letters.
-      specialize IH with lettersF.
-      exact IH.
-  - (* F = f_impl F1 F2 *)
-    unfold rewriter.
-    rewrite eval_implication.
-    unfold rewriter in IH1.
-    unfold rewriter in IH2.
-    (* destruct letters as [letters H]. *)
-    (* destruct H as [H1 H2]. *)
-    apply (letters_f1_from_letters_impl v) in letters as letters1.
-    apply (letters_f2_from_letters_impl v) in letters as letters2.
-    destruct (eval v f1), (eval v f2) ; simpl.
-    (* f1 = T, f2 = T *)
-    + apply drop_antecedent.
-      specialize IH2 with letters2.
-      apply (weaken (generate_context v letters2)).
-      * auto with Kalmar.
-      * exact IH2.
-    (* f1 = T, f2 = F *)
-    + apply conj_not_not_impl.
-      apply meta_conj_intro.
-      * apply (weaken (generate_context v letters1)).
-         ** auto with Kalmar.
-         ** specialize IH1 with letters1.
-            apply IH1.
-      * apply (weaken (generate_context v letters2)).
-         ** auto with Kalmar.
-         ** specialize IH2 with letters2.
-            apply IH2.
-    (* f1 = F, f2 = T *)
-    + apply drop_antecedent.
-      apply (weaken (generate_context v letters2)).
-      * auto with Kalmar.
-      * specialize IH2 with letters2.
-        exact IH2.
-    (* f1 = F, f2 = F *)
-    + specialize IH1 with letters1.
-      apply meta_neg_a_impl_a_b with (B := f2) in IH1.
-      apply (weaken (generate_context v letters1)).
-      * auto with Kalmar.
-      * exact IH1.
-Qed.
+  Admitted.
+
+(* Lemma rewriter_true {atom : Set} (v : atom -> bool) {f : @formula atom} (letters : LettersList f) : (generate_context v letters) |- rewriter v f. *)
+(* Proof. *)
+(*   induction f as [a | f IH | f1 IH1 f2 IH2]. *)
+(*   (* F = f_atom a *) *)
+(*   - destruct letters as [letters H]. *)
+(*     destruct H as [H1 H2]. *)
+(*     unfold generate_context. *)
+(*     simpl. *)
+(*     specialize H1 with a. *)
+(*     unfold occurs in H1. *)
+(*     assert (H3 : a = a). *)
+(*     { reflexivity. } *)
+(*     rewrite <-H1 in H3. *)
+(*     apply hypo. *)
+(*     unfold elem. *)
+(*     apply (apply_rewriter_iff_exists v (f_atom a)). *)
+(*     exists a. *)
+(*     split. *)
+(*     + exact H3. *)
+(*     + reflexivity. *)
+(*   (* F = f_not F' *) *)
+(*   - apply rewriter_pos_neg. *)
+(*     set (lettersF := get_letters_from_formula f). *)
+(*     apply (weaken (generate_context v lettersF)). *)
+(*     + unfold subset. *)
+(*       unfold elem. *)
+(*       intros A H1. *)
+(*       rewrite <-generate_context_f_iff_generate_context_not_f with (letters := lettersF). *)
+(*       exact H1. *)
+(*     + rewrite <-letters_f_eq_leters_not_f in letters. *)
+(*       specialize IH with lettersF. *)
+(*       exact IH. *)
+(*   - (* F = f_impl F1 F2 *) *)
+(*     unfold rewriter. *)
+(*     rewrite eval_implication. *)
+(*     unfold rewriter in IH1. *)
+(*     unfold rewriter in IH2. *)
+(*     (* destruct letters as [letters H]. *) *)
+(*     (* destruct H as [H1 H2]. *) *)
+(*     apply (letters_f1_from_letters_impl v) in letters as letters1. *)
+(*     apply (letters_f2_from_letters_impl v) in letters as letters2. *)
+(*     destruct (eval v f1), (eval v f2) ; simpl. *)
+(*     (* f1 = T, f2 = T *) *)
+(*     + apply drop_antecedent. *)
+(*       specialize IH2 with letters2. *)
+(*       apply (weaken (generate_context v letters2)). *)
+(*       * auto with Kalmar. *)
+(*       * exact IH2. *)
+(*     (* f1 = T, f2 = F *) *)
+(*     + apply conj_not_not_impl. *)
+(*       apply meta_conj_intro. *)
+(*       * apply (weaken (generate_context v letters1)). *)
+(*          ** auto with Kalmar. *)
+(*          ** specialize IH1 with letters1. *)
+(*             apply IH1. *)
+(*       * apply (weaken (generate_context v letters2)). *)
+(*          ** auto with Kalmar. *)
+(*          ** specialize IH2 with letters2. *)
+(*             apply IH2. *)
+(*     (* f1 = F, f2 = T *) *)
+(*     + apply drop_antecedent. *)
+(*       apply (weaken (generate_context v letters2)). *)
+(*       * auto with Kalmar. *)
+(*       * specialize IH2 with letters2. *)
+(*         exact IH2. *)
+(*     (* f1 = F, f2 = F *) *)
+(*     + specialize IH1 with letters1. *)
+(*       apply meta_neg_a_impl_a_b with (B := f2) in IH1. *)
+(*       apply (weaken (generate_context v letters1)). *)
+(*       * auto with Kalmar. *)
+(*       * exact IH1. *)
+(* Qed. *)
 
 Theorem contexts_or_equal {atom : Set} (Γ : @formula atom -> Prop) : forall A: @formula atom, ((fun x => (A = x) \/ (x ∈ Γ)) A) <-> ((fun x => (x ∈ Γ) \/ (A = x)) A).
 Proof.
@@ -848,6 +843,10 @@ Fixpoint anytail {atom: Set} `{Eq atom} (tail: list atom) (vhead: bool) (vtail: 
 
 Eval simpl in (@anytail nat eqNat [1; 2; 3; 4] true false 1).
 
+Lemma anytail_tail_eq {atom: Set} `{Eq atom} (tail: list atom) (vtail: bool): forall v : atom, anytail tail true true v = anytail tail false true v.
+  intro v.
+
+
 Theorem semantic_completeness {atom : Set} `{Eq atom} (Hatom: inhabited atom) (F : @formula atom) (v : atom -> bool) : tautology F -> theorem F.
 Proof.
   unfold tautology, theorem.
@@ -855,26 +854,17 @@ Proof.
   intro Γ.
   (* 1 *)
   set (letters := get_letters_from_formula F).
-  destruct letters as [letters [H1 H2]].
+  destruct letters as [list [H1 H2]].
   (* 2 *)
-  induction letters as [|h tail IH].
+  induction list as [|h tail IH].
   - simpl in H2.
     exfalso.
     apply H2.
     reflexivity.
   - set (FalseFun := anytail (h :: tail) false true : atom -> bool).
     set (TrueFun := anytail (h :: tail) true true : atom -> bool).
-    Check exist.
-    assert (letters : LettersList F).
-    {
-      eapply exist.
-      split.
-      + apply H1.
-      + apply H2.
-    }
-
-    pose proof (rewriter_true FalseFun letters) as HFalse.
-    pose proof (rewriter_true TrueFun letters) as HTrue.
+    pose proof (rewriter_true FalseFun (h :: tail) H1 H2) as HFalse.
+    pose proof (rewriter_true TrueFun (h :: tail) H1 H2) as HTrue.
     unfold rewriter in HFalse.
     unfold rewriter in HTrue.
     specialize (Htauto FalseFun) as HFun_False.
@@ -883,9 +873,15 @@ Proof.
     unfold is_true in HFun_True.
     rewrite HFun_False in HFalse.
     rewrite HFun_True in HTrue.
+    simpl in HFalse.
+    apply deduction in HFalse.
+    simpl in HTrue.
+    apply deduction in HTrue.
 
     unfold generate_context in HFalse.
     unfold FalseFun in HFalse.
+    set (H3 := get_list letters).
+
     unfold get_list in HFalse.
     unfold apply_rewriter in HFalse.
     simpl in HFalse.
