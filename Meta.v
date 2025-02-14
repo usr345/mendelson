@@ -153,6 +153,23 @@ Fixpoint exists_in {A: Type} `{EqDec A} (x: A) (l: list A) : bool :=
   | h :: t => if eqb x h then true else exists_in x t
   end.
 
+Lemma In_exists_true {A: Type} `{Heq: EqDec A} (x : A) (lst : list A) : In x lst <-> (exists_in x lst) = true.
+Proof.
+  split.
+  - intro H.
+    induction lst as [|h tail IH].
+    + simpl in H.
+      destruct H.
+    + simpl.
+      simpl in H.
+      destruct H.
+      * symmetry in H.
+        rewrite <-eqb_eq in H.
+        rewrite H.
+        reflexivity.
+      * apply IH in H.
+
+
 Lemma not_In_exists_false {A: Type} `{Heq: EqDec A} (x : A) (lst : list A) : ~ In x lst <-> (exists_in x lst) = false.
 Proof.
   split.
@@ -209,6 +226,40 @@ Fixpoint unique {A : Type} (l : list A) : Prop :=
   | x :: xs => ~ In x xs /\ unique xs
   end.
 
+Lemma in_remove_duplicates {A : Set} `{Heq: EqDec A} (lst : list A) (x : A) :
+  In x (remove_duplicates lst) <-> In x lst.
+Proof.
+  split.
+  - induction lst as [|a tail IH].
+    + unfold remove_duplicates.
+      simpl.
+      intro H.
+      exact H.
+    + simpl.
+      destruct (exists_in a (remove_duplicates tail)) eqn:HExists.
+      * right.
+        apply IH.
+        apply H.
+      * simpl.
+        intro H.
+        destruct H.
+        ** left.
+           exact H.
+        ** right.
+           apply IH.
+           exact H.
+  - intro H.
+    induction lst as [|a tail IH].
+    + simpl.
+      simpl in H.
+      exact H.
+    + simpl in H.
+      simpl.
+      destruct H.
+      * destruct (exists_in a (remove_duplicates tail)) eqn:HExists.
+        rewrite H in HExists.
+        rewrite <-not_In_exists_false in HExists.
+
 Lemma unique_remove_duplicates_unique {A : Set} `{Heq: EqDec A} (lst : list A) (H : unique lst):
   unique (remove_duplicates lst) -> unique lst.
 Proof.
@@ -241,35 +292,79 @@ Proof.
     reflexivity.
 Qed.
 
-Lemma unique_lists_unique_concat {A : Set} `{Heq: EqDec A} (lst1 lst2 : list A) (H1 : unique lst1)  (H2 : unique lst2):
-  unique (remove_duplicates (lst1 ++ lst2)).
+Lemma unique_lists_unique_concat {A : Set} `{Heq: EqDec A} (l1 l2 : list A) (H1 : unique l1)  (H2 : unique l2):
+  unique (remove_duplicates (l1 ++ l2)).
 Proof.
-  induction lst1 as [|h tail IH].
+  induction l1 as [|h tail IH].
   - simpl.
-    rewrite (unique_remove_duplicates_same lst2 H2).
+    rewrite (unique_remove_duplicates_same l2 H2).
     exact H2.
   - simpl in H1.
     destruct H1 as [H11 H12].
-    apply IH in H12.
+    apply IH in H12 as HConcat.
     simpl.
-    destruct (exists_in h (remove_duplicates (tail ++ lst2))).
-    + exact H12.
+    destruct (exists_in h (remove_duplicates (tail ++ l2))) eqn:H.
+    + exact HConcat.
     + split.
-      * admit.
-      * exact H12.
+      * rewrite <-not_In_exists_false in H.
+        exact H.
+      * exact HConcat.
 Qed.
 
-Fixpoint get_letters_rec {atom : Set} `{Eq atom} (f : @formula atom) (accum : list atom) {struct f} : list atom :=
+Fixpoint get_letters_rec {atom : Set} `{EqDec atom} (f : @formula atom) (accum : list atom) {struct f} : list atom :=
   match f with
   | f_atom f' => if (exists_in f' accum) then accum else f' :: accum
   | f_not f' => get_letters_rec f' accum
-  | f_imp f1 f2 => remove_duplicates (get_letters_rec f1 accum) ++ (get_letters_rec f2 accum)
+  | f_imp f1 f2 => remove_duplicates ((get_letters_rec f1 accum) ++ get_letters_rec f2 accum)
   end.
 
-Definition get_letters {atom : Set} `{Eq atom} (f : @formula atom) : list atom :=
+Definition get_letters {atom : Set} `{EqDec atom} (f : @formula atom) : list atom :=
   get_letters_rec f nil.
 
-Lemma all_letters_exist_in_get_letters {atom : Set} `{Heq: Eq atom} (f : @formula atom) :
+Proposition get_letters_rec_unique {atom : Set} `{Heq : EqDec atom} (f: @formula atom) :
+  unique (get_letters_rec f []).
+Proof.
+  induction f as [| A IH | f1 IH1 f2 IH2] ; simpl.
+  - unfold not.
+    split.
+    + intro H.
+      exact H.
+    + exact I.
+  - exact IH.
+  - apply unique_lists_unique_concat.
+    + exact IH1.
+    + exact IH2.
+Qed.
+
+Proposition in_remove_duplicates_concat {atom : Set} `{Heq : EqDec atom} (x : atom) (f1 f2: @formula atom) : In x (remove_duplicates (get_letters_rec f1 [] ++ get_letters_rec f2 [])) -> In x (get_letters_rec f1 []) \/ In x (get_letters_rec f2 []).
+Proof.
+  intro H.
+  induction f1 as [| A IH | f1' IH1 f2' IH2] ; simpl.
+  - simpl in H.
+    destruct (exists_in a (remove_duplicates (get_letters_rec f2 []))) eqn:Hexists.
+    + right.
+      rewrite unique_remove_duplicates_same in H.
+      * exact H.
+      * apply get_letters_rec_unique.
+    + simpl in H.
+      destruct H.
+      * left.
+        left.
+        exact H.
+      * rewrite unique_remove_duplicates_same in H.
+        right.
+        exact H.
+        apply get_letters_rec_unique.
+  - simpl in H.
+    apply IH.
+    exact H.
+  - simpl in H.
+
+
+
+
+
+Lemma all_letters_exist_in_get_letters {atom : Set} `{Heq: EqDec atom} (f : @formula atom) :
   forall x : atom, In x (get_letters f) <-> occurs x f.
 Proof.
   intro x.
@@ -283,7 +378,7 @@ Proof.
       * contradiction H.
     + apply IH in H.
       exact H.
-    + apply in_app_or in H.
+    +
       destruct H.
       * apply IH1 in H.
         left.
