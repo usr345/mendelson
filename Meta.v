@@ -288,20 +288,26 @@ Proof.
            exact H.
 Qed.
 
-Lemma unique_remove_duplicates_unique {A : Set} `{Heq: EqDec A} (lst : list A) (H : unique lst):
-  unique (remove_duplicates lst) -> unique lst.
+Lemma remove_duplicates_unique {A : Set} `{Heq: EqDec A} (lst : list A) (H : unique lst):
+  unique (remove_duplicates lst).
 Proof.
   induction lst as [|h tail IH].
   - simpl.
-    intro H1.
-    exact H1.
-  - intros _.
-    simpl in H.
-    destruct H as [H2 H3].
+    exact I.
+  - simpl in H.
+    destruct H as [H1 H2].
     simpl.
-    split.
-    + exact H2.
-    + exact H3.
+    destruct (exists_in h (remove_duplicates tail)) eqn:HExists.
+    + rewrite <-In_exists_true in HExists.
+      rewrite in_remove_duplicates in HExists.
+      apply H1 in HExists.
+      contradiction HExists.
+    + simpl.
+      split.
+      * rewrite in_remove_duplicates.
+        exact H1.
+      * apply IH in H2.
+        exact H2.
 Qed.
 
 Lemma unique_remove_duplicates_same {A : Set} `{Heq: EqDec A} (lst : list A) (H : unique lst):
@@ -364,39 +370,29 @@ Proof.
     + exact IH2.
 Qed.
 
-Proposition in_remove_duplicates_concat {atom : Set} `{Heq : EqDec atom} (x : atom) (f1 f2: @formula atom) : In x (remove_duplicates (get_letters_rec f1 [] ++ get_letters_rec f2 [])) <-> In x (get_letters_rec f1 []) \/ In x (get_letters_rec f2 []).
+Proposition in_remove_duplicates_concat {atom : Set} `{Heq : EqDec atom} (x : atom) (l1 l2 : list atom) : In x (remove_duplicates (l1 ++ l2)) <-> In x l1 \/ In x l2.
 Proof.
   split.
   - intro H.
-    induction f1 as [| A IH | f1' IH1 f2' IH2] ; simpl.
+    induction l1 as [| h tail IH] ; simpl.
     + simpl in H.
-      destruct (exists_in a (remove_duplicates (get_letters_rec f2 []))) eqn:Hexists.
-      * right.
-        rewrite unique_remove_duplicates_same in H.
-        ** exact H.
-        ** apply get_letters_rec_unique.
-      * simpl in H.
-        destruct H.
-        ** left.
-           left.
-           exact H.
-        ** rewrite unique_remove_duplicates_same in H.
-           right.
-           exact H.
-           apply get_letters_rec_unique.
-    + simpl in H.
-      apply IH.
-      exact H.
-    + simpl in H.
-      rewrite in_remove_duplicates.
+      right.
       rewrite in_remove_duplicates in H.
-      rewrite in_app_iff in H.
-      destruct H.
-      * rewrite in_remove_duplicates in H.
+      exact H.
+    + destruct (atom_eq h x) as [Yes | No].
+      * left.
         left.
-        exact H.
-      * right.
-        exact H.
+        exact Yes.
+      * rewrite or_assoc.
+        right.
+        apply IH.
+        rewrite in_remove_duplicates in H.
+        simpl in H.
+        destruct H.
+        ** apply No in H.
+           contradiction H.
+        ** rewrite in_remove_duplicates.
+           exact H.
   - intro H.
     rewrite in_remove_duplicates.
     rewrite in_app_iff.
@@ -493,7 +489,6 @@ Proof.
     reflexivity.
 Qed.
 
-
 Lemma length_remove_duplicates_concat_zero {A : Type} {HEq: EqDec A} (l1 l2 : list A) : length (remove_duplicates (l1 ++ l2)) = 0 <-> length l1 = 0 /\ length l2 = 0.
 Proof.
   split.
@@ -552,24 +547,30 @@ Proof.
 Qed.
 
 Lemma get_letters_unique {atom : Set} `{Heq: EqDec atom} (f : @formula atom) :
-  let lst := (get_letters f) in
-  unique lst.
+  unique (get_letters f).
 Proof.
-  intro lst.
-  unfold get_letters in lst.
-  induction f ; simpl in lst.
+  unfold get_letters.
+  induction f as [| f' IH | f1 IH1 f2 IH2].
   - simpl.
     unfold not.
     rewrite Decidable.not_false_iff.
     split ; exact I.
-  - apply IHf.
-  -
+  - apply IH.
+  - simpl.
+    apply unique_lists_unique_concat.
+    exact IH1.
+    exact IH2.
+Qed.
 
-Definition LettersList {atom : Set} (f : @formula atom) : Type := { ls : list atom | (forall x : atom, In x ls <-> occurs x f) /\ ~ (length ls = 0) /\ unique ls }.
+Definition LettersList {atom : Set} `{Heq: EqDec atom} (f : @formula atom) : Type := { ls : list atom | (forall x : atom, In x ls <-> occurs x f) /\ ~ (length ls = 0) /\ unique ls }.
 
-Definition get_letters_from_formula {atom : Set} (f : @formula atom) : LettersList f :=
+Definition get_letters_from_formula {atom : Set} `{Heq: EqDec atom} (f : @formula atom) : LettersList f :=
   let lst := get_letters f in
-  exist _ lst (conj (all_letters_exist_in_get_letters f) (letters_list_not_empty f)).
+  exist _ lst (conj (all_letters_exist_in_get_letters f)
+                    (conj
+                       (letters_list_not_empty f)
+                       (get_letters_unique f))).
+
 
 Definition get_list {atom : Set} {f : @formula atom} (lst : LettersList f) : list atom :=
   match lst with
@@ -585,9 +586,6 @@ Fixpoint n_impl {atom : Set} (consequent : @formula atom) (lst : list formula) {
   | nil => consequent
   | A :: tail => n_impl (f_imp A consequent) tail
   end.
-
-Definition In_flip {A : Type} (xs : list A) : A -> Prop :=
-  fun x => In x xs.
 
 Fixpoint apply_rewriter {atom : Set } (v : atom -> bool) (letters : list atom) : formula -> Prop :=
   match letters with
@@ -1023,17 +1021,18 @@ Print sumbool.
 *)
 Fixpoint anytail {atom: Set} `{Eq atom} (tail: list atom) (vhead: bool) (vtail: bool) (v: atom): bool :=
    match tail with
-   | [] => vhead
+   | [] => vtail
    | (h::t) =>
        match eqb v h with
-       | true => vtail
+       | true => vhead
        | false => anytail t vhead vtail v
        end
    end.
 
-#[local] Instance eqNat : Eq nat :=
+#[local] Instance eqNat : EqDec nat :=
   {
-    eqb := Nat.eqb
+    eqb := Nat.eqb,
+    eqb_eq := Nat.eqb_eq
   }.
 
 Eval simpl in (@anytail nat eqNat [1; 2; 3; 4] true false 1).
