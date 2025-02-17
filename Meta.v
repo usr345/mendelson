@@ -572,38 +572,38 @@ Definition get_letters_from_formula {atom : Set} `{Heq: EqDec atom} (f : @formul
                        (get_letters_unique f))).
 
 
-Definition get_list {atom : Set} {f : @formula atom} (lst : LettersList f) : list atom :=
+Definition get_list {atom : Set} `{Heq: EqDec atom} {f : @formula atom} (lst : LettersList f) : list atom :=
   match lst with
   | exist _ res p => res
   end.
 
-Definition length {atom : Set} {f : @formula atom} (letters : LettersList f) : nat :=
+Definition length {atom : Set} `{Heq: EqDec atom} {f : @formula atom} (letters : LettersList f) : nat :=
   let lst := get_list letters in
   length lst.
 
-Fixpoint n_impl {atom : Set} (consequent : @formula atom) (lst : list formula) {struct lst} : @formula atom:=
+Fixpoint n_impl {atom : Set} `{Heq: EqDec atom} (consequent : @formula atom) (lst : list formula) {struct lst} : @formula atom:=
   match lst with
   | nil => consequent
   | A :: tail => n_impl (f_imp A consequent) tail
   end.
 
-Fixpoint apply_rewriter {atom : Set } (v : atom -> bool) (letters : list atom) : formula -> Prop :=
+Fixpoint apply_rewriter {atom : Set } `{Heq: EqDec atom} (v : atom -> bool) (letters : list atom) : formula -> Prop :=
   match letters with
       | nil => empty
       | h :: t => extend (apply_rewriter v t) (rewriter v (f_atom h))
   end.
 
-Fixpoint rewriters_list {atom : Set} (v : atom -> bool) (letters : list atom) : list formula :=
+Fixpoint rewriters_list {atom : Set} `{Heq: EqDec atom} (v : atom -> bool) (letters : list atom) : list formula :=
   match letters with
   | nil => nil
   | a :: tail => (rewriter v (f_atom a)) :: (rewriters_list v tail)
   end.
 
-Definition generate_context {atom : Set } (v : atom -> bool) {f : @formula atom} (letters : LettersList f) : formula -> Prop :=
+Definition generate_context {atom : Set } `{Heq: EqDec atom} (v : atom -> bool) {f : @formula atom} (letters : LettersList f) : formula -> Prop :=
   let lst := get_list letters in
   apply_rewriter v lst.
 
-Lemma rewriter_impl {atom : Set} (v : atom -> bool) (letters : list atom) : forall F : formula, (apply_rewriter v letters) |- F -> empty |- n_impl F (rewriters_list v letters).
+Lemma rewriter_impl {atom : Set} `{Heq: EqDec atom} (v : atom -> bool) (letters : list atom) : forall F : formula, (apply_rewriter v letters) |- F -> empty |- n_impl F (rewriters_list v letters).
 Proof.
   induction letters as [| A tail IH].
   - intros F H.
@@ -619,7 +619,7 @@ Proof.
     exact IH.
 Qed.
 
-Lemma last_elem_impl {atom : Set } (v : atom -> bool) (Dummy : atom) (letters : list atom) (Hletters : ~(Coq.Lists.List.length letters) = 0) (Γ : @formula atom -> Prop) :
+Lemma last_elem_impl {atom : Set } `{Heq: EqDec atom} (v : atom -> bool) (Dummy : atom) (letters : list atom) (Hletters : ~(Coq.Lists.List.length letters) = 0) (Γ : @formula atom -> Prop) :
   let An := last letters Dummy in
   forall F : formula, Γ |- n_impl F (rewriters_list v letters) ->
                  Γ |- f_imp (rewriter v (f_atom An)) (n_impl F (rewriters_list v (removelast letters))).
@@ -638,7 +638,7 @@ Proof.
 Abort.
 
 
-Lemma all_values_true {atom : Set } {f : @formula atom} (letters : list atom) : (forall v : atom -> bool, (apply_rewriter v letters |- f)) -> empty |- f.
+Lemma all_values_true {atom : Set } `{Heq: EqDec atom} {f : @formula atom} (letters : list atom) : (forall v : atom -> bool, (apply_rewriter v letters |- f)) -> empty |- f.
 Proof.
   induction letters.
   - intros H.
@@ -649,16 +649,14 @@ Proof.
     simpl in H.
 Abort.
 
-Lemma letters_f_eq_leters_not_f {atom : Set} (f : @formula atom) : LettersList f = LettersList $~f$.
+Lemma letters_f_eq_leters_not_f {atom : Set} `{Heq: EqDec atom} (f : @formula atom) : LettersList f = LettersList $~f$.
 Proof.
   unfold LettersList.
   simpl.
   reflexivity.
 Qed.
 
-Check apply_rewriter.
-
-Lemma apply_rewriter_iff_exists {atom : Set} (v : atom -> bool) (f : @formula atom) (letters : list atom) (A : @formula atom) :
+Lemma apply_rewriter_iff_exists {atom : Set} `{Heq: EqDec atom} (v : atom -> bool) (f : @formula atom) (letters : list atom) (A : @formula atom) :
   apply_rewriter v letters A <-> exists x, In x letters /\ rewriter v (f_atom x) = A.
 Proof.
   split.
@@ -703,7 +701,7 @@ Proof.
         exact H.
 Qed.
 
-Lemma generate_context_f_iff_generate_context_not_f {atom : Set } (v : atom -> bool) (f : @formula atom) (letters : LettersList f) (letters_not : LettersList $~f$) (A : @formula atom) : generate_context v letters A <-> generate_context v letters_not A.
+Lemma generate_context_f_iff_generate_context_not_f {atom : Set } `{Heq: EqDec atom} (v : atom -> bool) (f : @formula atom) (letters : LettersList f) (letters_not : LettersList $~f$) (A : @formula atom) : generate_context v letters A <-> generate_context v letters_not A.
 Proof.
   split.
   - intro H.
@@ -746,21 +744,21 @@ Proof.
     + exact H6.
 Qed.
 
-Lemma letters_f1_from_letters_impl {atom : Set } (v : atom -> bool) (f1 f2 : @formula atom): (LettersList $f1 -> f2$) -> (LettersList f1).
+Lemma letters_f1_from_letters_impl {atom : Set } `{Heq: EqDec atom} (v : atom -> bool) (f1 f2 : @formula atom): (LettersList $f1 -> f2$) -> (LettersList f1).
 Proof.
   intro letters.
   set (letters1 := get_letters f1).
-  exact (exist _ letters1 (conj (all_letters_exist_in_get_letters f1) (letters_list_not_empty f1))).
+  exact (exist _ letters1 (conj (all_letters_exist_in_get_letters f1) (conj (letters_list_not_empty f1) (get_letters_unique f1)))).
 Qed.
 
-Lemma letters_f2_from_letters_impl {atom : Set } (v : atom -> bool) (f1 f2 : @formula atom): (LettersList $f1 -> f2$) -> (LettersList f2).
+Lemma letters_f2_from_letters_impl {atom : Set } `{Heq: EqDec atom} (v : atom -> bool) (f1 f2 : @formula atom): (LettersList $f1 -> f2$) -> (LettersList f2).
 Proof.
   intro letters.
   set (letters2 := get_letters f2).
-  exact (exist _ letters2 (conj (all_letters_exist_in_get_letters f2) (letters_list_not_empty f2))).
+  exact (exist _ letters2 (conj (all_letters_exist_in_get_letters f2) (conj (letters_list_not_empty f2) (get_letters_unique f2)))).
 Qed.
 
-Lemma rewriter_subset_left {atom : Set } (v : atom -> bool) (f1 f2 : @formula atom) (letters1 : LettersList f1) (letters2 : LettersList $f1 -> f2$) :
+Lemma rewriter_subset_left {atom : Set } `{Heq: EqDec atom} (v : atom -> bool) (f1 f2 : @formula atom) (letters1 : LettersList f1) (letters2 : LettersList $f1 -> f2$) :
   (generate_context v letters1) ⊆ (generate_context v letters2).
 Proof.
   unfold subset.
@@ -789,7 +787,7 @@ Proof.
   - exact H2.
 Qed.
 
-Lemma rewriter_subset_right {atom : Set } (v : atom -> bool) {f1 f2 : @formula atom} (letters1 : LettersList f2) (letters2 : LettersList $f1 -> f2$) :
+Lemma rewriter_subset_right {atom : Set } `{Heq: EqDec atom} (v : atom -> bool) {f1 f2 : @formula atom} (letters1 : LettersList f2) (letters2 : LettersList $f1 -> f2$) :
   (generate_context v letters1) ⊆ (generate_context v letters2).
 Proof.
   unfold subset.
@@ -822,11 +820,11 @@ Create HintDb Kalmar.
 Hint Resolve rewriter_subset_left : Kalmar.
 Hint Resolve rewriter_subset_right : Kalmar.
 
-Lemma rewriter_true {atom : Set} (v : atom -> bool) {f : @formula atom} (letters : list atom) (H1 : forall x : atom, In x letters <-> occurs x f) (H2 : ~ (Coq.Lists.List.length letters = 0)) : (apply_rewriter v letters) |- rewriter v f.
+Lemma rewriter_true {atom : Set} `{Heq: EqDec atom} (v : atom -> bool) {f : @formula atom} (letters : list atom) (H1 : forall x : atom, In x letters <-> occurs x f) (H2 : ~ (Coq.Lists.List.length letters = 0)) : (apply_rewriter v letters) |- rewriter v f.
 Proof.
   Admitted.
 
-(* Lemma rewriter_true {atom : Set} (v : atom -> bool) {f : @formula atom} (letters : LettersList f) : (generate_context v letters) |- rewriter v f. *)
+(* Lemma rewriter_true {atom : Set} `{Heq: EqDec atom} (v : atom -> bool) {f : @formula atom} (letters : LettersList f) : (generate_context v letters) |- rewriter v f. *)
 (* Proof. *)
 (*   induction f as [a | f IH | f1 IH1 f2 IH2]. *)
 (*   (* F = f_atom a *) *)
@@ -1012,14 +1010,11 @@ Proof.
     exact H.
 Qed.
 
-Compute atom_eq 1 1.
-Print sumbool.
-
 (* Фунция возвращает:
   * vhead, если v = голове списка или список пуст
   * vtail, если v = любому элементу из хвоста списка
 *)
-Fixpoint anytail {atom: Set} `{Eq atom} (tail: list atom) (vhead: bool) (vtail: bool) (v: atom): bool :=
+Fixpoint anytail {atom: Set} `{EqDec atom} (tail: list atom) (vhead: bool) (vtail: bool) (v: atom): bool :=
    match tail with
    | [] => vtail
    | (h::t) =>
@@ -1029,15 +1024,7 @@ Fixpoint anytail {atom: Set} `{Eq atom} (tail: list atom) (vhead: bool) (vtail: 
        end
    end.
 
-#[local] Instance eqNat : EqDec nat :=
-  {
-    eqb := Nat.eqb,
-    eqb_eq := Nat.eqb_eq
-  }.
-
-Eval simpl in (@anytail nat eqNat [1; 2; 3; 4] true false 1).
-
-Lemma anytail_tail_eq {atom: Set} `{Eq atom} (tail: list atom) (vtail: bool): forall v : atom, anytail tail true true v = anytail tail false true v.
+Lemma anytail_tail_eq {atom: Set} `{EqDec atom} (tail: list atom) (vtail: bool): forall v : atom, anytail tail true true v = anytail tail false true v.
   intro v.
 
 
