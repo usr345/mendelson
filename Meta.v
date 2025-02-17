@@ -1024,18 +1024,27 @@ Fixpoint anytail {atom: Set} `{EqDec atom} (tail: list atom) (vhead: bool) (vtai
        end
    end.
 
-Lemma anytail_for_tail {atom: Set} `{EqDec atom} (lst: list atom) (vhead: bool) (vtail: bool) :
-  let v := (head lst) in
-  ~(Coq.Lists.List.length lst = 0) -> unique lst -> forall v : atom, anytail (tail lst) vhead vtail v = vtail.
+Lemma anytail_not_in {atom: Set} `{HEq: EqDec atom} (lst: list atom) (vhead: bool) (vtail: bool) :
+  forall v : atom, ~(In v lst) -> anytail lst vhead vtail v = vtail.
 Proof.
-  intros head HLength HUnique v.
+  intros v H1.
   induction lst as [| x xs IH].
-  - simpl in HLength.
-    destruct HLength.
+  - simpl.
     reflexivity.
+  - simpl.
+    simpl in H1.
+    apply Decidable.not_or in H1.
+    destruct H1 as [H1 H2].
+    destruct (eqb v x) eqn:HEq1.
+    + rewrite eqb_eq in HEq1.
+      symmetry in HEq1.
+      apply H1 in HEq1.
+      contradiction HEq1.
+    + apply IH.
+      exact H2.
+Qed.
 
-
-Theorem semantic_completeness {atom : Set} `{Eq atom} (Hatom: inhabited atom) (F : @formula atom) (v : atom -> bool) : tautology F -> theorem F.
+Theorem semantic_completeness {atom : Set} `{EqDec atom} (Hatom: inhabited atom) (F : @formula atom) (v : atom -> bool) : tautology F -> theorem F.
 Proof.
   unfold tautology, theorem.
   intro Htauto.
