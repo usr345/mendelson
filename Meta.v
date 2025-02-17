@@ -1011,8 +1011,8 @@ Proof.
 Qed.
 
 (* Фунция возвращает:
-  * vhead, если v = голове списка или список пуст
-  * vtail, если v = любому элементу из хвоста списка
+  * vhead, если v содержится в списке
+  * vtail, если v не содержится в списке
 *)
 Fixpoint anytail {atom: Set} `{EqDec atom} (tail: list atom) (vhead: bool) (vtail: bool) (v: atom): bool :=
    match tail with
@@ -1024,8 +1024,15 @@ Fixpoint anytail {atom: Set} `{EqDec atom} (tail: list atom) (vhead: bool) (vtai
        end
    end.
 
-Lemma anytail_tail_eq {atom: Set} `{EqDec atom} (tail: list atom) (vtail: bool): forall v : atom, anytail tail true true v = anytail tail false true v.
-  intro v.
+Lemma anytail_for_tail {atom: Set} `{EqDec atom} (lst: list atom) (vhead: bool) (vtail: bool) :
+  let v := (head lst) in
+  ~(Coq.Lists.List.length lst = 0) -> unique lst -> forall v : atom, anytail (tail lst) vhead vtail v = vtail.
+Proof.
+  intros head HLength HUnique v.
+  induction lst as [| x xs IH].
+  - simpl in HLength.
+    destruct HLength.
+    reflexivity.
 
 
 Theorem semantic_completeness {atom : Set} `{Eq atom} (Hatom: inhabited atom) (F : @formula atom) (v : atom -> bool) : tautology F -> theorem F.
