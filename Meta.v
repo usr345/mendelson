@@ -143,6 +143,8 @@ Fixpoint occurs {atom : Set} (i : atom) (p : formula) {struct p} : Prop :=
 Class EqDec A :=
   {
     eqb: A -> A -> bool;
+    eqb_true: forall x, (eqb x x) = true;
+    eqb_false: forall x y, ~(x = y) -> (eqb x y) = false;
     eqb_eq : forall x y, (eqb x y) = true <-> x = y
   }.
 
@@ -1014,18 +1016,18 @@ Qed.
   * vhead, если v содержится в списке
   * vtail, если v не содержится в списке
 *)
-Fixpoint anytail {atom: Set} `{EqDec atom} (tail: list atom) (vhead: bool) (vtail: bool) (v: atom): bool :=
+Fixpoint anytail {atom: Set} `{EqDec atom} (tail: list atom) (vhead: bool) (fun_tail: atom -> bool) (v: atom): bool :=
    match tail with
-   | [] => vtail
+   | [] => fun_tail v
    | (h::t) =>
        match eqb v h with
        | true => vhead
-       | false => anytail t vhead vtail v
+       | false => anytail t vhead fun_tail v
        end
    end.
 
-Lemma anytail_not_in {atom: Set} `{HEq: EqDec atom} (lst: list atom) (vhead: bool) (vtail: bool) :
-  forall v : atom, ~(In v lst) -> anytail lst vhead vtail v = vtail.
+Lemma anytail_not_in {atom: Set} `{HEq: EqDec atom} (lst: list atom) (vhead: bool) (fun_tail: atom -> bool) :
+  forall v : atom, ~(In v lst) -> anytail lst vhead fun_tail v = fun_tail v.
 Proof.
   intros v H1.
   induction lst as [| x xs IH].
@@ -1044,14 +1046,47 @@ Proof.
       exact H2.
 Qed.
 
-Theorem semantic_completeness {atom : Set} `{EqDec atom} (Hatom: inhabited atom) (F : @formula atom) (v : atom -> bool) : tautology F -> theorem F.
+Lemma is_theorem_if_it_true_for_all_cases {atom : Set} `{HEqDec: EqDec atom} (f : @formula atom) (letters : list atom) (HUnique: unique letters) :
+  (forall v : atom -> bool, apply_rewriter v letters |- f) -> empty |- f.
+Proof.
+  intro H.
+  induction letters as [|x l' IH].
+  - specialize H with (fun _ => true).
+    simpl in H.
+    exact H.
+  - simpl in H.
+    simpl in HUnique.
+    destruct HUnique as [H1 H2].
+    apply IH.
+    exact H2.
+    intro v.
+    set (FalseFun := anytail (x :: l') false v : atom -> bool).
+    set (TrueFun := anytail (x :: l') true v : atom -> bool).
+    specialize (H FalseFun) as HFalse.
+    specialize (H TrueFun) as HTrue.
+    specialize (eqb_true x) as HEq.
+    apply deduction in HFalse.
+    unfold rewriter in HFalse.
+    unfold FalseFun in HFalse.
+    simpl in HFalse.
+    rewrite HEq in HFalse.
+
+    apply deduction in HTrue.
+    unfold rewriter in HTrue.
+    unfold TrueFun in HTrue.
+    simpl in HTrue.
+    rewrite HEq in HTrue.
+
+
+
+Theorem semantic_completeness {atom : Set} `{EqDec atom} (Hatom: inhabited atom) (F : @formula atom) : tautology F -> theorem F.
 Proof.
   unfold tautology, theorem.
   intro Htauto.
   intro Γ.
   (* 1 *)
   set (letters := get_letters_from_formula F).
-  destruct letters as [list [H1 H2]].
+  destruct letters as [list [H1 [H2 H3]]].
   (* 2 *)
   induction list as [|h tail IH].
   - simpl in H2.
@@ -1074,6 +1109,21 @@ Proof.
     apply deduction in HFalse.
     simpl in HTrue.
     apply deduction in HTrue.
+
+    simpl in H3.
+    destruct H3 as [H3 H4].
+    specialize (eqb_true h) as HeqbTrue.
+    simpl in FalseFun.
+    simpl in TrueFun.
+    unfold rewriter in HFalse.
+    unfold FalseFun in HFalse.
+    simpl in HFalse.
+    rewrite HeqbTrue in HFalse.
+    unfold rewriter in HTrue.
+    unfold TrueFun in HTrue.
+    simpl in HTrue.
+    rewrite HeqbTrue in HTrue.
+
 
     unfold generate_context in HFalse.
     unfold FalseFun in HFalse.
