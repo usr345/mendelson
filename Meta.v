@@ -155,8 +155,6 @@ Qed.
 Class EqDec A :=
   {
     eqb: A -> A -> bool;
-    eqb_true: forall x, (eqb x x) = true;
-    eqb_false: forall x y, ~(x = y) -> (eqb x y) = false;
     eqb_eq : forall x y, (eqb x y) = true <-> x = y
   }.
 
@@ -759,7 +757,7 @@ Proof.
   - exact H4.
 Qed.
 
-Lemma rewriter_true {atom : Set} (v : atom -> bool) (f : @formula atom) :
+Lemma rewriter_true {atom : Set} `{Heq: EqDec atom} (v : atom -> bool) (f : @formula atom) :
   let letters := (get_letters f) in
   (apply_rewriter v letters) |- rewriter v f.
 Proof.
