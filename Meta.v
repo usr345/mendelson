@@ -1034,21 +1034,32 @@ Proof.
   (* 1 *)
   set (letters := get_letters_from_formula F).
   destruct letters as [list [H1 [H2 H3]]].
-  specialize (is_theorem_if_it_true_for_all_cases F list H3) as H4.
+  apply weaken with (Γ := empty).
+  {
+    unfold subset.
+    unfold elem.
+    intros A HEmpty.
+    unfold empty in HEmpty.
+    contradiction HEmpty.
+  }
 
-  set (FalseFun := a_not_a h false (fun _ => true) : atom -> bool).
-  set (TrueFun := a_not_a h true  (fun _ => true) : atom -> bool).
-
-  pose proof (rewriter_true FalseFun (h :: tail) H1 H2) as HFalse.
   (* 2 *)
   induction list as [|h tail IH].
   - simpl in H2.
     exfalso.
     apply H2.
     reflexivity.
+  - simpl in H3.
+    destruct H3 as [H3 H4].
+    specialize (is_theorem_if_it_true_for_all_cases F tail H4) as H5.
+    apply H5.
+    intro v.
 
+    set (FalseFun := a_not_a h false v : atom -> bool).
+    set (TrueFun := a_not_a h true v : atom -> bool).
     pose proof (rewriter_true FalseFun (h :: tail) H1 H2) as HFalse.
     pose proof (rewriter_true TrueFun (h :: tail) H1 H2) as HTrue.
+
     unfold rewriter in HFalse.
     unfold rewriter in HTrue.
     specialize (Htauto FalseFun) as HFun_False.
@@ -1059,38 +1070,40 @@ Proof.
     rewrite HFun_True in HTrue.
     simpl in HFalse.
     apply deduction in HFalse.
-    unfold
     simpl in HTrue.
     apply deduction in HTrue.
 
-    simpl in H3.
-    destruct H3 as [H3 H4].
-    specialize (eqb_true h) as HeqbTrue.
-    simpl in FalseFun.
-    simpl in TrueFun.
+    apply weaken with (Δ := (apply_rewriter v tail)) in HFalse.
+    2: {
+      unfold subset.
+      unfold elem.
+      intros A HContext.
+      apply (rewriter_a_not_a h tail H3 v false) in HContext.
+      exact HContext.
+    }.
+
+    apply weaken with (Δ := (apply_rewriter v tail)) in HTrue.
+    2: {
+      unfold subset.
+      unfold elem.
+      intros A HContext.
+      apply (rewriter_a_not_a h tail H3 v true) in HContext.
+      exact HContext.
+    }.
+
+    specialize (eqb_true h) as HEq.
     unfold rewriter in HFalse.
+    unfold eval in HFalse.
     unfold FalseFun in HFalse.
-    simpl in HFalse.
-    rewrite HeqbTrue in HFalse.
+    unfold a_not_a in HFalse.
+    rewrite HEq in HFalse.
+
     unfold rewriter in HTrue.
+    unfold eval in HTrue.
     unfold TrueFun in HTrue.
-    simpl in HTrue.
-    rewrite HeqbTrue in HTrue.
+    unfold a_not_a in HTrue.
+    rewrite HEq in HTrue.
 
-
-    unfold generate_context in HFalse.
-    unfold FalseFun in HFalse.
-    set (H3 := get_list letters).
-
-    unfold get_list in HFalse.
-    unfold apply_rewriter in HFalse.
-    simpl in HFalse.
-
-    apply deduction in HFalse.
-
-      unfold generate_context in HTrue.
-    simpl in HTrue.
-    unfold rewriter in HTrue.
-    simpl in HTrue.
-
-    apply deduction in HTrue.
+    specialize (meta_T_1_10_7 (f_atom h) F HTrue HFalse) as HResult.
+    exact HResult.
+Qed.
