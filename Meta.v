@@ -595,19 +595,13 @@ Definition length {atom : Set} `{Heq: EqDec atom} {f : @formula atom} (letters :
   let lst := get_list letters in
   length lst.
 
-Fixpoint n_impl {atom : Set} `{Heq: EqDec atom} (consequent : @formula atom) (lst : list formula) {struct lst} : @formula atom:=
-  match lst with
-  | nil => consequent
-  | A :: tail => n_impl (f_imp A consequent) tail
-  end.
-
-Fixpoint apply_rewriter {atom : Set } `{Heq: EqDec atom} (v : atom -> bool) (letters : list atom) : formula -> Prop :=
+Fixpoint apply_rewriter {atom : Set } (v : atom -> bool) (letters : list atom) : formula -> Prop :=
   match letters with
       | nil => empty
       | h :: t => extend (apply_rewriter v t) (rewriter v (f_atom h))
   end.
 
-Fixpoint rewriters_list {atom : Set} `{Heq: EqDec atom} (v : atom -> bool) (letters : list atom) : list formula :=
+Fixpoint rewriters_list {atom : Set} (v : atom -> bool) (letters : list atom) : list formula :=
   match letters with
   | nil => nil
   | a :: tail => (rewriter v (f_atom a)) :: (rewriters_list v tail)
@@ -617,23 +611,7 @@ Definition generate_context {atom : Set } `{Heq: EqDec atom} (v : atom -> bool) 
   let lst := get_list letters in
   apply_rewriter v lst.
 
-Lemma rewriter_impl {atom : Set} `{Heq: EqDec atom} (v : atom -> bool) (letters : list atom) : forall F : formula, (apply_rewriter v letters) |- F -> empty |- n_impl F (rewriters_list v letters).
-Proof.
-  induction letters as [| A tail IH].
-  - intros F H.
-    simpl.
-    simpl in H.
-    exact H.
-  - intros F H.
-    simpl.
-    simpl in H.
-    apply deduction in H.
-    specialize (IH (f_imp (rewriter v (f_atom A)) F)).
-    specialize (IH H).
-    exact IH.
-Qed.
-
-Lemma apply_rewriter_iff_exists {atom : Set} `{Heq: EqDec atom} (v : atom -> bool) (f : @formula atom) (letters : list atom) (A : @formula atom) :
+Lemma apply_rewriter_iff_exists {atom : Set} (v : atom -> bool) (f : @formula atom) (letters : list atom) (A : @formula atom) :
   apply_rewriter v letters A <-> exists x, In x letters /\ rewriter v (f_atom x) = A.
 Proof.
   split.
@@ -781,7 +759,7 @@ Proof.
   - exact H4.
 Qed.
 
-Lemma rewriter_true {atom : Set} `{Heq: EqDec atom} (v : atom -> bool) (f : @formula atom) :
+Lemma rewriter_true {atom : Set} (v : atom -> bool) (f : @formula atom) :
   let letters := (get_letters f) in
   (apply_rewriter v letters) |- rewriter v f.
 Proof.
