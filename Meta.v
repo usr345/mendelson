@@ -882,7 +882,7 @@ Proof.
     specialize (rewriter_a_not_a x l' H1 v) as H4.
     specialize (H FalseFun) as HFalse.
     specialize (H TrueFun) as HTrue.
-    specialize (eqb_true x) as HEq.
+    specialize (eqb_eq x x) as HEq.
     apply deduction in HFalse.
     assert (Hsubset : subset (apply_rewriter FalseFun l') (apply_rewriter v l')).
     {
