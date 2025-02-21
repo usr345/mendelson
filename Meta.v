@@ -155,10 +155,15 @@ Qed.
 Class EqDec A :=
   {
     eqb: A -> A -> bool;
-    eqb_true: forall x, (eqb x x) = true;
-    eqb_false: forall x y, ~(x = y) -> (eqb x y) = false;
     eqb_eq : forall x y, (eqb x y) = true <-> x = y
   }.
+
+Proposition eqb_reflexive {A : Type} `{EqDec A}: forall x : A, (eqb x x) = true.
+Proof.
+  intro x.
+  rewrite eqb_eq.
+  reflexivity.
+Qed.
 
 (* Check if an element is in the list *)
 Fixpoint exists_in {A: Type} `{EqDec A} (x: A) (l: list A) : bool :=
@@ -816,7 +821,7 @@ Proof.
     specialize (rewriter_a_not_a x l' H1 v) as H4.
     specialize (H FalseFun) as HFalse.
     specialize (H TrueFun) as HTrue.
-    specialize (eqb_true x) as HEq.
+    specialize (eqb_reflexive x) as HEq.
     apply deduction in HFalse.
     assert (Hsubset : subset (apply_rewriter FalseFun l') (apply_rewriter v l')).
     {
@@ -928,7 +933,7 @@ Proof.
       exact HContext.
     }.
 
-    specialize (eqb_true h) as HEq.
+    specialize (eqb_reflexive h) as HEq.
     unfold rewriter in HFalse.
     unfold eval in HFalse.
     unfold FalseFun in HFalse.
