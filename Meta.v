@@ -90,6 +90,7 @@ Proof.
     discriminate H.
 Qed.
 
+(* Синтаксическая непротиворечивость *)
 (* Система L непротиворечива, т.е. не существует формулы A, такой, чтобы A и ~A были теоремами в L *)
 Theorem consistency {atom : Set} (A : @formula atom) : theorem A -> theorem $~A$ -> False.
 Proof.
@@ -366,7 +367,7 @@ Qed.
 
 Fixpoint get_letters_rec {atom : Set} `{EqDec atom} (f : @formula atom) (accum : list atom) {struct f} : list atom :=
   match f with
-  | f_atom f' => if (exists_in f' accum) then accum else f' :: accum
+  | f_atom a => if (exists_in a accum) then accum else a :: accum
   | f_not f' => get_letters_rec f' accum
   | f_imp f1 f2 => remove_duplicates ((get_letters_rec f1 accum) ++ get_letters_rec f2 accum)
   end.
@@ -387,6 +388,21 @@ Proof.
   - apply unique_lists_unique_concat.
     + exact IH1.
     + exact IH2.
+Qed.
+
+(* Списки букв для f и ~f одинаковы *)
+Proposition get_letters_f_not_f {atom : Set} `{EqDec atom} (f : @formula atom) : get_letters f = get_letters $~f$.
+Proof.
+  unfold get_letters.
+  simpl.
+  reflexivity.
+Qed.
+
+Proposition in_f_in_not_f {atom : Set} `{Heq : EqDec atom} (f : @formula atom) : forall x : atom, In x (get_letters f) <-> In x (get_letters $~ f$).
+Proof.
+  intro x.
+  rewrite <-get_letters_f_not_f.
+  reflexivity.
 Qed.
 
 Proposition in_remove_duplicates_concat {atom : Set} `{Heq : EqDec atom} (x : atom) (l1 l2 : list atom) : In x (remove_duplicates (l1 ++ l2)) <-> In x l1 \/ In x l2.
@@ -463,7 +479,8 @@ Proof.
         exact H.
 Qed.
 
-Lemma length_concat_zero {A : Type} (l1 l2 : list A) : length (l1 ++ l2) = 0 <-> length l1 = 0 /\ length l2 = 0.
+Lemma length_concat_zero {A : Type} (l1 l2 : list A) :
+  length (l1 ++ l2) = 0 <-> length l1 = 0 /\ length l2 = 0.
 Proof.
   split.
   - intro H.
@@ -632,7 +649,8 @@ Proof.
         exact H.
 Qed.
 
-Lemma rewriter_subset_left {atom : Set } `{Heq: EqDec atom} (v : atom -> bool) (f1 f2 : @formula atom) (letters1 letters_impl : list atom) (H1 : forall x : atom, In x letters1 <-> occurs x f1) (H2 : forall x : atom, In x letters_impl <-> occurs x $f1 -> f2$):
+Lemma rewriter_subset_left {atom : Set } `{Heq: EqDec atom} (v : atom -> bool) (f1 f2 : @formula atom) (letters1 letters_impl : list atom)
+  (H1 : forall x : atom, In x letters1 <-> occurs x f1) (H2 : forall x : atom, In x letters_impl <-> occurs x $f1 -> f2$):
   (apply_rewriter v letters1) ⊆ (apply_rewriter v letters_impl).
 Proof.
   unfold subset.
@@ -711,11 +729,13 @@ Proof.
       specialize (HOccurs x).
       rewrite occurs_f_occurs_not_f.
       apply HOccurs.
+      rewrite <-in_f_in_not_f.
       exact H.
     + intro H.
       specialize (HOccurs x).
       rewrite occurs_f_occurs_not_f in H.
       apply HOccurs in H.
+      rewrite <-in_f_in_not_f in H.
       exact H.
   - (* F = f_impl F1 F2 *)
     unfold rewriter.
@@ -777,6 +797,7 @@ Definition a_not_a {atom: Set} `{EqDec atom} (a: atom) (v_a: bool) (f_not_a: ato
   | false => f_not_a v
   end.
 
+(* Если x не принадлежит списку lst, то (a_not_a x b f) всегда вернет (f x) *)
 Lemma rewriter_a_not_a {atom: Set} `{HEqDec: EqDec atom} (x : atom) (lst: list atom) (H : ~(In x lst)) (f : atom -> bool) (b: bool) :
   forall F, (apply_rewriter (a_not_a x b f) lst) F <-> (apply_rewriter f lst) F.
 Proof.
@@ -865,7 +886,7 @@ Proof.
     exact HResult.
 Qed.
 
-Theorem semantic_completeness {atom : Set} `{EqDec atom} (Hatom: inhabited atom) (F : @formula atom) : tautology F -> theorem F.
+Theorem semantic_completeness {atom : Set} `{EqDec atom} (F : @formula atom) : tautology F -> theorem F.
 Proof.
   unfold tautology, theorem.
   intro Htauto.
@@ -873,7 +894,8 @@ Proof.
   (* 1 *)
   set (letters := get_letters_from_formula F).
   destruct letters as [letters H1].
-  destruct H1 as [H1 [H2 H3]].
+  destruct H1 as [H1 H2].
+  destruct H2 as [H2 H3].
   destruct H3 as [H3 H4].
   apply weaken with (Γ := empty).
   {

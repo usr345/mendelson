@@ -5,7 +5,7 @@ Module Semantic.
 Fixpoint eval {atom : Set} (value : atom -> bool) (f : formula) : bool :=
   match f with
   | f_atom a => value a
-  | f_not f => negb (eval value f)
+  | f_not f' => negb (eval value f')
   | f_imp f1 f2 => implb (eval value f1) (eval value f2)
 end.
 

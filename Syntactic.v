@@ -76,6 +76,7 @@ Definition extend {atom : Set} (Γ : @formula atom -> Prop) (A : formula) : form
 
 Notation "Γ ,, A" := (extend Γ A) (at level 32, left associativity).
 
+(* Множество Gamma является подмножеством расширения (Gamma + A) *)
 Lemma subset_extend {atom : Set} {Γ : @formula atom -> Prop} {A} : subset Γ (extend Γ A).
 Proof.
   unfold subset, extend.
