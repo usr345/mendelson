@@ -830,7 +830,7 @@ Proof.
       intros A H5.
       apply (H4 false A).
       exact H5.
-    }.
+    }
 
     apply weaken with (Δ := (apply_rewriter v l')) in HFalse.
     2: { exact Hsubset. }
@@ -850,7 +850,7 @@ Proof.
       intros A H5.
       apply (H4 true A).
       exact H5.
-    }.
+    }
 
     apply weaken with (Δ := (apply_rewriter v l')) in HTrue.
     2: { exact Hsubset. }
@@ -873,8 +873,7 @@ Proof.
   (* 1 *)
   set (letters := get_letters_from_formula F).
   destruct letters as [letters H1].
-  destruct H1 as [H1 H2].
-  destruct H2 as [H2 H3].
+  destruct H1 as [H1 [H2 H3]].
   destruct H3 as [H3 H4].
   apply weaken with (Γ := empty).
   {
@@ -922,7 +921,7 @@ Proof.
       intros A HContext.
       apply (rewriter_a_not_a h tail H31 v false) in HContext.
       exact HContext.
-    }.
+    }
 
     apply weaken with (Δ := (apply_rewriter v tail)) in HTrue.
     2: {
@@ -931,7 +930,7 @@ Proof.
       intros A HContext.
       apply (rewriter_a_not_a h tail H31 v true) in HContext.
       exact HContext.
-    }.
+    }
 
     specialize (eqb_reflexive h) as HEq.
     unfold rewriter in HFalse.
