@@ -696,10 +696,6 @@ Proof.
   - exact H4.
 Qed.
 
-Create HintDb Kalmar.
-Hint Resolve rewriter_subset_left : Kalmar.
-Hint Resolve rewriter_subset_right : Kalmar.
-
 Lemma rewriter_true {atom : Set} `{Heq: EqDec atom} (f : @formula atom) :
   let letters := (get_letters f) in
   forall v : atom -> bool, (apply_rewriter v letters) |- rewriter v f.
@@ -744,32 +740,34 @@ Proof.
     unfold rewriter in IH2.
     pose proof (all_letters_exist_in_get_letters f1) as HOccurs1.
     pose proof (all_letters_exist_in_get_letters f2) as HOccurs2.
+    set (letters1 := get_letters f1).
+    set (letters2 := get_letters f2).
     specialize (IH1 HOccurs1).
     specialize (IH2 HOccurs2).
     destruct (eval v f1), (eval v f2) ; simpl.
     (* f1 = T, f2 = T *)
     + apply drop_antecedent.
-      apply (weaken (apply_rewriter v (get_letters f2))).
-      * apply (rewriter_subset_right v f1 f2 (get_letters f2) letters HOccurs2 HOccurs).
+      apply (weaken (apply_rewriter v letters2)).
+      * apply (rewriter_subset_right v f1 f2 letters2 letters HOccurs2 HOccurs).
       * exact IH2.
     (* f1 = T, f2 = F *)
     + apply conj_not_not_impl.
       apply meta_conj_intro.
-      * apply (weaken (apply_rewriter v (get_letters f1))).
-         ** apply (rewriter_subset_left v f1 f2 (get_letters f1) letters HOccurs1 HOccurs).
+      * apply (weaken (apply_rewriter v letters1)).
+         ** apply (rewriter_subset_left v f1 f2 letters1 letters HOccurs1 HOccurs).
          ** apply IH1.
-      * apply (weaken (apply_rewriter v (get_letters f2))).
-         ** apply (rewriter_subset_right v f1 f2 (get_letters f2) letters HOccurs2 HOccurs).
+      * apply (weaken (apply_rewriter v letters2)).
+         ** apply (rewriter_subset_right v f1 f2 letters2 letters HOccurs2 HOccurs).
          ** apply IH2.
     (* f1 = F, f2 = T *)
     + apply drop_antecedent.
-      apply (weaken (apply_rewriter v (get_letters f2))).
-      * apply (rewriter_subset_right v f1 f2 (get_letters f2) letters HOccurs2 HOccurs).
+      apply (weaken (apply_rewriter v letters2)).
+      * apply (rewriter_subset_right v f1 f2 letters2 letters HOccurs2 HOccurs).
       * exact IH2.
     (* f1 = F, f2 = F *)
     + apply meta_neg_a_impl_a_b with (B := f2) in IH1.
-      apply (weaken (apply_rewriter v (get_letters f1))).
-      * apply (rewriter_subset_left v f1 f2 (get_letters f1) letters HOccurs1 HOccurs).
+      apply (weaken (apply_rewriter v letters1)).
+      * apply (rewriter_subset_left v f1 f2 letters1 letters HOccurs1 HOccurs).
       * exact IH1.
 Qed.
 
