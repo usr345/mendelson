@@ -167,6 +167,7 @@ Proof.
     * reflexivity.
 Qed.
 
+(* Задачи *)
 Proposition P1_3 {atom : Set} (A B C: @formula atom) : tautology $(A <-> (~B \/ C)) -> (~A -> B)$.
 Proof.
   unfold tautology.

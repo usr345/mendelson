@@ -47,7 +47,7 @@ Qed.
    characteristic map formula -> Prop. *)
 
 (* Element-hood relation between a formula and a set of formulas. *)
-Definition elem {atom : Set} (A : formula) (Γ : @formula atom  -> Prop) := Γ A.
+Definition elem {atom : Set} (A : formula) (Γ : @formula atom -> Prop) := Γ A.
 Infix "∈" := elem (at level 77) : formula_scope.
 
 (* The empty context. *)

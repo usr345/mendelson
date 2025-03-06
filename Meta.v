@@ -247,6 +247,17 @@ Proof.
         ** exact H1.
 Qed.
 
+Lemma exists_in_not_empty {A: Type} `{Heq: EqDec A} (x : A) (lst : list A) : (exists_in x lst) = true -> lst <> [].
+Proof.
+  intro H.
+  rewrite <-In_exists_true in H.
+  induction lst as [|h l' IH].
+  - simpl in H.
+    contradiction H.
+  - intro H1.
+    discriminate H1.
+Qed.
+
 (* Function to remove duplicates from a list *)
 Fixpoint remove_duplicates {A : Type} `{EqDec A} (l : list A) : list A :=
   match l with
@@ -308,26 +319,24 @@ Proof.
            exact H.
 Qed.
 
-Lemma remove_duplicates_unique {A : Set} `{Heq: EqDec A} (lst : list A) (H : unique lst):
+Lemma remove_duplicates_unique {A : Set} `{Heq: EqDec A} (lst : list A):
   unique (remove_duplicates lst).
 Proof.
   induction lst as [|h tail IH].
   - simpl.
     exact I.
-  - simpl in H.
-    destruct H as [H1 H2].
-    simpl.
+  - simpl.
     destruct (exists_in h (remove_duplicates tail)) eqn:HExists.
     + rewrite <-In_exists_true in HExists.
       rewrite in_remove_duplicates in HExists.
-      apply H1 in HExists.
-      contradiction HExists.
+      exact IH.
     + simpl.
       split.
       * rewrite in_remove_duplicates.
-        exact H1.
-      * apply IH in H2.
-        exact H2.
+        rewrite <-not_In_exists_false in HExists.
+        rewrite in_remove_duplicates in HExists.
+        exact HExists.
+      * exact IH.
 Qed.
 
 Lemma unique_remove_duplicates_same {A : Set} `{Heq: EqDec A} (lst : list A) (H : unique lst):
@@ -344,25 +353,6 @@ Proof.
     rewrite not_In_exists_false in H1.
     rewrite H1.
     reflexivity.
-Qed.
-
-Lemma unique_lists_unique_concat {A : Set} `{Heq: EqDec A} (l1 l2 : list A) (H1 : unique l1)  (H2 : unique l2):
-  unique (remove_duplicates (l1 ++ l2)).
-Proof.
-  induction l1 as [|h tail IH].
-  - simpl.
-    rewrite (unique_remove_duplicates_same l2 H2).
-    exact H2.
-  - simpl in H1.
-    destruct H1 as [H11 H12].
-    apply IH in H12 as HConcat.
-    simpl.
-    destruct (exists_in h (remove_duplicates (tail ++ l2))) eqn:H.
-    + exact HConcat.
-    + split.
-      * rewrite <-not_In_exists_false in H.
-        exact H.
-      * exact HConcat.
 Qed.
 
 Fixpoint get_letters_rec {atom : Set} `{EqDec atom} (f : @formula atom) (accum : list atom) {struct f} : list atom :=
@@ -385,9 +375,8 @@ Proof.
       exact H.
     + exact I.
   - exact IH.
-  - apply unique_lists_unique_concat.
-    + exact IH1.
-    + exact IH2.
+    (* Можно использовать другую теорему remove_duplicates_unique  *)
+  - apply remove_duplicates_unique.
 Qed.
 
 (* Списки букв для f и ~f одинаковы *)
@@ -407,31 +396,8 @@ Qed.
 
 Proposition in_remove_duplicates_concat {atom : Set} `{Heq : EqDec atom} (x : atom) (l1 l2 : list atom) : In x (remove_duplicates (l1 ++ l2)) <-> In x l1 \/ In x l2.
 Proof.
-  split.
-  - intro H.
-    induction l1 as [| h tail IH] ; simpl.
-    + simpl in H.
-      right.
-      rewrite in_remove_duplicates in H.
-      exact H.
-    + destruct (atom_eq h x) as [Yes | No].
-      * left.
-        left.
-        exact Yes.
-      * rewrite or_assoc.
-        right.
-        apply IH.
-        rewrite in_remove_duplicates in H.
-        simpl in H.
-        destruct H.
-        ** apply No in H.
-           contradiction H.
-        ** rewrite in_remove_duplicates.
-           exact H.
-  - intro H.
-    rewrite in_remove_duplicates.
-    rewrite in_app_iff.
-    exact H.
+  rewrite in_remove_duplicates.
+  apply in_app_iff.
 Qed.
 
 Lemma all_letters_exist_in_get_letters {atom : Set} `{Heq: EqDec atom} (f : @formula atom) :
@@ -479,104 +445,40 @@ Proof.
         exact H.
 Qed.
 
-Lemma length_concat_zero {A : Type} (l1 l2 : list A) :
-  length (l1 ++ l2) = 0 <-> length l1 = 0 /\ length l2 = 0.
+Lemma remove_duplicates_empty {A : Type} {HEq: EqDec A} (l : list A) : (remove_duplicates l) = [] <-> l = [].
 Proof.
   split.
   - intro H.
-    induction l1 as [| l' IH].
-    + simpl.
-      simpl in H.
-      split.
-      * reflexivity.
-      * exact H.
+    induction l as [|x l' IH].
+    + reflexivity.
     + simpl in H.
-      discriminate H.
+      destruct (exists_in x (remove_duplicates l')) eqn:H1.
+      * apply exists_in_not_empty in H1.
+        apply H1 in H.
+        contradiction H.
+      * discriminate H.
   - intro H.
-    destruct H as [H1 H2].
-    induction l1 as [| h t IH].
-    + simpl.
-      exact H2.
-    + simpl in H1.
-      discriminate H1.
-Qed.
-
-Lemma length_remove_duplicates_zero {A : Type} {HEq: EqDec A} (l : list A) : length (remove_duplicates l) = 0 <-> length l = 0.
-Proof.
-  split.
-  - intro H.
-    induction l as [| h t IH].
-    + simpl.
-      reflexivity.
-    + simpl.
-      simpl in H.
-      destruct (exists_in h (remove_duplicates t)) eqn:H1.
-      * apply IH in H.
-        rewrite length_zero_iff_nil in H.
-        rewrite H in H1.
-        simpl in H1.
-        discriminate H1.
-      * simpl in H.
-        discriminate H.
-  - intro H.
-    rewrite length_zero_iff_nil in H.
     rewrite H.
     simpl.
     reflexivity.
 Qed.
 
-Lemma length_remove_duplicates_concat_zero {A : Type} {HEq: EqDec A} (l1 l2 : list A) : length (remove_duplicates (l1 ++ l2)) = 0 <-> length l1 = 0 /\ length l2 = 0.
-Proof.
-  split.
-  - intro H.
-    induction l1 as [| h1 t1 IH].
-    + simpl.
-      split.
-      * reflexivity.
-      * simpl in H.
-        induction l2 as [|h2 t2 IH] ; simpl.
-        ** reflexivity.
-        ** simpl in H.
-           destruct (exists_in h2 (remove_duplicates t2)) eqn:H1.
-           rewrite length_remove_duplicates_zero in H.
-           rewrite length_zero_iff_nil in H.
-           rewrite H in H1.
-           simpl in H1.
-           discriminate H1.
-           simpl in H.
-           discriminate H.
-    + simpl.
-      simpl in H.
-      destruct (exists_in h1 (remove_duplicates (t1 ++ l2))) eqn:H1.
-      * rewrite length_remove_duplicates_zero in H.
-        rewrite length_zero_iff_nil in H.
-        rewrite H in H1.
-        simpl in H1.
-        discriminate H1.
-      * simpl in H.
-        discriminate H.
-  - intro H.
-    rewrite length_remove_duplicates_zero.
-    rewrite length_concat_zero.
-    exact H.
-Qed.
-
 Lemma letters_list_not_empty {atom : Set} `{Heq: EqDec atom} (f : @formula atom) :
-  ~ (length (get_letters f) = 0).
+  ~ (get_letters f = []).
 Proof.
+  intro H.
   induction f as [| A IH | f1 IH1 f2 IH2].
-  - simpl. intro H. discriminate H.
-  - intro H.
-    unfold get_letters in H.
-    cbn in H.
+  - cbv in H.
+    discriminate H.
+  - cbn in H.
     unfold get_letters in IH.
     apply IH in H.
     exact H.
-  - intro H.
-    unfold get_letters in H.
+  - unfold get_letters in H.
     unfold get_letters in IH1.
     cbn in H.
-    rewrite length_remove_duplicates_concat_zero in H.
+    rewrite remove_duplicates_empty in H.
+    apply app_eq_nil in H.
     destruct H as [H1 H2].
     apply IH1 in H1.
     exact H1.
@@ -593,9 +495,7 @@ Proof.
     split ; exact I.
   - apply IH.
   - simpl.
-    apply unique_lists_unique_concat.
-    exact IH1.
-    exact IH2.
+    apply remove_duplicates_unique.
 Qed.
 
 Fixpoint apply_rewriter {atom : Set } `{Heq: EqDec atom} (v : atom -> bool) (letters : list atom) : formula -> Prop :=
@@ -696,6 +596,7 @@ Proof.
   - exact H4.
 Qed.
 
+(* Теорема об истинности переписывателей*)
 Lemma rewriter_true {atom : Set} `{Heq: EqDec atom} (f : @formula atom) :
   let letters := (get_letters f) in
   forall v : atom -> bool, (apply_rewriter v letters) |- rewriter v f.
@@ -774,7 +675,7 @@ Qed.
 Definition LettersList {atom : Set} `{Heq: EqDec atom} (f : @formula atom) : Type :=
   {
     ls : list atom & prod (forall x : atom, In x ls <-> occurs x f)
-                       (prod (~ (length ls = 0))
+                       (prod (~ (ls = []))
                           (prod (unique ls) (forall v : atom -> bool, (apply_rewriter v ls) |- rewriter v f))) }.
 
 Definition get_letters_from_formula {atom : Set} `{Heq: EqDec atom} (f : @formula atom) : LettersList f :=
@@ -906,9 +807,7 @@ Proof.
 
   (* 2 *)
   induction letters as [|h tail IH].
-  - simpl in H2.
-    exfalso.
-    destruct H2.
+  - contradiction H2.
     reflexivity.
   - simpl in H3.
     destruct H3 as [H31 H32].

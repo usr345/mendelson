@@ -62,7 +62,8 @@ Proof.
   induction H as [B H|?|?|?|C D K L IH1 IH2].
   - unfold subset in S.
     specialize (S B H).
-    exact (@hypo atom Δ B S).
+    apply hypo.
+    exact S.
   - apply (axiom1 A B).
   - apply (axiom2 A B C).
   - apply (axiom3 A B).
@@ -133,6 +134,38 @@ Proof.
   - apply axiom1.
 Qed.
 
+(* We conclude with the proof of the deduction theorem, just to show
+   that it is quite painless to formalize. *)
+Theorem deduction {atom : Set} {Γ : @formula atom -> Prop} {A B} : extend Γ A |- B -> Γ |- $A -> B$.
+Proof.
+  intro H.
+  induction H as [B H|?|?|?|C B H1 IH1 H2 IH2].
+  (* Пусть B является элементом Γ,, A *)
+  - destruct (formula_eq A B) as [Heq|Hneq].
+    + rewrite Heq.
+      apply imply_self.
+    + apply mp with (B := B).
+      * apply hypo.
+        unfold extend in H.
+        unfold elem in H.
+        destruct H as [Hin|Heq].
+        ++ exact Hin.
+        ++ contradiction.
+      * apply axiom1.
+  - (* Пусть B является результатом применения аксиомы 1 к чему-то *)
+    apply drop_antecedent.
+    apply axiom1.
+  - apply drop_antecedent.
+    apply axiom2.
+  - apply drop_antecedent.
+    apply axiom3.
+  - apply (mp $A -> B$).
+    + exact IH1.
+    + apply (mp $A -> B -> C$).
+      * exact IH2.
+      * apply axiom2.
+Qed.
+
 (* Now we can define a tactic that does the above steps.
    Note the difference between the tactic "hypo" and the constructor "hypo"!
    If you type "hypo" in tactic mode, it will use the tactic defined below,
@@ -144,6 +177,7 @@ Lemma T1_7ex1 {atom : Set} (Γ : @formula atom -> Prop) A : Γ |- $(~A -> A) -> 
 Proof.
   (* 1 *)
   pose proof (@axiom3 _ Γ A A) as H1.
+  unfold f_axiom3 in H1.
   (* 2 *)
   pose proof (@imply_self _ Γ $~A$) as H2.
   (* 3 *)
@@ -157,6 +191,7 @@ Lemma T1_7ex2 {atom : Set} (Γ : @formula atom -> Prop) A B C : Γ ,, $A -> B$ ,
 Proof.
   (* 1 *)
   pose proof (@axiom1 _ (Γ ,, $A -> B$ ,, $B -> C$) $B -> C$ A) as H1.
+  unfold f_axiom1 in H1.
   (* 2 *)
   assert (H2 : Γ,, $A -> B$,, $B -> C$ |- $A -> (B -> C)$).
   apply mp with (B := $B -> C$).
@@ -164,6 +199,7 @@ Proof.
   apply H1.
   (* 3  *)
   pose proof (@axiom2 _ (Γ ,, $A -> B$ ,, $B -> C$) A B C) as H3.
+  unfold f_axiom2 in H3.
   (* 4 *)
   assert (H4 : Γ,, $A -> B$,, $B -> C$ |- $(A -> B) -> A -> C$).
   apply (@mp _ (Γ,, $A -> B$,, $B -> C$) _ $A -> B -> C$ H2 H3).
@@ -206,34 +242,6 @@ Proof.
   apply (@mp _ (Γ,, $A -> B -> C$) _ $B -> A -> B$ H7 H6).
   (* 9 *)
   exact H8.
-Qed.
-
-(* We conclude with the proof of the deduction theorem, just to show
-   that it is quite painless to formalize. *)
-Theorem deduction {atom : Set} {Γ : @formula atom -> Prop} {A B} : extend Γ A |- B -> Γ |- $A -> B$.
-Proof.
-  intro H.
-  induction H as [B H|?|?|?|C].
-  - destruct (formula_eq A B) as [Heq|Hneq].
-    + rewrite Heq.
-      apply imply_self.
-    + apply mp with (B := B).
-      * apply hypo.
-        destruct H as [Hin|Heq].
-        ++ exact Hin.
-        ++ contradiction.
-      * apply axiom1.
-  - apply drop_antecedent.
-    apply axiom1.
-  - apply drop_antecedent.
-    apply axiom2.
-  - apply drop_antecedent.
-    apply axiom3.
-  - apply (mp ($A -> B$)).
-    + assumption.
-    + apply (mp ($A -> B -> C$)).
-      * assumption.
-      * apply axiom2.
 Qed.
 
 Corollary transitivity {atom : Set} {Γ : @formula atom -> Prop} {A} B {C} :
