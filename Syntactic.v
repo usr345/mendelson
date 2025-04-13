@@ -45,8 +45,26 @@ Arguments axiom3 {_} {_} _ _.
 Arguments mp {_} {_} {_} (_).
 
 (* Here are some basic observation about |-. *)
-
+(* Лемма 1.7. $\vdash_L A \supset A$ для любой формулы A. *)
 Lemma imply_self {atom : Set} (Γ : @formula atom -> Prop) (A : @formula atom) : Γ |- $A -> A$.
+Proof.
+  (* (1) $(A \supset ((A \supset A) \supset A)) \supset ((A \supset (A \supset A)) \supset (A \supset A))$ --- подстановка в схему аксиом A2 *)
+  pose proof (@axiom2 _ Γ A $A -> A$ A) as H1.
+  unfold f_axiom2 in H1.
+  (* (2) $A \supset ((A \supset A) \supset A)$ --- схема аксиом A1 *)
+  pose proof (@axiom1 _ Γ A $A -> A$) as H2.
+  unfold f_axiom1 in H2.
+  (* (3) $((A \supset (A \supset A)) \supset (A \supset A))$ --- из (1) и (2) по MP *)
+  specialize (@mp _ _ _ $A -> (A -> A) -> A$ H2 H1) as H3.
+  (* (4) $A \supset (A \supset A)$ --- схема аксиом A1 *)
+  pose proof (@axiom1 _ Γ A A) as H4.
+  unfold f_axiom1 in H4.
+  (* (5) $A \supset A$ --- из (3) и (4) по MP *)
+  specialize (@mp _ _ _ $A -> (A -> A)$ H4 H3) as H5.
+  exact H5.
+Qed.
+
+Lemma imply_self' {atom : Set} (Γ : @formula atom -> Prop) (A : @formula atom) : Γ |- $A -> A$.
 Proof.
   apply mp with (B := $A -> A -> A$).
   - exact (axiom1 A A).
@@ -55,7 +73,7 @@ Proof.
     + exact (axiom2 A $A -> A$ A).
 Qed.
 
-(* Weakening: having more hypotheses does not hurt. *)
+(* Если $\Gamma \subseteq \Delta$ и $\Gamma \vdash A$, то $\Delta \vdash A$ *)
 Theorem weaken {atom : Set} (Γ : @formula atom -> Prop) Δ A : Γ ⊆ Δ -> Γ |- A -> Δ |- A.
 Proof.
   intros S H.
