@@ -55,22 +55,13 @@ Proof.
   pose proof (@axiom1 _ Γ A $A -> A$) as H2.
   unfold f_axiom1 in H2.
   (* (3) $((A \supset (A \supset A)) \supset (A \supset A))$ --- из (1) и (2) по MP *)
-  specialize (@mp _ _ _ $A -> (A -> A) -> A$ H2 H1) as H3.
+  specialize (mp $A -> (A -> A) -> A$ H2 H1) as H3.
   (* (4) $A \supset (A \supset A)$ --- схема аксиом A1 *)
   pose proof (@axiom1 _ Γ A A) as H4.
   unfold f_axiom1 in H4.
   (* (5) $A \supset A$ --- из (3) и (4) по MP *)
-  specialize (@mp _ _ _ $A -> (A -> A)$ H4 H3) as H5.
+  specialize (mp $A -> (A -> A)$ H4 H3) as H5.
   exact H5.
-Qed.
-
-Lemma imply_self' {atom : Set} (Γ : @formula atom -> Prop) (A : @formula atom) : Γ |- $A -> A$.
-Proof.
-  apply mp with (B := $A -> A -> A$).
-  - exact (axiom1 A A).
-  - apply mp with (B := $A -> (A -> A) -> A$).
-    + exact (axiom1 A $A -> A$).
-    + exact (axiom2 A $A -> A$ A).
 Qed.
 
 (* Если $\Gamma \subseteq \Delta$ и $\Gamma \vdash A$, то $\Delta \vdash A$ *)
@@ -95,7 +86,7 @@ Definition extend {atom : Set} (Γ : @formula atom -> Prop) (A : formula) : form
 
 Notation "Γ ,, A" := (extend Γ A) (at level 32, left associativity).
 
-(* Множество Gamma является подмножеством расширения (Gamma + A) *)
+(* Множество Gamma является подмножеством расширения (Gamma,, A) *)
 Lemma subset_extend {atom : Set} {Γ : @formula atom -> Prop} {A} : subset Γ (extend Γ A).
 Proof.
   unfold subset, extend.
