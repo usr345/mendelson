@@ -147,9 +147,12 @@ Qed.
 Lemma drop_antecedent {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- B -> Γ |- $A -> B$.
 Proof.
   intro H.
-  apply (mp B).
-  - exact H.
-  - apply axiom1.
+  (* 1. $B \supset (A \supset B)$ --- схема аксиом A1 *)
+  pose proof (@axiom1 _ Γ B A) as H1.
+  unfold f_axiom1 in H1.
+  (* 2. $A \supset B$ --- из H и H1 по MP *)
+  specialize (@mp _ _ _ B H H1) as H2.
+  exact H2.
 Qed.
 
 (* We conclude with the proof of the deduction theorem, just to show
@@ -157,31 +160,63 @@ Qed.
 Theorem deduction {atom : Set} {Γ : @formula atom -> Prop} {A B} : extend Γ A |- B -> Γ |- $A -> B$.
 Proof.
   intro H.
-  induction H as [B H|?|?|?|C B H1 IH1 H2 IH2].
+  induction H as [B H|?|?|?|B C H1 IH1 H2 IH2].
   (* Пусть B является элементом Γ,, A *)
   - destruct (formula_eq A B) as [Heq|Hneq].
+    (* Если B = A, применяем лемму imply_self *)
     + rewrite Heq.
       apply imply_self.
-    + apply mp with (B := B).
-      * apply hypo.
+    (* Если B != A, по аксиоме 1 получаем формулу *)
+    (* $B \supset (A \supset B)$ *)
+    + pose proof (@axiom1 _ Γ B A) as H1.
+      unfold f_axiom1 in H1.
+      (* Поскольку B != A, B содержится в Γ *)
+      assert (H2: Γ |- B).
+      {
+        apply hypo.
         unfold extend in H.
         unfold elem in H.
         destruct H as [Hin|Heq].
-        ++ exact Hin.
-        ++ contradiction.
-      * apply axiom1.
-  - (* Пусть B является результатом применения аксиомы 1 к чему-то *)
+        * unfold elem.
+          exact Hin.
+        * apply Hneq in Heq.
+          contradiction Heq.
+      }
+
+      (* По MP из H1 : Γ |- $B -> (A -> B)$ *)
+      (* и H2 : Γ |- B получаем Γ |- $A -> B$ *)
+      specialize (mp B H2 H1) as H3.
+      exact H3.
+  - (* Пусть B является аксиомой *)
     apply drop_antecedent.
     apply axiom1.
   - apply drop_antecedent.
     apply axiom2.
   - apply drop_antecedent.
     apply axiom3.
-  - apply (mp $A -> B$).
-    + exact IH1.
-    + apply (mp $A -> B -> C$).
-      * exact IH2.
-      * apply axiom2.
+  - (* Modus Ponens:
+       Пусть B получена по MP из 2-х формул C и $C -> B$, и пусть они доказуемы в контексте (Γ,, A):
+       H1 : Γ,, A |- B
+       H2 : Γ,, A |- $B -> C$
+
+       Пусть истинны индуктивные гипотезы:
+       IH1 : Γ |- $A -> B$
+       IH2 : Γ |- $A -> B -> C$
+    *)
+
+    (* По аксиоме 2: $(A -> (C -> B)) -> ((A -> C) -> (A -> B))$ *)
+    + pose proof (@axiom2 _ Γ A C B) as H3.
+      unfold f_axiom2 in H3.
+
+      (* По MP из IH2 : Γ |- $A -> C -> B$ *)
+      (* и H3 : Γ |- $(A -> C -> B) -> (A -> C) -> A -> B$ *)
+      specialize (mp $A -> C -> B$ IH2 H3) as H4.
+
+      (* MP *)
+      (* IH1 : Γ |- $A -> C$ *)
+      (*  H4 : Γ |- $(A -> C) -> A -> B$ *)
+      specialize (mp $A -> C$ IH1 H4) as H5.
+      exact H5.
 Qed.
 
 (* Now we can define a tactic that does the above steps.
