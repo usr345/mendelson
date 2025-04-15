@@ -5,6 +5,7 @@ Require Import Coq.Bool.BoolEq.
 Require Import Coq.Lists.List.
 Import ListNotations.
 
+Module Meta.
 Theorem axiom1_tautology {atom : Set} (A B: @formula atom) : tautology (f_axiom1 A B).
 Proof.
   unfold f_axiom1, tautology.
@@ -134,11 +135,11 @@ Proof.
     exact H.
 Qed.
 
-Fixpoint occurs {atom : Set} (i : atom) (p : formula) {struct p} : Prop :=
-  match p with
-  | f_atom i' => i = i'
-  | f_not p1 => occurs i p1
-  | f_imp p1 p2 => occurs i p1 \/ occurs i p2
+Fixpoint occurs {atom : Set} (a : atom) (F : formula) {struct F} : Prop :=
+  match F with
+  | f_atom a' => a = a'
+  | f_not p1 => occurs a p1
+  | f_imp p1 p2 => occurs a p1 \/ occurs a p2
   end.
 
 Proposition occurs_f_occurs_not_f {atom : Set} (f : @formula atom) : forall x : atom, occurs x f <-> occurs x $~f$.
@@ -790,12 +791,9 @@ Proof.
   unfold tautology, theorem.
   intro Htauto.
   intro Γ.
-  (* 1 *)
+  (* Пусть letters --- список пропозициональных *)
   set (letters := get_letters_from_formula F).
-  destruct letters as [letters H1].
-  destruct H1 as [H1 H2].
-  destruct H2 as [H2 H3].
-  destruct H3 as [H3 H4].
+  destruct letters as [letters [H1 [H2 [H3 H4]]]].
   apply weaken with (Γ := empty).
   {
     unfold subset.
@@ -867,3 +865,4 @@ Proof.
     specialize (meta_T_1_10_7 (f_atom h) F HTrue HFalse) as HResult.
     exact HResult.
 Qed.
+End Meta.

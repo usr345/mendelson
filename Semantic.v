@@ -92,16 +92,16 @@ Proof.
     reflexivity.
 Qed.
 
-Definition tautology {atom : Set} (f : formula) :=
+Definition tautology {atom : Set} (f : formula) : Prop :=
   forall v : atom -> bool, is_true (eval v f).
 
-Definition contradictory {atom : Set} (f : formula) :=
+Definition contradictory {atom : Set} (f : formula) : Prop :=
   forall v : atom -> bool, (eval v f) = false.
 
-Definition logically_implies {atom : Set} (A : formula) (B : formula) :=
+Definition logically_implies {atom : Set} (A : formula) (B : formula) : Prop :=
   forall v : atom -> bool, is_true (eval v A) -> is_true (eval v B).
 
-Definition logically_equivalent {atom : Set} (A : formula) (B : formula) :=
+Definition logically_equivalent {atom : Set} (A : formula) (B : formula) : Prop :=
   forall v : atom -> bool, (eval v A) = (eval v B).
 
 Proposition P1_1 {atom : Set} (A B: @formula atom) : logically_implies A B <-> tautology $A -> B$.

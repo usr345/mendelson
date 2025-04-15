@@ -20,7 +20,7 @@ Module Syntactic.
    for the purpose of constructing an element of Prop.
  *)
 Definition f_axiom1 {atom : Set} (A B : @formula atom) : formula :=
-  $A -> B -> A$.
+  $A -> (B -> A)$.
 
 Definition f_axiom2 {atom : Set} (A B C : @formula atom) : formula :=
   $(A -> B -> C) -> (A -> B) -> (A -> C)$.
