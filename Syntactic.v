@@ -104,7 +104,7 @@ Proof.
   pose proof (@axiom1 _ Γ B A) as H1.
   unfold f_axiom1 in H1.
   (* 2. $A \supset B$ --- из H и H1 по MP *)
-  specialize (@mp _ _ _ B H H1) as H2.
+  specialize (mp B H H1) as H2.
   exact H2.
 Qed.
 
@@ -153,8 +153,8 @@ Proof.
        H2 : Γ,, A |- $B -> C$
 
        Пусть истинны индуктивные гипотезы:
-       IH1 : Γ |- $A -> B$
-       IH2 : Γ |- $A -> B -> C$
+       IH1 : Γ |- $A -> С$
+       IH2 : Γ |- $A -> С -> B$
     *)
 
     (* По аксиоме 2: $(A -> (C -> B)) -> ((A -> C) -> (A -> B))$ *)

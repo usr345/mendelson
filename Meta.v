@@ -605,6 +605,9 @@ Proof.
   pose proof (all_letters_exist_in_get_letters f) as HOccurs.
   induction f as [a | f IH | f1 IH1 f2 IH2].
   (* F = f_atom a *)
+  (* Мы имеем ситуацию:
+     rewriter v (get_letters (f_atom a)) |- rewriter v (f_atom a)
+   *)
   - specialize HOccurs with a.
     unfold occurs in HOccurs.
     assert (H3 : a = a).
@@ -635,10 +638,8 @@ Proof.
       rewrite <-in_f_in_not_f in H.
       exact H.
   - (* F = f_impl F1 F2 *)
-    unfold rewriter.
+    unfold rewriter in *.
     rewrite eval_implication.
-    unfold rewriter in IH1.
-    unfold rewriter in IH2.
     pose proof (all_letters_exist_in_get_letters f1) as HOccurs1.
     pose proof (all_letters_exist_in_get_letters f2) as HOccurs2.
     set (letters1 := get_letters f1).
@@ -649,12 +650,14 @@ Proof.
     (* f1 = T, f2 = T *)
     + apply drop_antecedent.
       apply (weaken (apply_rewriter v letters2)).
+      (* Множество букв f2 --- это подмножество всех букв импликации *)
       * apply (rewriter_subset_right v f1 f2 letters2 letters HOccurs2 HOccurs).
       * exact IH2.
     (* f1 = T, f2 = F *)
     + apply conj_not_not_impl.
       apply meta_conj_intro.
       * apply (weaken (apply_rewriter v letters1)).
+        (* Множество букв f1 --- это подмножество всех букв импликации *)
          ** apply (rewriter_subset_left v f1 f2 letters1 letters HOccurs1 HOccurs).
          ** apply IH1.
       * apply (weaken (apply_rewriter v letters2)).
