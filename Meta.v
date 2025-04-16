@@ -12,6 +12,7 @@ Proof.
   intro v.
   unfold is_true.
   simpl.
+  (* доказательство перебором *)
   destruct (eval v A), (eval v B) ; reflexivity.
 Qed.
 
@@ -36,39 +37,38 @@ Qed.
 Proposition mp_tautology {atom : Set} (A B: @formula atom) : tautology A -> tautology $A -> B$ -> tautology B.
 Proof.
   intros H_A H_AB.
-  unfold tautology.
+  unfold tautology in *.
   intro v.
-  unfold tautology in H_A, H_AB.
   specialize (H_A v).
   specialize (H_AB v).
-  unfold is_true in H_A.
-  unfold is_true in H_AB.
+  unfold is_true in *.
   simpl in H_AB.
   destruct (eval v A), (eval v B).
   - reflexivity.
   - simpl in H_AB.
-    discriminate H_AB.
-  - simpl in H_A.
-    discriminate H_A.
-  - simpl in H_A.
-    discriminate H_A.
+    exact H_AB.
+  - reflexivity.
+  - exact H_A.
 Qed.
 
 Definition theorem {atom : Set} (A : @formula atom) :=
-  forall Γ : (formula -> Prop), Γ |- A.
+  empty |- A.
 
 Theorem semantic_non_contradictionness {atom : Set} (A : @formula atom) : theorem A -> tautology A.
 Proof.
   unfold theorem.
   intro H.
-  specialize H with empty.
   induction H as [A H|A B|A B C|A B|A B H1 H2 IH1 IH2].
+  (* A принадлежит множеству гипотез *)
   - unfold elem in H.
     unfold empty in H.
     contradiction H.
   - apply axiom1_tautology.
   - apply axiom2_tautology.
   - apply axiom3_tautology.
+    (* Если есть формула B, которая доказуема в пустом контексте.
+       И есть формула $B -> A$, которая доказуема в пустом контексте.
+     *)
   - apply (mp_tautology B A H2 IH2).
 Qed.
 
@@ -77,8 +77,7 @@ Lemma tautology_F_not_F_not_tautology {atom : Set} (A : @formula atom) : tautolo
 Proof.
   intro H.
   intro HNot.
-  unfold tautology in H.
-  unfold tautology in HNot.
+  unfold tautology in *.
   simpl in HNot.
   set (v := fun _ : atom => true).
   specialize (H v).
@@ -790,18 +789,9 @@ Theorem semantic_completeness {atom : Set} `{EqDec atom} (F : @formula atom) : t
 Proof.
   unfold tautology, theorem.
   intro Htauto.
-  intro Γ.
   (* Пусть letters --- список пропозициональных *)
   set (letters := get_letters_from_formula F).
   destruct letters as [letters [H1 [H2 [H3 H4]]]].
-  apply weaken with (Γ := empty).
-  {
-    unfold subset.
-    unfold elem.
-    intros A HEmpty.
-    unfold empty in HEmpty.
-    contradiction HEmpty.
-  }
 
   (* 2 *)
   induction letters as [|h tail IH].
