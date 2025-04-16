@@ -44,6 +44,23 @@ Arguments axiom2 {_} {_} _ _ _.
 Arguments axiom3 {_} {_} _ _.
 Arguments mp {_} {_} {_} (_).
 
+(* Если $\Gamma \subseteq \Delta$ и $\Gamma \vdash A$, то $\Delta \vdash A$ *)
+Theorem weaken {atom : Set} (Γ : @formula atom -> Prop) Δ A : Γ ⊆ Δ -> Γ |- A -> Δ |- A.
+Proof.
+  intros S H.
+  induction H as [A H|A B|A B C|A B|A B H1 H2 IH1 IH2].
+  (* Пусть A ∈ Γ *)
+  - unfold subset in S.
+    specialize (S A H).
+    apply hypo.
+    exact S.
+  - apply (axiom1 A B).
+  - apply (axiom2 A B C).
+  - apply (axiom3 A B).
+  - pose proof (mp B H2 IH2) as H3.
+    exact H3.
+Qed.
+
 (* Here are some basic observation about |-. *)
 (* Лемма 1.7. $\vdash_L A \supset A$ для любой формулы A. *)
 Lemma imply_self {atom : Set} (Γ : @formula atom -> Prop) (A : @formula atom) : Γ |- $A -> A$.
@@ -64,23 +81,6 @@ Proof.
   exact H5.
 Qed.
 
-(* Если $\Gamma \subseteq \Delta$ и $\Gamma \vdash A$, то $\Delta \vdash A$ *)
-Theorem weaken {atom : Set} (Γ : @formula atom -> Prop) Δ A : Γ ⊆ Δ -> Γ |- A -> Δ |- A.
-Proof.
-  intros S H.
-  induction H as [B H|?|?|?|C D K L IH1 IH2].
-  - unfold subset in S.
-    specialize (S B H).
-    apply hypo.
-    exact S.
-  - apply (axiom1 A B).
-  - apply (axiom2 A B C).
-  - apply (axiom3 A B).
-  - apply mp with (B := D).
-    + exact L.
-    + exact IH2.
-Qed.
-
 (* "extend Γ A" is the set Γ ∪ {A}. *)
 Definition extend {atom : Set} (Γ : @formula atom -> Prop) (A : formula) : formula -> Prop := fun B => or (B ∈ Γ) (A = B).
 
@@ -94,44 +94,6 @@ Proof.
   unfold elem.
   left.
   exact H.
-Qed.
-
-Theorem eq_entails {atom : Set} (Γ Γ' : @formula atom -> Prop) (A: @formula atom) :
-  (forall A, Γ A <-> Γ' A) -> (Γ |- A) -> Γ' |- A.
-Proof.
-  intros H1 H2.
-  induction H2 as [A H|?|?|?|A B HΓ HΓ' IH1 IH2].
-  - apply hypo.
-    unfold elem.
-    unfold elem in H.
-    specialize H1 with A.
-    rewrite <-H1.
-    exact H.
-  - apply axiom1.
-  - apply axiom2.
-  - apply axiom3.
-  - apply mp with (B := B).
-    + apply HΓ'.
-    + apply IH2.
-Qed.
-
-(* The cut rule is admissible. *)
-Theorem CutRule {atom : Set} (A : @formula atom) {Γ B} : Γ |- A -> extend Γ A |- B -> Γ |- B.
-Proof.
-  intros H G.
-  induction G as [B L|?|?|?|?].
-  - destruct (formula_eq A B) as [Heq|Hneq].
-    + rewrite <- Heq. exact H.
-    + apply hypo.
-      destruct L as [Hin|Heq].
-      * exact Hin.
-      * specialize (Hneq Heq). destruct Hneq.
-  - apply axiom1.
-  - apply axiom2.
-  - apply axiom3.
-  - apply (mp B).
-    + apply IHG1.
-    + apply IHG2.
 Qed.
 
 (* We need this lemma in the deduction theorem. *)
@@ -670,6 +632,44 @@ Proof.
   (* 3 *)
   pose proof (@mp _ Γ _ $(A -> B) -> A -> ~ ~ B$ H2 H1) as H3.
   exact H3.
+Qed.
+
+Theorem eq_entails {atom : Set} (Γ Γ' : @formula atom -> Prop) (A: @formula atom) :
+  (forall A, Γ A <-> Γ' A) -> (Γ |- A) -> Γ' |- A.
+Proof.
+  intros H1 H2.
+  induction H2 as [A H|?|?|?|A B HΓ HΓ' IH1 IH2].
+  - apply hypo.
+    unfold elem.
+    unfold elem in H.
+    specialize H1 with A.
+    rewrite <-H1.
+    exact H.
+  - apply axiom1.
+  - apply axiom2.
+  - apply axiom3.
+  - apply mp with (B := B).
+    + apply HΓ'.
+    + apply IH2.
+Qed.
+
+(* The cut rule is admissible. *)
+Theorem CutRule {atom : Set} (A : @formula atom) {Γ B} : Γ |- A -> extend Γ A |- B -> Γ |- B.
+Proof.
+  intros H G.
+  induction G as [B L|?|?|?|?].
+  - destruct (formula_eq A B) as [Heq|Hneq].
+    + rewrite <- Heq. exact H.
+    + apply hypo.
+      destruct L as [Hin|Heq].
+      * exact Hin.
+      * specialize (Hneq Heq). destruct Hneq.
+  - apply axiom1.
+  - apply axiom2.
+  - apply axiom3.
+  - apply (mp B).
+    + apply IHG1.
+    + apply IHG2.
 Qed.
 
 End Syntactic.
