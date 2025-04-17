@@ -34,7 +34,20 @@ Fixpoint traveler {F : @formula atom} {Gamma : @formula atom -> Prop} (T : @enta
     | axiom2 A B C => 1
     | axiom3 A B => 1
     | @mp _ _ A B H1 H2 => 1 + max (traveler H1) (traveler H2)
-    end.
+  end.
+
+Fixpoint traveler1 {F : @formula atom} {Gamma : @formula atom -> Prop} (T : @entails atom Gamma F) (accum : list string) {struct T} : list string :=
+  match T with
+  | hypo A H => "hypo"%string :: accum
+  | axiom1 A B => "axiom1"%string :: accum
+  | axiom2 A B C => "axiom2"%string :: accum
+  | axiom3 A B => "axiom3"%string :: accum
+  | @mp _ _ A B H1 H2 => let x := traveler1 H2 (")"%string :: accum) in
+                        let y := traveler1 H1 (") ("%string :: x) in
+                        "mp ("%string :: y
+  end.
+
+Compute (traveler1 (T1 A B)).
 
 Compute (traveler (T1 A B)).
 Compute (
