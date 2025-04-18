@@ -198,18 +198,22 @@ Proof.
   specialize_axiom (@axiom1 _ (Γ ,, $A -> B$ ,, $B -> C$) $B -> C$ A) H1.
   (* 2 *)
   assert (H2 : Γ,, $A -> B$,, $B -> C$ |- $A -> (B -> C)$).
-  apply mp with (B := $B -> C$).
-  hypo.
-  apply H1.
+  {
+    apply mp with (B := $B -> C$).
+    hypo.
+    apply H1.
+  }
   (* 3  *)
   specialize_axiom (@axiom2 _ (Γ ,, $A -> B$ ,, $B -> C$) A B C) H3.
   (* 4 *)
   specialize (mp $A -> B -> C$ H2 H3) as H4.
   (* 5 *)
   assert (H5 : Γ,, $A -> B$,, $B -> C$ |- $A -> C$).
-  apply mp with (B := $A -> B$).
-  hypo.
-  exact H4.
+  {
+    apply mp with (B := $A -> B$).
+    hypo.
+    exact H4.
+  }
   (* 6 *)
   exact H5.
 Qed.
@@ -220,9 +224,11 @@ Proof.
   specialize_axiom (@axiom2 _ (Γ,, $A -> (B -> C)$) A B C) H1.
   (* 2 *)
   assert (H2 : Γ,, $A -> (B -> C)$ |- $(A -> B) -> (A -> C)$).
-  apply mp with (B := $A -> (B -> C)$).
-  hypo.
-  exact H1.
+  {
+    apply mp with (B := $A -> (B -> C)$).
+    hypo.
+    exact H1.
+  }
   (* 3 *)
   specialize_axiom (@axiom1 _ (Γ,, $A -> (B -> C)$) $((A -> B) -> (A -> C))$ B) H3.
   (* 4 *)
@@ -299,7 +305,7 @@ Proof.
 Qed.
 
 (* 1.10 a *)
-Theorem neg_neg_pos {atom : Set} {Γ : @formula atom -> Prop} B : Γ |- $~~B -> B$.
+Theorem neg_neg_pos {atom : Set} (Γ : @formula atom -> Prop) B : Γ |- $~~B -> B$.
 Proof.
   apply (transitivity $~B -> ~~B$).
   - apply axiom1.
@@ -309,7 +315,7 @@ Proof.
 Qed.
 
 (* 1.10 b *)
-Theorem pos_neg_neg {atom : Set} {Γ : @formula atom -> Prop} B : Γ |- $B -> ~~B$.
+Theorem pos_neg_neg {atom : Set} (Γ : @formula atom -> Prop) B : Γ |- $B -> ~~B$.
 Proof.
   apply transitivity with (B := $~ ~ ~ B -> B$).
   - apply axiom1.
@@ -318,7 +324,7 @@ Proof.
     + exact (axiom3 B $~~B$).
 Qed.
 
-Theorem meta_neg_neg_pos {atom : Set} {Γ : @formula atom -> Prop} B : (Γ |- $~~B$) -> (Γ |- B).
+Theorem meta_neg_neg_pos {atom : Set} (Γ : @formula atom -> Prop) B : (Γ |- $~~B$) -> (Γ |- B).
 Proof.
   intro H.
   set (H1 := @neg_neg_pos atom Γ B).
@@ -327,17 +333,17 @@ Proof.
   - assumption.
 Qed.
 
-Theorem meta_pos_neg_neg {atom : Set} {Γ : @formula atom -> Prop} B : (Γ |- B) -> (Γ |- $~~B$).
+Theorem meta_pos_neg_neg {atom : Set} (Γ : @formula atom -> Prop) B : (Γ |- B) -> (Γ |- $~~B$).
 Proof.
   intro H.
-  set (H1 := @pos_neg_neg atom Γ B).
+  specialize (pos_neg_neg Γ B) as H1.
   apply mp with (B := B).
-  - assumption.
-  - assumption.
+  - exact H.
+  - exact H1.
 Qed.
 
 (* 1.10 c *)
-Theorem neg_a_impl_a_b {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $~A -> A -> B$.
+Theorem neg_a_impl_a_b {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $~A -> A -> B$.
 Proof.
   apply deduction.
   apply deduction.
@@ -353,7 +359,7 @@ Proof.
 Qed.
 
 (* 1.10 d *)
-Theorem contraposition2 {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $(~B -> ~A) -> A -> B$.
+Theorem contraposition2 {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $(~B -> ~A) -> A -> B$.
 Proof.
   apply deduction.
   apply deduction.
@@ -366,16 +372,12 @@ Proof.
       * apply axiom3.
 Qed.
 
-Theorem meta_neg_a_impl_a_b {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $~A$ -> Γ |- $A -> B$.
+Theorem meta_neg_a_impl_a_b {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $~A$ -> Γ |- $A -> B$.
 Proof.
   intro H1.
-  (* 1 *)
   specialize_axiom (@axiom1 _ Γ $~A$ $~B$) H2.
-  (* 2 *)
   specialize (mp $~A$ H1 H2) as H3.
-  (* 3 *)
   specialize (@contraposition2 _ Γ A B) as H4.
-  (* 4 *)
   specialize (mp $~B -> ~A$ H3 H4) as H5.
   exact H5.
 Qed.
@@ -395,7 +397,7 @@ Qed.
 
 (* 1.10 f *)
 (* сначала докажем вспомогательную лемму *)
-Lemma T_1_10_6' {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $A -> (A -> B) -> B$.
+Lemma T_1_10_6' {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $A -> (A -> B) -> B$.
 Proof.
   apply deduction.
   apply deduction.
@@ -403,7 +405,7 @@ Proof.
 Qed.
 
 (* теперь основную теорему *)
-Theorem T_1_10_6 {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $A -> ~B -> ~(A -> B)$.
+Theorem T_1_10_6 {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $A -> ~B -> ~(A -> B)$.
 Proof.
   apply transitivity with (B := $(A -> B) -> B$).
   - apply T_1_10_6'.
@@ -426,21 +428,18 @@ Proof.
     + apply axiom3 with (A := $~A$).
 Qed.
 
-Theorem meta_T_1_10_7 {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $A -> B$ -> Γ |- $~A -> B$ -> Γ |- B.
+Theorem meta_T_1_10_7 {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $A -> B$ -> Γ |- $~A -> B$ -> Γ |- B.
 Proof.
   intros H1 H2.
-  (* 1 *)
   specialize (T_1_10_7 Γ A B) as H3.
-  (* 2 *)
   specialize (mp $A -> B$ H1 H3) as H4.
-  (* 3 *)
   specialize (mp $~A -> B$ H2 H4) as H5.
   exact H5.
 Qed.
 
 (* Задачи *)
 (* 1 *)
-Theorem disj_intro_left {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $A -> (A \/ B)$.
+Theorem disj_intro_left {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $A -> (A \/ B)$.
 Proof.
   unfold disjunction.
   apply meta_flip.
@@ -448,7 +447,7 @@ Proof.
 Qed.
 
 (* 2 *)
-Theorem disj_intro_right {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $A -> (B \/ A)$.
+Theorem disj_intro_right {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $A -> (B \/ A)$.
 Proof.
   unfold disjunction.
   apply deduction.
@@ -457,7 +456,7 @@ Proof.
 Qed.
 
 (* 3 *)
-Theorem disj_comm {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $(A \/ B) -> (B \/ A)$.
+Theorem disj_comm {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $(A \/ B) -> (B \/ A)$.
 Proof.
    unfold disjunction.
    apply deduction.
@@ -470,54 +469,58 @@ Proof.
 Qed.
 
 (* 4 *)
-Theorem conj_elim_left {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $(A /\ B) -> A$.
+Theorem conj_elim_left {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $(A /\ B) -> A$.
 Proof.
   unfold conjunction.
   apply deduction.
   (* 1 *)
-  pose proof (@axiom3 _ (Γ,, $~ (A -> ~ B)$) $(A -> ~B)$ A) as H1.
+  specialize_axiom (@axiom3 _ (Γ,, $~ (A -> ~ B)$) $(A -> ~B)$ A) H1.
   (* 2 *)
-  pose proof (@axiom1 _ (Γ,, $~ (A -> ~ B)$) $~(A -> ~B)$ $~A$) as H2.
+  specialize_axiom (@axiom1 _ (Γ,, $~ (A -> ~ B)$) $~(A -> ~B)$ $~A$) H2.
   (* 3 *)
   assert (H3 : Γ,, $~ (A -> ~ B)$ |- $~A -> ~(A -> ~B)$).
-  apply mp with (B := $~(A -> ~B)$).
-  hypo.
-  apply H2.
+  {
+    apply mp with (B := $~(A -> ~B)$).
+    hypo.
+    apply H2.
+  }
   (* 4 *)
-  pose proof (@mp _ (Γ,, $~ (A -> ~ B)$) _ $~A -> ~(A -> ~B)$ H3 H1) as H4.
+  specialize (mp $~A -> ~(A -> ~B)$ H3 H1) as H4.
   (* 5 *)
-  pose proof (@neg_a_impl_a_b _ (Γ,, $~ (A -> ~ B)$) A $~B$) as H5.
+  specialize (neg_a_impl_a_b (Γ,, $~ (A -> ~ B)$) A $~B$) as H5.
   (* 6 *)
-  pose proof (@mp _ (Γ,, $~ (A -> ~ B)$) _ $~ A -> A -> ~ B$ H5 H4) as H6.
+  specialize (mp $~ A -> A -> ~ B$ H5 H4) as H6.
   exact H6.
 Qed.
 
 (* 5 *)
-Theorem conj_elim_right {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $(A /\ B) -> B$.
+Theorem conj_elim_right {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $(A /\ B) -> B$.
 Proof.
   unfold conjunction.
   apply deduction.
   (* 1 *)
-  pose proof (@axiom3 _ (Γ,, $~(A -> ~B)$) $A -> ~B$ B) as H1.
+  specialize_axiom (@axiom3 _ (Γ,, $~(A -> ~B)$) $A -> ~B$ B) H1.
   (* 2 *)
-  pose proof (@axiom1 _ (Γ,, $~(A -> ~B)$) $~(A -> ~B)$ $~B$) as H2.
+  specialize_axiom (@axiom1 _ (Γ,, $~(A -> ~B)$) $~(A -> ~B)$ $~B$) H2.
   (* 3 *)
   assert (H3 : Γ,, $~(A -> ~B)$ |- $~B -> ~(A -> ~B)$).
-  apply mp with (B := $~(A -> ~B)$).
-  hypo.
-  apply H2.
+  {
+    apply mp with (B := $~(A -> ~B)$).
+    - hypo.
+    - apply H2.
+  }
   (* 4 *)
-  pose proof (@mp _ (Γ,, $~(A -> ~B)$) _ $~B -> ~(A -> ~B)$ H3 H1) as H4.
+  specialize (mp $~B -> ~(A -> ~B)$ H3 H1) as H4.
   (* 5 *)
-  pose proof (@axiom1 _ (Γ,, $~(A -> ~B)$) $~B$ A) as H5.
+  specialize_axiom (@axiom1 _ (Γ,, $~(A -> ~B)$) $~B$ A) H5.
   (* 6 *)
-  pose proof (@mp _ (Γ,, $~(A -> ~B)$) _ $~B -> A -> ~B$ H5 H4) as H6.
+  specialize (mp $~B -> A -> ~B$ H5 H4) as H6.
   exact H6.
 Qed.
 
 (* 6 *)
 (* Простая конструктивная дилемма *)
-Theorem T_48_6 {atom : Set} {Γ : @formula atom -> Prop} A B C : Γ |- $(A -> C) -> (B -> C) -> (A \/ B) -> C$.
+Theorem T_48_6 {atom : Set} (Γ : @formula atom -> Prop) A B C : Γ |- $(A -> C) -> (B -> C) -> (A \/ B) -> C$.
 Proof.
   unfold disjunction.
   apply deduction.
@@ -532,7 +535,7 @@ Proof.
     + apply T_1_10_7.
 Qed.
 
-Theorem T_48_7 {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $((A -> B) -> A) -> A$.
+Theorem T_48_7 {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $((A -> B) -> A) -> A$.
 Proof.
   apply deduction.
   (* 1 *)
@@ -568,7 +571,7 @@ Proof.
     + apply T_1_10_6.
 Qed.
 
-Theorem meta_conj_intro {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- A -> Γ |- B -> Γ |- $A /\ B$.
+Theorem meta_conj_intro {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- A -> Γ |- B -> Γ |- $A /\ B$.
 Proof.
   intros H1 H2.
   (* 1 *)
@@ -580,7 +583,7 @@ Proof.
   exact H5.
 Qed.
 
-Theorem not_impl_conj_not {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $~(A -> B)$ -> Γ |- $A /\ ~B$.
+Theorem not_impl_conj_not {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $~(A -> B)$ -> Γ |- $A /\ ~B$.
 Proof.
   intro H.
   unfold conjunction.
@@ -601,7 +604,7 @@ Proof.
   exact H3.
 Qed.
 
-Theorem conj_not_not_impl {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $A /\ ~B$ -> Γ |- $~(A -> B)$.
+Theorem conj_not_not_impl {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $A /\ ~B$ -> Γ |- $~(A -> B)$.
 Proof.
   unfold conjunction.
   intro H.
