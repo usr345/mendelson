@@ -36,6 +36,22 @@ Fixpoint traveler {F : @formula atom} {Gamma : @formula atom -> Prop} (T : @enta
     | @mp _ _ A B H1 H2 => 1 + max (traveler H1) (traveler H2)
   end.
 
+Fixpoint stringify (F : @formula string) {struct F} : string :=
+  match F with
+  | f_atom A => A
+  | f_not F' => "\neg " ++ (stringify F')
+  | f_imp A B => (stringify A) ++ " \supset " ++ (stringify B)
+  end.
+
+Definition F1 : @formula string := f_atom "A"%string.
+Compute (stringify F1).
+
+Definition F2 : @formula string := (f_not (f_atom "A"%string)).
+Compute (stringify F2).
+
+Definition F3 : @formula string := (f_imp F1 F2).
+Compute (stringify F3).
+
 Fixpoint traveler1 {F : @formula atom} {Gamma : @formula atom -> Prop} (T : @entails atom Gamma F) (accum : list string) {struct T} : list string :=
   match T with
   | hypo A H => "hypo"%string :: accum

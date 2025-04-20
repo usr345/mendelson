@@ -1,4 +1,5 @@
 Require Import Classical.
+From Mendelson Require Import Sets.
 From Mendelson Require Import Formula.
 
 Module Semantic.

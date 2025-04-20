@@ -1,3 +1,4 @@
+From Mendelson Require Import Sets.
 From Mendelson Require Import Formula.
 From Mendelson Require Import Syntactic.
 From Mendelson Require Import Semantic.
@@ -52,7 +53,7 @@ Proof.
 Qed.
 
 Definition theorem {atom : Set} (A : @formula atom) :=
-  empty |- A.
+  (@empty (@formula atom)) |- A.
 
 Theorem semantic_non_contradictionness {atom : Set} (A : @formula atom) : theorem A -> tautology A.
 Proof.

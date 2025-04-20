@@ -10,8 +10,8 @@ Inductive formula {atom : Set} : Type :=
 | f_imp  : formula -> formula -> formula.
 
 Declare Scope formula_scope.
-Open Scope formula_scope.
 Declare Custom Entry formula_view.
+Open Scope formula_scope.
 
 (* Заполняем нотации с учетом приоритета *)
 Notation "x" := x (x ident, in custom formula_view at level 0).
@@ -41,26 +41,5 @@ Proof.
   decide equality.
   now apply atom_eq.
 Qed.
-
-(* Instead of working with lists of assumptions we shall work with
-   sets of assumptions. A set of formulas can be represented by its
-   characteristic map formula -> Prop. *)
-
-(* Element-hood relation between a formula and a set of formulas. *)
-Definition elem {atom : Set} (A : formula) (Γ : @formula atom -> Prop) : Prop := Γ A.
-Infix "∈" := elem (at level 77) : formula_scope.
-
-(* The empty context. *)
-Definition empty {atom : Set} : @formula atom -> Prop := fun _ => False.
-
-(* The union of two sets of formulas. *)
-Definition union {atom : Set} (Γ Δ : @formula atom -> Prop) (A : formula) : Prop := A ∈ Γ \/ A ∈ Δ.
-Infix "∪" := union (at level 78, left associativity) : formula_scope.
-
-(* The subset relation between sets of formulas. *)
-Definition subset {atom : Set} (Γ Δ : @formula atom -> Prop) : Prop :=
-  forall A, A ∈ Γ -> A ∈ Δ.
-Infix "⊆" := subset (at level 79) : formula_scope.
-
 End Formula.
 Export Formula.

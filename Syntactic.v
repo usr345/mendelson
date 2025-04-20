@@ -1,4 +1,5 @@
 Require Import Classical.
+From Mendelson Require Import Sets.
 From Mendelson Require Import Formula.
 
 Module Syntactic.
@@ -61,6 +62,12 @@ Proof.
     exact H3.
 Qed.
 
+(* Now we can define a tactic that does the above steps.
+   Note the difference between the tactic "hypo" and the constructor "hypo"!
+   If you type "hypo" in tactic mode, it will use the tactic defined below,
+   but if you type "apply hypo" it will use the constructor hypo. *)
+Ltac hypo := (apply hypo ; cbv in * ; auto 6).
+
 Ltac specialize_axiom A H :=
   pose proof A as H;
   try match type of H with
@@ -85,11 +92,6 @@ Proof.
   specialize (mp $A -> (A -> A)$ H4 H3) as H5.
   exact H5.
 Qed.
-
-(* "extend Γ A" is the set Γ ∪ {A}. *)
-Definition extend {atom : Set} (Γ : @formula atom -> Prop) (A : formula) : formula -> Prop := fun B => or (B ∈ Γ) (A = B).
-
-Notation "Γ ,, A" := (extend Γ A) (at level 32, left associativity).
 
 (* Множество Gamma является подмножеством расширения (Gamma,, A) *)
 Lemma subset_extend {atom : Set} {Γ : @formula atom -> Prop} {A} : subset Γ (extend Γ A).
@@ -176,12 +178,6 @@ Proof.
       specialize (mp $A -> C$ IH1 H4) as H5.
       exact H5.
 Qed.
-
-(* Now we can define a tactic that does the above steps.
-   Note the difference between the tactic "hypo" and the constructor "hypo"!
-   If you type "hypo" in tactic mode, it will use the tactic defined below,
-   but if you type "apply hypo" it will use the constructor hypo. *)
-Ltac hypo := (apply hypo ; cbv in * ; auto 6).
 
 (* Упражнения *)
 Lemma T1_7ex1 {atom : Set} (Γ : @formula atom -> Prop) A : Γ |- $(~A -> A) -> A$.
@@ -428,7 +424,7 @@ Proof.
     + apply axiom3 with (A := $~A$).
 Qed.
 
-Theorem meta_T_1_10_7 {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $A -> B$ -> Γ |- $~A -> B$ -> Γ |- B.
+Theorem meta_T_1_10_7 {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $A -> B$ -> Γ |- $~A -> B$ -> Γ |- B.
 Proof.
   intros H1 H2.
   specialize (T_1_10_7 Γ A B) as H3.
