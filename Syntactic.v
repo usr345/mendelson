@@ -1,9 +1,14 @@
 Require Import Classical.
 From Mendelson Require Import Sets.
+From Mendelson Require Import FSignature.
 From Mendelson Require Import Formula.
 
 Module Syntactic.
-(* We now come to main definitions. We first define a type
+  Module F1:= Make_Formula(Formula1).
+  Import Formula1.
+  Import F1.
+
+  (* We now come to main definitions. We first define a type
    Γ |- A whose elements are derivations of formula A
    from assumptions Γ. These are presented as derivation trees,
    rather than more traditional lists.

@@ -1,45 +1,36 @@
+From Mendelson Require Import FSignature.
+
+Module Formula1 <: TFormula.
+  Inductive formula {atom : Type} : Type :=
+  | f_atom : atom -> formula
+  | f_not  : formula -> formula
+  | f_imp  : formula -> formula -> formula.
+
+  Definition t {atom : Type} := @formula atom.
+  Definition implication {atom : Type} := @f_imp atom.
+  Definition negation {atom : Type} := @f_not atom.
+  Definition conjunction {atom : Type} (A B: @formula atom) : formula := negation (implication A (negation B)).
+  Definition disjunction {atom : Type} (A B: @formula atom) : formula := implication (negation A) B.
+  Definition equivalence {atom : Type} (A B: @formula atom) : formula := conjunction (implication A B) (implication B A).
+End Formula1.
+
 Module Formula.
 
-(* We assume atomic propositions form a set with decidable equality. *)
-Parameter atom_eq : forall {atom : Set} (a b : atom), {a = b} + {a <> b}.
+  Module F1:= Make_Formula(Formula1).
+  Import Formula1.
+  Import F1.
+  (* We assume atomic propositions form a set with decidable equality. *)
+  Parameter atom_eq : forall {atom : Set} (a b : atom), {a = b} + {a <> b}.
 
-(* Propositional formulas *)
-Inductive formula {atom : Set} : Type :=
-| f_atom : atom -> formula
-| f_not  : formula -> formula
-| f_imp  : formula -> formula -> formula.
+  (* Equality of formulas is decidable. *)
+  Lemma formula_eq {atom : Set} (A B : @formula atom) : {A = B} + {A <> B}.
+  Proof.
+    decide equality.
+    now apply atom_eq.
+  Qed.
 
-Declare Scope formula_scope.
-Declare Custom Entry formula_view.
-Open Scope formula_scope.
+  Definition f_axiom1 {atom : Set} (A B : @formula atom) : formula :=
+  $A -> (B -> A)$.
 
-(* Заполняем нотации с учетом приоритета *)
-Notation "x" := x (x ident, in custom formula_view at level 0).
-Notation "( p )" := p (p custom formula_view at level 5, in custom formula_view at level 0).
-Notation "~ p" := (f_not p) (p custom formula_view at level 1, in custom formula_view at level 1).
-
-(*
-Импликация слабее конъюнкции и дизъюнкции, но она нужна для их определений
-поэтому нотацию для неё вводим раньше.
- *)
-Notation "p -> q" := (f_imp p q) (q custom formula_view at level 4, in custom formula_view at level 4, right associativity).
-
-Notation "'$' p '$'" := p (format "'$' p '$'", p custom formula_view at level 5, at level 0).
-
-Definition conjunction {atom : Set} (A B: @formula atom) : formula := $~(A -> ~B)$.
-Notation "A /\ B" := (conjunction A B) (B custom formula_view at level 2, in custom formula_view at level 2, left associativity) : formula_scope.
-
-Definition disjunction {atom : Set} (A B: @formula atom) : formula := $~A -> B$.
-Notation "A \/ B" := (disjunction A B) (B custom formula_view at level 3, in custom formula_view at level 3, left associativity) : formula_scope.
-
-Definition equivalence {atom : Set} (A B: @formula atom) : formula := $(A -> B) /\ (B -> A)$.
-Notation "A <-> B" := (equivalence A B) (B custom formula_view at level 5, in custom formula_view at level 5, left associativity) : formula_scope.
-
-(* Equality of formulas is decidable. *)
-Lemma formula_eq {atom : Set} (A B : @formula atom) : {A = B} + {A <> B}.
-Proof.
-  decide equality.
-  now apply atom_eq.
-Qed.
 End Formula.
 Export Formula.

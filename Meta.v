@@ -1,4 +1,5 @@
 From Mendelson Require Import Sets.
+From Mendelson Require Import FSignature.
 From Mendelson Require Import Formula.
 From Mendelson Require Import Syntactic.
 From Mendelson Require Import Semantic.
@@ -7,6 +8,11 @@ Require Import Coq.Lists.List.
 Import ListNotations.
 
 Module Meta.
+
+  Module F1:= Make_Formula(Formula1).
+  Import Formula1.
+  Import F1.
+
 Theorem axiom1_tautology {atom : Set} (A B: @formula atom) : tautology (f_axiom1 A B).
 Proof.
   unfold f_axiom1, tautology.
