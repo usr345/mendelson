@@ -93,16 +93,6 @@ Proof.
   exact H5.
 Qed.
 
-(* Множество Gamma является подмножеством расширения (Gamma,, A) *)
-Lemma subset_extend {atom : Set} {Γ : @formula atom -> Prop} {A} : subset Γ (extend Γ A).
-Proof.
-  unfold subset, extend.
-  intros A0 H.
-  unfold elem.
-  left.
-  exact H.
-Qed.
-
 (* We need this lemma in the deduction theorem. *)
 Lemma drop_antecedent {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- B -> Γ |- $A -> B$.
 Proof.
@@ -135,7 +125,6 @@ Proof.
       assert (H2: Γ |- B).
       {
         apply hypo.
-        unfold extend in H.
         unfold elem in H.
         destruct H as [Hin|Heq].
         * unfold elem.
@@ -166,17 +155,17 @@ Proof.
     *)
 
     (* По аксиоме 2: $(A -> (C -> B)) -> ((A -> C) -> (A -> B))$ *)
-    + specialize_axiom (@axiom2 _ Γ A C B) H3.
+    specialize_axiom (@axiom2 _ Γ A C B) H3.
 
-      (* По MP из IH2 : Γ |- $A -> C -> B$ *)
-      (* и H3 : Γ |- $(A -> C -> B) -> (A -> C) -> A -> B$ *)
-      specialize (mp $A -> C -> B$ IH2 H3) as H4.
+    (* По MP из IH2 : Γ |- $A -> C -> B$ *)
+    (* и H3 : Γ |- $(A -> C -> B) -> (A -> C) -> A -> B$ *)
+    specialize (mp $A -> C -> B$ IH2 H3) as H4.
 
-      (* MP *)
-      (* IH1 : Γ |- $A -> C$ *)
-      (*  H4 : Γ |- $(A -> C) -> A -> B$ *)
-      specialize (mp $A -> C$ IH1 H4) as H5.
-      exact H5.
+    (* MP *)
+    (* IH1 : Γ |- $A -> C$ *)
+    (*  H4 : Γ |- $(A -> C) -> A -> B$ *)
+    specialize (mp $A -> C$ IH1 H4) as H5.
+    exact H5.
 Qed.
 
 (* Упражнения *)

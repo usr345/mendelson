@@ -105,6 +105,18 @@ Definition logically_implies {atom : Set} (A : formula) (B : formula) : Prop :=
 Definition logically_equivalent {atom : Set} (A : formula) (B : formula) : Prop :=
   forall v : atom -> bool, (eval v A) = (eval v B).
 
+Proposition noi_tautology_exists_false {atom : Set} (A: @formula atom) : ~(tautology A) -> exists v : atom -> bool, (eval v A) = false.
+Proof.
+  intro H.
+  unfold tautology in H.
+  apply not_all_ex_not in H.
+  destruct H as [v H].
+  unfold is_true in H.
+  exists v.
+  rewrite Bool.not_true_iff_false in H.
+  exact H.
+Qed.
+
 Proposition P1_1 {atom : Set} (A B: @formula atom) : logically_implies A B <-> tautology $A -> B$.
 Proof.
   unfold logically_implies, tautology.

@@ -30,5 +30,15 @@ Definition extend {T : Type} (Γ : T -> Prop) (A : T) : T -> Prop := fun B : T =
 
 Notation "Γ ,, A" := (extend Γ A) (at level 32, left associativity).
 
+(* Множество Gamma является подмножеством (Gamma,, A) *)
+Lemma subset_extend {T : Type} {Γ : T -> Prop} {A : T} : subset Γ (extend Γ A).
+Proof.
+  unfold subset, extend.
+  intros A0 H.
+  unfold elem.
+  left.
+  exact H.
+Qed.
+
 End MSet.
 Export MSet.
