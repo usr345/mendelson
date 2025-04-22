@@ -40,7 +40,7 @@ Inductive entails {atom : Set} (Γ : @formula atom -> Prop) : @formula atom -> T
   | axiom1 : forall A B , Γ |- f_axiom1 A B
   | axiom2 : forall A B C, Γ |- f_axiom2 A B C
   | axiom3 : forall A B, Γ |- f_axiom3 A B
-  | mp : forall A B, Γ |- B -> Γ |- $B -> A$ -> Γ |- A (* modus ponens *)
+  | mp : forall A B, Γ |- $A -> B$ -> Γ |- A -> Γ |- B (* modus ponens *)
 where "Γ |- A" := (entails Γ A).
 
 (* It is convenient to make some parameters implicit. *)
@@ -48,7 +48,7 @@ Arguments hypo {_} {_} _.
 Arguments axiom1 {_} {_} _ _.
 Arguments axiom2 {_} {_} _ _ _.
 Arguments axiom3 {_} {_} _ _.
-Arguments mp {_} {_} {_} (_).
+Arguments mp {_} {_} {_} {_} (_) (_).
 
 (* Если $\Gamma \subseteq \Delta$ и $\Gamma \vdash A$, то $\Delta \vdash A$ *)
 Theorem weaken {atom : Set} (Γ : @formula atom -> Prop) Δ A : Γ ⊆ Δ -> Γ |- A -> Δ |- A.
@@ -63,7 +63,7 @@ Proof.
   - apply (axiom1 A B).
   - apply (axiom2 A B C).
   - apply (axiom3 A B).
-  - pose proof (mp B H2 IH2) as H3.
+  - pose proof (mp H2 IH2) as H3.
     exact H3.
 Qed.
 
@@ -90,11 +90,11 @@ Proof.
   (* (2) $A \supset ((A \supset A) \supset A)$ --- схема аксиом A1 *)
   specialize_axiom (@axiom1 _ Γ A $A -> A$) H2.
   (* (3) $((A \supset (A \supset A)) \supset (A \supset A))$ --- из (1) и (2) по MP *)
-  specialize (mp $A -> (A -> A) -> A$ H2 H1) as H3.
+  specialize (mp H1 H2) as H3.
   (* (4) $A \supset (A \supset A)$ --- схема аксиом A1 *)
   specialize_axiom (@axiom1 _ Γ A A) H4.
   (* (5) $A \supset A$ --- из (3) и (4) по MP *)
-  specialize (mp $A -> (A -> A)$ H4 H3) as H5.
+  specialize (mp H3 H4) as H5.
   exact H5.
 Qed.
 
@@ -105,7 +105,7 @@ Proof.
   (* 1. $B \supset (A \supset B)$ --- схема аксиом A1 *)
   specialize_axiom (@axiom1 _ Γ B A) H1.
   (* 2. $A \supset B$ --- из H и H1 по MP *)
-  specialize (mp B H H1) as H2.
+  specialize (mp H1 H) as H2.
   exact H2.
 Qed.
 
@@ -124,8 +124,7 @@ Proof.
       apply imply_self.
     (* Если B != A, по аксиоме 1 получаем формулу *)
     (* $B \supset (A \supset B)$ *)
-    + pose proof (@axiom1 _ Γ B A) as H1.
-      unfold f_axiom1 in H1.
+    + specialize_axiom (@axiom1 _ Γ B A) H1.
       (* Поскольку B != A, B содержится в Γ *)
       assert (H2: Γ |- B).
       {
@@ -140,7 +139,7 @@ Proof.
 
       (* По MP из H1 : Γ |- $B -> (A -> B)$ *)
       (* и H2 : Γ |- B получаем Γ |- $A -> B$ *)
-      specialize (mp B H2 H1) as H3.
+      specialize (mp H1 H2) as H3.
       exact H3.
   - (* Пусть B является аксиомой *)
     apply drop_antecedent.
@@ -150,26 +149,27 @@ Proof.
   - apply drop_antecedent.
     apply axiom3.
   - (* Modus Ponens:
-       Пусть B получена по MP из 2-х формул C и $C -> B$ по Modus Ponens, и пусть они доказуемы в контексте (Γ,, A):
-       H1 : Γ,, A |- C
-       H2 : Γ,, A |- $C -> B$
+       Пусть C получена по MP из 2-х формул B и $B -> C$ по Modus Ponens, и пусть они доказуемы в контексте (Γ,, A):
+       H1 : Γ,, A |- $B -> C$
+       H2 : Γ,, A |- B
 
        Пусть истинны индуктивные гипотезы:
-       IH1 : Γ |- $A -> С$
-       IH2 : Γ |- $A -> С -> B$
+       IH1 : Γ |- $A -> B -> C$
+       IH2 : Γ |- $A -> B$
     *)
 
-    (* По аксиоме 2: $(A -> (C -> B)) -> ((A -> C) -> (A -> B))$ *)
-    specialize_axiom (@axiom2 _ Γ A C B) H3.
-
-    (* По MP из IH2 : Γ |- $A -> C -> B$ *)
-    (* и H3 : Γ |- $(A -> C -> B) -> (A -> C) -> A -> B$ *)
-    specialize (mp $A -> C -> B$ IH2 H3) as H4.
+    (* По аксиоме 2: $(A -> (B -> C)) -> ((A -> B) -> (A -> C))$ *)
+    specialize_axiom (@axiom2 _ Γ A B C) H3.
 
     (* MP *)
-    (* IH1 : Γ |- $A -> C$ *)
-    (*  H4 : Γ |- $(A -> C) -> A -> B$ *)
-    specialize (mp $A -> C$ IH1 H4) as H5.
+    (* IH1 : Γ |- $A -> B -> C$ *)
+    (*  H3 : Γ |- $(A -> B -> C) -> (A -> B) -> A -> C$ *)
+    specialize (mp H3 IH1) as H4.
+
+    (* MP *)
+    (* IH2 : Γ |- $A -> B$ *)
+    (*  H4 : Γ |- $(A -> B) -> A -> C$ *)
+    specialize (mp H4 IH2) as H5.
     exact H5.
 Qed.
 
@@ -178,7 +178,7 @@ Lemma T1_7ex1 {atom : Set} (Γ : @formula atom -> Prop) A : Γ |- $(~A -> A) -> 
 Proof.
   specialize_axiom (@axiom3 _ Γ A A) H1.
   pose proof (imply_self Γ $~A$) as H2.
-  specialize (mp $~A -> ~A$ H2 H1) as H3.
+  specialize (mp H1 H2) as H3.
   exact H3.
 Qed.
 
@@ -189,20 +189,20 @@ Proof.
   (* 2 *)
   assert (H2 : Γ,, $A -> B$,, $B -> C$ |- $A -> (B -> C)$).
   {
-    apply mp with (B := $B -> C$).
-    hypo.
-    apply H1.
+    apply @mp with (A := $B -> C$).
+    - apply H1.
+    - hypo.
   }
   (* 3  *)
   specialize_axiom (@axiom2 _ (Γ ,, $A -> B$ ,, $B -> C$) A B C) H3.
   (* 4 *)
-  specialize (mp $A -> B -> C$ H2 H3) as H4.
+  specialize (mp H3 H2) as H4.
   (* 5 *)
   assert (H5 : Γ,, $A -> B$,, $B -> C$ |- $A -> C$).
   {
-    apply mp with (B := $A -> B$).
-    hypo.
+    apply @mp with (A := $A -> B$).
     exact H4.
+    hypo.
   }
   (* 6 *)
   exact H5.
@@ -215,22 +215,22 @@ Proof.
   (* 2 *)
   assert (H2 : Γ,, $A -> (B -> C)$ |- $(A -> B) -> (A -> C)$).
   {
-    apply mp with (B := $A -> (B -> C)$).
-    hypo.
+    apply @mp with (A := $A -> (B -> C)$).
     exact H1.
+    hypo.
   }
   (* 3 *)
   specialize_axiom (@axiom1 _ (Γ,, $A -> (B -> C)$) $((A -> B) -> (A -> C))$ B) H3.
   (* 4 *)
-  specialize (mp $(A -> B) -> (A -> C)$ H2 H3) as H4.
+  specialize (mp H3 H2) as H4.
   (* 5 *)
   specialize_axiom (@axiom2 _ (Γ,, $A -> (B -> C)$) B $A -> B$ $A -> C$) H5.
   (* 6 *)
-  specialize (mp $B -> (A -> B) -> A -> C$ H4 H5) as H6.
+  specialize (mp H5 H4) as H6.
   (* 7 *)
   specialize_axiom (@axiom1 _ (Γ,, $A -> B -> C$) B A) H7.
   (* 8 *)
-  specialize (mp $B -> A -> B$ H7 H6) as H8.
+  specialize (mp H6 H7) as H8.
   exact H8.
 Qed.
 
@@ -238,12 +238,12 @@ Corollary transitivity {atom : Set} {Γ : @formula atom -> Prop} {A} B {C} :
   Γ |- $A -> B$ -> Γ |- $B -> C$ -> Γ |- $A -> C$.
 Proof.
   intros H1 H2.
-  apply (mp $A -> B$).
-  - exact H1.
-  - apply (mp $A -> B -> C$).
+  apply @mp with (A := $A -> B$).
+  - apply @mp with (A := $A -> B -> C$).
+    + apply axiom2.
     + apply drop_antecedent.
       exact H2.
-    + apply axiom2.
+  - exact H1.
 Qed.
 
 (* теорема, обратная теореме дедукции *)
@@ -251,12 +251,12 @@ Lemma impl_intro {atom : Set} {Γ : @formula atom -> Prop} {A B} :
   Γ |- $A -> B$ -> extend Γ A |- B.
 Proof.
   intro H.
-  apply (mp A).
-  - hypo.
+  apply @mp with (A := A).
   (* weaken Γ Δ A : Γ ⊆ Δ -> Γ |- A -> Δ |- A. *)
   - apply (weaken Γ).
     + apply subset_extend.
     + exact H.
+  - hypo.
 Qed.
 
 Corollary flip {atom : Set} {Γ : @formula atom -> Prop} {A} B {C} :
@@ -264,12 +264,12 @@ Corollary flip {atom : Set} {Γ : @formula atom -> Prop} {A} B {C} :
 Proof.
   intros H1 H2.
   apply deduction.
-  apply (mp B).
+  apply @mp with (A := B).
+  - apply impl_intro.
+    exact H1.
   - apply (weaken Γ).
     + apply subset_extend.
     + exact H2.
-  - apply impl_intro.
-    exact H1.
 Qed.
 
 Corollary meta_flip {atom : Set} {Γ : @formula atom -> Prop} {A} B {C} :
@@ -279,19 +279,19 @@ Proof.
   apply deduction.
   apply deduction.
   assert (H1 : Γ,, B,, A |- $B -> C$).
-  apply mp with (B := A).
-  hypo.
-  apply (weaken Γ).
-  - unfold subset.
-    intros.
-    unfold extend.
-    unfold elem.
-    unfold elem in H0.
-    auto.
-  - exact H.
-  - apply mp with (B := B).
-    + hypo.
+  apply @mp with (A := A).
+  - apply (weaken Γ).
+    + unfold subset.
+      intros.
+      unfold extend.
+      unfold elem in *.
+      left.
+      auto.
+    + exact H.
+  - hypo.
+  - apply @mp with (A := B).
     + exact H1.
+    + hypo.
 Qed.
 
 (* 1.10 a *)
@@ -309,27 +309,26 @@ Theorem pos_neg_neg {atom : Set} (Γ : @formula atom -> Prop) B : Γ |- $B -> ~~
 Proof.
   apply transitivity with (B := $~ ~ ~ B -> B$).
   - apply axiom1.
-  - apply mp with (B := $~ ~ ~ B -> ~ B$).
-    + apply neg_neg_pos with (B := $~B$).
+  - apply @mp with (A := $~ ~ ~ B -> ~ B$).
     + exact (axiom3 B $~~B$).
+    + apply neg_neg_pos with (B := $~B$).
 Qed.
 
 Theorem meta_neg_neg_pos {atom : Set} (Γ : @formula atom -> Prop) B : (Γ |- $~~B$) -> (Γ |- B).
 Proof.
   intro H.
-  set (H1 := @neg_neg_pos atom Γ B).
-  apply mp with (B := $~~ B$).
-  - assumption.
-  - assumption.
+  apply @mp with (A := $~~ B$).
+  - apply neg_neg_pos.
+  - exact H.
 Qed.
 
 Theorem meta_pos_neg_neg {atom : Set} (Γ : @formula atom -> Prop) B : (Γ |- B) -> (Γ |- $~~B$).
 Proof.
   intro H.
   specialize (pos_neg_neg Γ B) as H1.
-  apply mp with (B := B).
-  - exact H.
+  apply @mp with (A := B).
   - exact H1.
+  - exact H.
 Qed.
 
 (* 1.10 c *)
@@ -337,15 +336,15 @@ Theorem neg_a_impl_a_b {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $~A
 Proof.
   apply deduction.
   apply deduction.
-  apply mp with (B := $~B -> A$).
-  - apply mp with (B := A).
-    + hypo.
-    + apply axiom1.
-  - apply mp with (B := $~B -> ~A$).
-    + apply mp with (B := $~A$).
-      * hypo.
-      * apply axiom1.
+  apply @mp with (A := $~B -> A$).
+  - apply @mp with (A := $~B -> ~A$).
     + apply axiom3.
+    + apply @mp with (A := $~A$).
+      * apply axiom1.
+      * hypo.
+  - apply @mp with (A := A).
+    + apply axiom1.
+    + hypo.
 Qed.
 
 (* 1.10 d *)
@@ -353,22 +352,22 @@ Theorem contraposition2 {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $(
 Proof.
   apply deduction.
   apply deduction.
-  apply mp with (B := A).
-  - hypo.
+  apply @mp with (A := A).
   - apply transitivity with (B := $~B -> A$) (C := B).
     + apply axiom1.
-    + apply mp with (B := $~B -> ~A$).
-      * hypo.
+    + apply @mp with (A := $~B -> ~A$).
       * apply axiom3.
+      * hypo.
+  - hypo.
 Qed.
 
 Theorem meta_neg_a_impl_a_b {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $~A$ -> Γ |- $A -> B$.
 Proof.
   intro H1.
   specialize_axiom (@axiom1 _ Γ $~A$ $~B$) H2.
-  specialize (mp $~A$ H1 H2) as H3.
+  specialize (mp H2 H1) as H3.
   specialize (@contraposition2 _ Γ A B) as H4.
-  specialize (mp $~B -> ~A$ H3 H4) as H5.
+  specialize (mp H4 H3) as H5.
   exact H5.
 Qed.
 
@@ -376,13 +375,13 @@ Qed.
 Theorem contraposition {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $(A -> B) -> ~B -> ~ A$.
 Proof.
   apply deduction.
-  apply mp with (B := $~~A -> ~~B$).
+  apply @mp with (A := $~~A -> ~~B$).
+  - apply contraposition2.
   - apply @transitivity with (A := $~~A$) (B := B) (C := $~~B$).
     + apply transitivity with (B := A).
       * apply neg_neg_pos.
       * hypo.
     + apply pos_neg_neg.
-  - apply contraposition2.
 Qed.
 
 (* 1.10 f *)
@@ -391,7 +390,7 @@ Lemma T_1_10_6' {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $A -> (A -
 Proof.
   apply deduction.
   apply deduction.
-  apply mp with (B := A) ; hypo.
+  apply @mp with (A := A) ; hypo.
 Qed.
 
 (* теперь основную теорему *)
@@ -407,23 +406,23 @@ Theorem T_1_10_7 {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $(A -> B)
 Proof.
   apply deduction.
   apply deduction.
-  apply mp with (B := $~B -> ~A$).
-  - apply mp with (B := $A -> B$).
-    + hypo.
-    + apply contraposition.
-  - apply mp with (B := $~B -> ~~A$).
-    + apply mp with (B := $~A -> B$).
-      * hypo.
-      * apply contraposition with (A := $~A$).
+  apply @mp with (A := $~B -> ~A$).
+  - apply @mp with (A := $~B -> ~~A$).
     + apply axiom3 with (A := $~A$).
+    + apply @mp with (A := $~A -> B$).
+      * apply contraposition with (A := $~A$).
+      * hypo.
+  - apply @mp with (A := $A -> B$).
+    + apply contraposition.
+    + hypo.
 Qed.
 
 Theorem meta_T_1_10_7 {atom : Set} {Γ : @formula atom -> Prop} A B : Γ |- $A -> B$ -> Γ |- $~A -> B$ -> Γ |- B.
 Proof.
   intros H1 H2.
   specialize (T_1_10_7 Γ A B) as H3.
-  specialize (mp $A -> B$ H1 H3) as H4.
-  specialize (mp $~A -> B$ H2 H4) as H5.
+  specialize (mp H3 H1) as H4.
+  specialize (mp H4 H2) as H5.
   exact H5.
 Qed.
 
@@ -452,9 +451,9 @@ Proof.
    apply deduction.
    (* (~B -> ~~A) -> (~~A -> A) -> (~B -> A) *)
    apply transitivity with (B := $~~A$).
-   - apply mp with (B := $~A -> B$).
-     + hypo.
+   - apply @mp with (A := $~A -> B$).
      + apply contraposition with (A := $~A$).
+     + hypo.
    - apply neg_neg_pos.
 Qed.
 
@@ -470,16 +469,16 @@ Proof.
   (* 3 *)
   assert (H3 : Γ,, $~ (A -> ~ B)$ |- $~A -> ~(A -> ~B)$).
   {
-    apply mp with (B := $~(A -> ~B)$).
-    hypo.
-    apply H2.
+    apply @mp with (A := $~(A -> ~B)$).
+    - apply H2.
+    - hypo.
   }
   (* 4 *)
-  specialize (mp $~A -> ~(A -> ~B)$ H3 H1) as H4.
+  specialize (mp H1 H3) as H4.
   (* 5 *)
   specialize (neg_a_impl_a_b (Γ,, $~ (A -> ~ B)$) A $~B$) as H5.
   (* 6 *)
-  specialize (mp $~ A -> A -> ~ B$ H5 H4) as H6.
+  specialize (mp H4 H5) as H6.
   exact H6.
 Qed.
 
@@ -495,16 +494,16 @@ Proof.
   (* 3 *)
   assert (H3 : Γ,, $~(A -> ~B)$ |- $~B -> ~(A -> ~B)$).
   {
-    apply mp with (B := $~(A -> ~B)$).
-    - hypo.
+    apply @mp with (A := $~(A -> ~B)$).
     - apply H2.
+    - hypo.
   }
   (* 4 *)
-  specialize (mp $~B -> ~(A -> ~B)$ H3 H1) as H4.
+  specialize (mp H1 H3) as H4.
   (* 5 *)
   specialize_axiom (@axiom1 _ (Γ,, $~(A -> ~B)$) $~B$ A) H5.
   (* 6 *)
-  specialize (mp $~B -> A -> ~B$ H5 H4) as H6.
+  specialize (mp H4 H5) as H6.
   exact H6.
 Qed.
 
@@ -516,13 +515,13 @@ Proof.
   apply deduction.
   apply deduction.
   apply deduction.
-  apply mp with (B := $~A -> C$).
+  apply @mp with (A := $~A -> C$).
+  - apply @mp with (A := $A -> C$).
+    + apply T_1_10_7.
+    + hypo.
   - apply transitivity with (B := B).
     + hypo.
     + hypo.
-  - apply mp with (B := $A -> C$).
-    + hypo.
-    + apply T_1_10_7.
 Qed.
 
 Theorem T_48_7 {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $((A -> B) -> A) -> A$.
@@ -532,17 +531,17 @@ Proof.
   specialize (contraposition (Γ,, $((A -> B) -> A)$) $A -> B$ A) as H1.
   (* 2 *)
   assert (H2 : Γ,, $((A -> B) -> A)$ |- $~A -> ~(A -> B)$).
-  apply mp with (B := $(A -> B) -> A$).
-  hypo.
+  apply @mp with (A := $(A -> B) -> A$).
   apply H1.
-  (* 3 *)
+  hypo.
+    (* 3 *)
   specialize_axiom (@axiom3 _ (Γ,, $((A -> B) -> A)$) $A -> B$ A) H3.
   (* 4 *)
-  specialize (mp $~A -> ~(A -> B)$ H2 H3) as H4.
+  specialize (mp H3 H2) as H4.
   (* 5 *)
   specialize (@neg_a_impl_a_b _ (Γ,, $((A -> B) -> A)$) A B) as H5.
   (* 6 *)
-  specialize (mp $~A -> A -> B$ H5 H4) as H6.
+  specialize (mp H4 H5) as H6.
   exact H6.
 Qed.
 
@@ -552,13 +551,13 @@ Proof.
   unfold conjunction.
   apply deduction.
   apply deduction.
-  apply mp with (B := $~~B$).
-  - apply mp with (B := B).
-    + hypo.
-    + apply pos_neg_neg.
-  - apply mp with (B := A).
-    + hypo.
+  apply @mp with (A := $~~B$).
+  - apply @mp with (A := A).
     + apply T_1_10_6.
+    + hypo.
+  - apply @mp with (A := B).
+    + apply pos_neg_neg.
+    + hypo.
 Qed.
 
 Theorem meta_conj_intro {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- A -> Γ |- B -> Γ |- $A /\ B$.
@@ -567,9 +566,9 @@ Proof.
   (* 1 *)
   specialize (conj_intro Γ A B) as H3.
   (* 2 *)
-  specialize (mp A H1 H3) as H4.
+  specialize (mp H3 H1) as H4.
   (* 3 *)
-  specialize (mp B H2 H4) as H5.
+  specialize (mp H4 H2) as H5.
   exact H5.
 Qed.
 
@@ -577,40 +576,40 @@ Theorem not_impl_conj_not {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- 
 Proof.
   intro H.
   unfold conjunction.
-  apply mp with (B := $~ (A -> B)$).
-  exact H.
-  (* 1 *)
-  specialize (contraposition Γ $A -> ~~B$ $A -> B$) as H1.
-  (* 2 *)
-  assert (H2 : Γ |- $((A -> ~~B) -> A -> B)$).
-  apply deduction.
-  apply deduction.
-  apply meta_neg_neg_pos.
-  apply mp with (B := A).
-  hypo.
-  hypo.
-  (* 3 *)
-  specialize (mp $(A -> ~ ~ B) -> A -> B$ H2 H1) as H3.
-  exact H3.
+  apply @mp with (A := $~ (A -> B)$).
+  - specialize (contraposition Γ $A -> ~~B$ $A -> B$) as H1.
+    assert (H2 : Γ |- $((A -> ~~B) -> A -> B)$).
+    {
+      apply deduction.
+      apply deduction.
+      apply meta_neg_neg_pos.
+      apply @mp with (A := A).
+      + hypo.
+      + hypo.
+    }
+
+    specialize (mp H1 H2) as H3.
+    exact H3.
+  - exact H.
 Qed.
 
 Theorem conj_not_not_impl {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $A /\ ~B$ -> Γ |- $~(A -> B)$.
 Proof.
   unfold conjunction.
   intro H.
-  apply mp with (B := $~(A -> ~~ B)$).
-  exact H.
-  (* 1 *)
-  specialize (contraposition Γ $A -> B$ $A -> ~~B$) as H1.
-  (* 2 *)
-  assert (H2 : Γ |- $((A -> B) -> A -> ~ ~ B)$).
-  apply deduction.
-  apply deduction.
-  apply meta_pos_neg_neg.
-  apply mp with (B := A) ; hypo.
-  (* 3 *)
-  specialize (mp $(A -> B) -> A -> ~ ~ B$ H2 H1) as H3.
-  exact H3.
+  apply @mp with (A := $~(A -> ~~ B)$).
+  - specialize (contraposition Γ $A -> B$ $A -> ~~B$) as H1.
+    assert (H2 : Γ |- $((A -> B) -> A -> ~ ~ B)$).
+    {
+      apply deduction.
+      apply deduction.
+      apply meta_pos_neg_neg.
+      apply @mp with (A := A) ; hypo.
+    }
+
+    specialize (mp H1 H2) as H3.
+    exact H3.
+  - exact H.
 Qed.
 
 Theorem eq_entails {atom : Set} (Γ Γ' : @formula atom -> Prop) (A: @formula atom) :
@@ -627,7 +626,7 @@ Proof.
   - apply axiom1.
   - apply axiom2.
   - apply axiom3.
-  - apply mp with (B := B).
+  - apply @mp with (A := A).
     + apply HΓ'.
     + apply IH2.
 Qed.
@@ -646,7 +645,7 @@ Proof.
   - apply axiom1.
   - apply axiom2.
   - apply axiom3.
-  - apply (mp B).
+  - apply @mp with (A := A0).
     + apply IHG1.
     + apply IHG2.
 Qed.
