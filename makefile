@@ -23,6 +23,5 @@ Meta.vo : Meta.v Syntactic.vo Semantic.vo
 L1_Hilbert_Accerman.vo : L1_Hilbert_Accerman.v Sets.vo FSignature.vo
 	$(COQC) L1_Hilbert_Accerman.v
 
-
 clean:
 	rm -f *.vo *.vok *.vos *.glob
