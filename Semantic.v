@@ -1,13 +1,9 @@
 Require Import Classical.
 From Mendelson Require Import Sets.
-From Mendelson Require Import FSignature.
 From Mendelson Require Import Formula.
+From Mendelson Require Import FSignature.
 
 Module Semantic.
-
-  Module F1:= Make_Formula(Formula1).
-  Import Formula1.
-  Import F1.
 
   Fixpoint eval {atom : Set} (value : atom -> bool) (f : formula) : bool :=
     match f with

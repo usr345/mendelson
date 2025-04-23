@@ -9,10 +9,6 @@ Import ListNotations.
 
 Module Meta.
 
-  Module F1:= Make_Formula(Formula1).
-  Import Formula1.
-  Import F1.
-
 Theorem axiom1_tautology {atom : Set} (A B: @formula atom) : tautology (f_axiom1 A B).
 Proof.
   unfold f_axiom1, tautology.

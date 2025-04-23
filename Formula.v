@@ -13,12 +13,14 @@ Module Formula1 <: TFormula.
   Definition disjunction {atom : Type} (A B: @formula atom) : formula := implication (negation A) B.
   Definition equivalence {atom : Type} (A B: @formula atom) : formula := conjunction (implication A B) (implication B A).
 End Formula1.
+Export Formula1.
 
 Module Formula.
 
   Module F1:= Make_Formula(Formula1).
-  Import Formula1.
   Import F1.
+  Export F1.
+
   (* We assume atomic propositions form a set with decidable equality. *)
   Parameter atom_eq : forall {atom : Set} (a b : atom), {a = b} + {a <> b}.
 
