@@ -1,4 +1,4 @@
-Require Import Classical.
+Require Import Setoid.
 From Mendelson Require Import Sets.
 From Mendelson Require Import Formula.
 From Mendelson Require Import FSignature.

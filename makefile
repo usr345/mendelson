@@ -1,4 +1,4 @@
-COQC=coqc -R . Mendelson
+COQC=rocq c -R . Mendelson
 
 all: Meta.vo
 
