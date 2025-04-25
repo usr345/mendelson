@@ -1,4 +1,3 @@
-Require Import Classical.
 From Mendelson Require Import Sets.
 From Mendelson Require Import FSignature.
 
@@ -184,6 +183,80 @@ Module Formula.
   (*     exact H5. *)
   (* Qed. *)
 
+  (* Теоремы из книги Гильберта Аккермана *)
+  Lemma T1 {atom : Set} (Γ : @formula atom -> Prop) (A B C : @formula atom) : Γ |- $(B -> C) -> ((A -> B) -> (A -> C))$.
+  Proof.
+    specialize_axiom (@axiom4 _ Γ $~A$ B C) H1.
+    unfold implication in *.
+    exact H1.
+  Qed.
+
+  Lemma T2 {atom : Set} (Γ : @formula atom -> Prop) (A B C : @formula atom) : Γ,, $A -> B$,, $B -> C$ |- $A -> C$.
+  Proof.
+    remember (Γ,, $A -> B$,, $B -> C$) as Γ_plus.
+    assert (H1: Γ_plus |- $A -> B$).
+    {
+      rewrite HeqΓ_plus.
+      hypo.
+    }
+
+    assert (H2: Γ_plus |- $B -> C$).
+    {
+      rewrite HeqΓ_plus.
+      hypo.
+    }
+
+    specialize (T1 Γ_plus A B C) as H3.
+
+    specialize (mp H3 H2) as H4.
+    specialize (mp H4 H1) as H5.
+    exact H5.
+  Qed.
+
+  Lemma T3 {atom : Set} (Γ : @formula atom -> Prop) (A : @formula atom) : Γ |- $~A \/ A$.
+  Proof.
+    specialize_axiom (@axiom4 _ Γ $~A$ $A \/ A$ A) H1.
+    specialize_axiom (@axiom1 _ Γ A A) H2.
+    specialize (mp H1 H2) as H3.
+    specialize_axiom (@axiom2 _ Γ A A) H4.
+    unfold implication in H4.
+    specialize (mp H3 H4) as H5.
+    exact H5.
+  Qed.
+
+  Lemma T3' {atom : Set} (Γ : @formula atom -> Prop) (A : @formula atom) : Γ |- $A -> A$.
+  Proof.
+    unfold implication.
+    apply T3.
+  Qed.
+
+  Lemma T4 {atom : Set} (Γ : @formula atom -> Prop) (A : @formula atom) : Γ |- $A \/ ~A$.
+  Proof.
+    specialize (imply_self Γ A) as H1.
+    unfold implication in *.
+    specialize_axiom (@axiom3 _ Γ $~A$ A) H2.
+    specialize (mp H2 H1) as H3.
+    exact H3.
+  Qed.
+
+
+  Lemma T5 {atom : Set} (Γ : @formula atom -> Prop) (A : @formula atom) : Γ |- $A -> ~(~A)$.
+  Proof.
+    unfold implication.
+    apply (T4 Γ $~A$).
+  Qed.
+
+  Lemma T6 {atom : Set} (Γ : @formula atom -> Prop) (A : @formula atom) : Γ |- $~~A -> A$.
+  Proof.
+    specialize (T5 Γ $~A$) as H1.
+    specialize_axiom (@axiom4 _ Γ A $~A$ $~ ~ ~A$) H2.
+    specialize (mp H2 H1) as H3.
+    specialize ( Γ $~A$) as H1.
+    unfold implication.
+
+
+  Qed.
+
   Lemma T1 {atom : Set} (Γ : @formula atom -> Prop) (A B C : @formula atom) : Γ,, $A -> B$ |- $C \/ A -> C \/ B$.
   Proof.
     specialize_axiom (@axiom4 _ (Γ,, $A -> B$) C A B) H1.
@@ -241,14 +314,25 @@ Module Formula.
   Proof.
   Admitted.
 
-  Lemma T2 {atom : Set} (Γ : @formula atom -> Prop) (A B C : @formula atom) : Γ,, $A -> (B -> C)$,, $A -> B$ |- $A -> C$.
+  Lemma T14 {atom : Set} (Γ : @formula atom -> Prop) (A B C : @formula atom) : Γ,, $A -> (B -> C)$,, $A -> B$ |- $A -> C$.
   Proof.
 
-    assert (H1: Γ,, $A -> B$ |- $A -> B$).
+    remember (Γ,, $A -> (B -> C)$,, $A -> B$) as Γ_plus.
+
+    assert (H1: Γ_plus |- $A -> (B -> C)$).
     {
+      rewrite HeqΓ_plus.
       hypo.
     }
 
+    assert (H2: Γ_plus |- $A -> B$).
+    {
+      rewrite HeqΓ_plus.
+      hypo.
+    }
+
+    specialize (T2 Γ_plus $A -> B$ C A) as H3.
+    specialize (drop_antecedent Γ_plus A $A -> B$ H2) as H4.
 
     (* Lemma T2 {atom : Set} (Γ : @formula atom -> Prop) (A B C : @formula atom) : Γ |- $(A -> B) -> ((C -> A) -> (C -> B))$. *)
     (* Proof. *)
