@@ -51,9 +51,9 @@ Proof.
 Defined.
 
 Open Scope string_scope.
-Definition A : @formula string := f_atom "A"%string.
-Definition B : @formula string := f_atom "B"%string.
-Definition C : @formula string := f_atom "C"%string.
+Definition A : @formula string := f_atom "A".
+Definition B : @formula string := f_atom "B".
+Definition C : @formula string := f_atom "C".
 
 (* Check (T1 A B). *)
 (* Compute (T1 A B). *)

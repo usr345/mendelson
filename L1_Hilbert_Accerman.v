@@ -24,7 +24,21 @@ Module Formula.
   (* We assume atomic propositions form a set with decidable equality. *)
   Parameter atom_eq : forall {atom : Set} (a b : atom), {a = b} + {a <> b}.
 
-  Definition f_axiom1 {atom : Set} (A B : @formula atom) : formula :=
+  (* Equality of formulas is decidable. *)
+  Lemma formula_eq {atom : Set} (A B : @formula atom) : {A = B} + {A <> B}.
+  Proof.
+    decide equality.
+    now apply atom_eq.
+  Qed.
+
+  Lemma implication_eq {atom : Type} (A B: @formula atom) : $A -> B$ = $~A \/ B$.
+  Proof.
+    unfold implication.
+    reflexivity.
+  Qed.
+  (* We assume atomic propositions form a set with decidable equality. *)
+
+  Definition f_axiom1 {atom : Set} (A : @formula atom) : formula :=
     $(A \/ A) -> A$.
 
   Definition f_axiom2 {atom : Set} (A B : @formula atom) : formula :=
@@ -34,12 +48,12 @@ Module Formula.
     $A \/ B -> B \/ A$.
 
   Definition f_axiom4 {atom : Set} (A B C: @formula atom) : formula :=
-    $(B -> C) -> (A \/ B -> A \/ C)$.
+    $(A -> B) -> (C \/ A -> C \/ B)$.
 
   Reserved Notation "Γ |- A" (at level 32).
   Inductive entails {atom : Set} (Γ : @formula atom -> Prop) : @formula atom -> Type :=
   | hypo : forall A, A ∈ Γ -> Γ |- A (* every hypothesis is provable *)
-  | axiom1 : forall A B , Γ |- f_axiom1 A B
+  | axiom1 : forall A , Γ |- f_axiom1 A
   | axiom2 : forall A B, Γ |- f_axiom2 A B
   | axiom3 : forall A B, Γ |- f_axiom3 A B
   | axiom4 : forall A B C, Γ |- f_axiom4 A B C
@@ -48,25 +62,18 @@ Module Formula.
 
   (* It is convenient to make some parameters implicit. *)
   Arguments hypo {_} {_} _.
-  Arguments axiom1 {_} {_} _ _.
+  Arguments axiom1 {_} {_} (_).
   Arguments axiom2 {_} {_} _ _.
   Arguments axiom3 {_} {_} _ _.
   Arguments axiom4 {_} {_} _ _ _.
   Arguments mp {_} {_} {_} {_} (_) (_).
-
-  (* Equality of formulas is decidable. *)
-  Lemma formula_eq {atom : Set} (A B : @formula atom) : {A = B} + {A <> B}.
-  Proof.
-    decide equality.
-    now apply atom_eq.
-  Qed.
 
   Ltac hypo := (apply hypo ; cbv in * ; auto 6).
 
   Ltac specialize_axiom A H :=
     pose proof A as H;
     try match type of H with
-      | (_ |- f_axiom1 _ _) => unfold f_axiom1 in H
+      | (_ |- f_axiom1 _) => unfold f_axiom1 in H
       | (_ |- f_axiom2 _ _) => unfold f_axiom2 in H
       | (_ |- f_axiom3 _ _) => unfold f_axiom3 in H
       | (_ |- f_axiom4 _ _ _) => unfold f_axiom4 in H
@@ -81,7 +88,7 @@ Module Formula.
       specialize (S A H).
       apply hypo.
       exact S.
-    - apply (axiom1 A B).
+    - apply (axiom1 A).
     - apply (axiom2 A B).
     - apply (axiom3 A B).
     - apply (axiom4 A B C).
@@ -93,9 +100,9 @@ Module Formula.
   Proof.
     unfold implication.
     (* (1) $(A \supset ((A \supset A) \supset A)) \supset ((A \supset (A \supset A)) \supset (A \supset A))$ --- подстановка в схему аксиом A4 *)
-    specialize_axiom (@axiom4 _ Γ $~A$ $A \/ A$ A) H1.
+    specialize_axiom (@axiom4 _ Γ $A \/ A$ A $~A$) H1.
     (* (2) $A \or A \supset A$ --- схема аксиом A1 *)
-    specialize_axiom (@axiom1 _ Γ A A) H2.
+    specialize_axiom (@axiom1 _ Γ A) H2.
     (* (3) $((A \supset (A \supset A)) \supset (A \supset A))$ --- из (1) и (2) по MP *)
     specialize (mp H1 H2) as H3.
     (* (4) $A \supset (A \supset A)$ --- схема аксиом A1 *)
@@ -184,78 +191,111 @@ Module Formula.
   (* Qed. *)
 
   (* Теоремы из книги Гильберта Аккермана *)
-  Lemma T1 {atom : Set} (Γ : @formula atom -> Prop) (A B C : @formula atom) : Γ |- $(B -> C) -> ((A -> B) -> (A -> C))$.
+  Lemma Rule1 {atom : Set} {Γ : @formula atom -> Prop} {A : @formula atom} : Γ |- $A \/ A$ -> Γ |- A.
   Proof.
-    specialize_axiom (@axiom4 _ Γ $~A$ B C) H1.
+    intro H1.
+    specialize_axiom (@axiom1 _ Γ A) H2.
+    specialize (mp H2 H1) as H3.
+    exact H3.
+  Qed.
+
+  Lemma Rule2 {atom : Set} {Γ : @formula atom -> Prop} {A B: @formula atom} : Γ |- A -> Γ |- $A \/ B$.
+  Proof.
+    intro H1.
+    specialize_axiom (@axiom2 _ Γ A B) H2.
+    specialize (mp H2 H1) as H3.
+    exact H3.
+  Qed.
+
+  Lemma Rule3 {atom : Set} {Γ : @formula atom -> Prop} {A B: @formula atom} : Γ |- $A \/ B$ -> Γ |- $B \/ A$.
+  Proof.
+    intro H1.
+    specialize_axiom (@axiom3 _ Γ A B) H2.
+    specialize (mp H2 H1) as H3.
+    exact H3.
+  Qed.
+
+  Lemma Rule4 {atom : Set} {Γ : @formula atom -> Prop} {A B : @formula atom} (C : @formula atom) : Γ |- $A -> B$ -> Γ |- $C \/ A -> C \/ B$.
+  Proof.
+    intro H1.
+    specialize_axiom (@axiom4 _ Γ A B C) H2.
+    specialize (mp H2 H1) as H3.
+    exact H3.
+  Qed.
+
+  Lemma T1 {atom : Set} (Γ : @formula atom -> Prop) (A B C : @formula atom) : Γ |- $(A -> B) -> ((C -> A) -> (C -> B))$.
+  Proof.
+    specialize_axiom (@axiom4 _ Γ A B $~C$) H1.
     unfold implication in *.
     exact H1.
   Qed.
 
-  Lemma T2 {atom : Set} (Γ : @formula atom -> Prop) (A B C : @formula atom) : Γ,, $A -> B$,, $B -> C$ |- $A -> C$.
+  Lemma Rule5 {atom : Set} {Γ : @formula atom -> Prop} {A B C : @formula atom} : Γ |- $A -> B$ -> Γ |- $B -> C$ -> Γ |- $A -> C$.
   Proof.
-    remember (Γ,, $A -> B$,, $B -> C$) as Γ_plus.
-    assert (H1: Γ_plus |- $A -> B$).
-    {
-      rewrite HeqΓ_plus.
-      hypo.
-    }
-
-    assert (H2: Γ_plus |- $B -> C$).
-    {
-      rewrite HeqΓ_plus.
-      hypo.
-    }
-
-    specialize (T1 Γ_plus A B C) as H3.
-
+    intros H1 H2.
+    specialize (T1 Γ B C A) as H3.
     specialize (mp H3 H2) as H4.
     specialize (mp H4 H1) as H5.
     exact H5.
   Qed.
 
-  Lemma T3 {atom : Set} (Γ : @formula atom -> Prop) (A : @formula atom) : Γ |- $~A \/ A$.
+  Lemma T2 {atom : Set} (Γ : @formula atom -> Prop) (A : @formula atom) : Γ |- $~A \/ A$.
   Proof.
-    specialize_axiom (@axiom4 _ Γ $~A$ $A \/ A$ A) H1.
-    specialize_axiom (@axiom1 _ Γ A A) H2.
-    specialize (mp H1 H2) as H3.
-    specialize_axiom (@axiom2 _ Γ A A) H4.
-    unfold implication in H4.
-    specialize (mp H3 H4) as H5.
-    exact H5.
-  Qed.
-
-  Lemma T3' {atom : Set} (Γ : @formula atom -> Prop) (A : @formula atom) : Γ |- $A -> A$.
-  Proof.
-    unfold implication.
-    apply T3.
-  Qed.
-
-  Lemma T4 {atom : Set} (Γ : @formula atom -> Prop) (A : @formula atom) : Γ |- $A \/ ~A$.
-  Proof.
-    specialize (imply_self Γ A) as H1.
-    unfold implication in *.
-    specialize_axiom (@axiom3 _ Γ $~A$ A) H2.
-    specialize (mp H2 H1) as H3.
+    specialize_axiom (@axiom2 _ Γ A A) H1.
+    specialize_axiom (@axiom1 _ Γ A) H2.
+    specialize (Rule5 H1 H2) as H3.
+    unfold implication in H3.
     exact H3.
   Qed.
 
-
-  Lemma T5 {atom : Set} (Γ : @formula atom -> Prop) (A : @formula atom) : Γ |- $A -> ~(~A)$.
+  Lemma T3 {atom : Set} (Γ : @formula atom -> Prop) (A : @formula atom) : Γ |- $A \/ ~A$.
   Proof.
-    unfold implication.
-    apply (T4 Γ $~A$).
+    specialize (T2 Γ A) as H1.
+    specialize (Rule3 H1) as H2.
+    exact H2.
   Qed.
 
-  Lemma T6 {atom : Set} (Γ : @formula atom -> Prop) (A : @formula atom) : Γ |- $~~A -> A$.
+  Lemma T4 {atom : Set} (Γ : @formula atom -> Prop) (A : @formula atom) : Γ |- $A -> ~ ~A$.
   Proof.
-    specialize (T5 Γ $~A$) as H1.
-    specialize_axiom (@axiom4 _ Γ A $~A$ $~ ~ ~A$) H2.
-    specialize (mp H2 H1) as H3.
-    specialize ( Γ $~A$) as H1.
     unfold implication.
-
-
+    specialize (T3 Γ $~A$) as H1.
+    exact H1.
   Qed.
+
+  Lemma T5 {atom : Set} (Γ : @formula atom -> Prop) (A : @formula atom) : Γ |- $~ ~A -> A$.
+  Proof.
+    specialize (T4 Γ $~A$) as H1.
+    specialize (Rule4 A H1) as H2.
+    specialize (T3 Γ A) as H3.
+    specialize (mp H2 H3) as H4.
+    specialize (Rule3 H4) as H5.
+    rewrite <-implication_eq in H5.
+    exact H5.
+  Qed.
+
+  Lemma T6 {atom : Set} (Γ : @formula atom -> Prop) (A B : @formula atom) : Γ |- $(A -> B) -> (~B -> ~A)$.
+  Proof.
+    specialize (T4 Γ B) as H1.
+    specialize (Rule4 $~A$ H1) as H2.
+    specialize_axiom (@axiom3 _ Γ $~A$ $~~B$) H3.
+    specialize (Rule5 H2 H3) as H4.
+    rewrite <-implication_eq in H4.
+    exact H4.
+  Qed.
+
+  (* Formula A is a subformula of formula Φ *)
+  Fixpoint occurs {atom : Set} (A Φ : @formula atom) : Prop :=
+    match Φ with
+    | f_atom a => A = (f_atom a)
+    | f_not Φ' => A = f_not Φ' \/ (occurs A Φ')
+    | f_disj F1 F2 => A = (f_disj F1 F2) \/ (occurs A F1) \/ (occurs A F2)
+    end.
+
+  (* Replace A to B in formula Φ *)
+  Fixpoint replaceF {atom : Set} (A B Φ : @formula atom) : Prop :=
+    (* ? *)
+
+  Lemma Rule6 {atom : Set} (Γ : @formula atom -> Prop) (A Φ B : @formula atom) : occurs A Φ -> Γ |- $A -> B$ -> Γ |- $B -> A$ -> (Γ |- (implication ) /\ Γ |-)
 
   Lemma T1 {atom : Set} (Γ : @formula atom -> Prop) (A B C : @formula atom) : Γ,, $A -> B$ |- $C \/ A -> C \/ B$.
   Proof.

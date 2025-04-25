@@ -30,9 +30,5 @@ Module Formula.
     decide equality.
     now apply atom_eq.
   Qed.
-
-  Definition f_axiom1 {atom : Set} (A B : @formula atom) : formula :=
-  $A -> (B -> A)$.
-
 End Formula.
 Export Formula.
