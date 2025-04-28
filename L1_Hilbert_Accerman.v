@@ -291,6 +291,49 @@ Module Formula.
     | f_disj F1 F2 => A = (f_disj F1 F2) \/ (occurs A F1) \/ (occurs A F2)
     end.
 
+  (* Соответствие между высказывательной формой до замены одного вхождения A на B и после вхождения *)
+  Inductive substi {atom : Set} (Φ : @formula atom) (A B : @formula atom) : @formula atom -> Prop :=
+  | s_full: Φ = A -> substi Φ A B B
+  | s_not (Φ' : @formula atom) : (substi Φ A B Φ') -> substi (f_not Φ) A B (f_not Φ')
+  | s_disj1 (Φ' Φ1: @formula atom): (substi Φ A B Φ') -> substi (f_disj Φ Φ1) A B (f_disj Φ' Φ1)
+  | s_disj2 (Φ' Φ1: @formula atom): (substi Φ A B Φ') -> substi (f_disj Φ1 Φ) A B (f_disj Φ1 Φ').
+
+  Lemma T7 {atom : Set} (Γ : @formula atom -> Prop) (A B : @formula atom) : Γ |- $~(A /\ B) -> (~A \/ ~B)$.
+  Proof.
+    unfold conjunction.
+    specialize (T5 Γ $~A \/ ~B$) as H1.
+    rewrite <-implication_eq in H1.
+    exact H1.
+  Qed.
+
+  Lemma T8 {atom : Set} (Γ : @formula atom -> Prop) (A B : @formula atom) : Γ |- $~A \/ ~B -> ~(A /\ B)$.
+  Proof.
+    unfold conjunction.
+    specialize (T4 Γ $~A \/ ~B$) as H1.
+    rewrite <-implication_eq in H1.
+    rewrite <-implication_eq.
+    exact H1.
+  Qed.
+
+  (* Lemma T9 {atom : Set} (Γ : @formula atom -> Prop) (A B : @formula atom) : Γ |- $~(A \/ B) -> ~A /\ ~B$. *)
+  (* Proof. *)
+  (*   unfold conjunction. *)
+  (*   unfold implication. *)
+
+
+  (* Lemma T11 {atom : Set} (Γ : @formula atom -> Prop) (A B : @formula atom) : Γ |- $A /\ B -> B /\ A$. *)
+  (* Proof. *)
+  (*   unfold conjunction. *)
+  (*   unfold implication. *)
+
+  Lemma T12 {atom : Set} (Γ : @formula atom -> Prop) (A B : @formula atom) : Γ |- $A /\ B -> A$.
+  Proof.
+    specialize_axiom (@axiom2 _ Γ $~A$ $~B$) H1.
+
+    unfold conjunction.
+
+
+
   (* Replace A to B in formula Φ *)
   Fixpoint replaceF {atom : Set} (A B Φ : @formula atom) : Prop :=
     (* ? *)
