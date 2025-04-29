@@ -300,6 +300,15 @@ Module Formula.
     | f_disj F1 F2 => A = (f_disj F1 F2) \/ (occurs A F1) \/ (occurs A F2)
     end.
 
+  Fixpoint replaceF {atom : Set} (A B Φ : @formula atom) (H: occurs A Φ) : @formula atom :=
+    Φ.
+
+
+  Lemma Rule6 {atom : Set} (Γ : @formula atom -> Prop) (A Φ B : @formula atom) (H : occurs A Φ) :
+    Γ |- $A -> B$ -> Γ |- $B -> A$ -> (Γ |- (implication Φ (replaceF A B Φ H)) /\ (Γ |- (implication (replaceF A B Φ H) Φ))).
+  Proof.
+
+
   (* Соответствие между высказывательной формой до замены одного вхождения A на B и после вхождения *)
   Inductive substi {atom : Set} (Φ : @formula atom) (A B : @formula atom) : @formula atom -> Prop :=
   | s_full: Φ = A -> substi Φ A B B
