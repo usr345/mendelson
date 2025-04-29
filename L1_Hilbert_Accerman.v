@@ -10,9 +10,9 @@ Module L1_Hilbert_Accerman <: TFormula.
   Definition t {atom : Type} := @formula atom.
   Definition disjunction {atom : Type} := @f_disj atom.
   Definition negation {atom : Type} := @f_not atom.
-  Definition implication {atom : Type} (A B: @formula atom) : formula := disjunction (negation A) B.
-  Definition conjunction {atom : Type} (A B: @formula atom) : formula := negation (implication A (negation B)).
-  Definition equivalence {atom : Type} (A B: @formula atom) : formula := conjunction (implication A B) (implication B A).
+  Definition implication {atom : Type} (A B: @formula atom) : @formula atom := disjunction (negation A) B.
+  Definition conjunction {atom : Type} (A B: @formula atom) : @formula atom := negation (implication A (negation B)).
+  Definition equivalence {atom : Type} (A B: @formula atom) : @formula atom := conjunction (implication A B) (implication B A).
 End L1_Hilbert_Accerman.
 
 Module Formula.
@@ -283,6 +283,11 @@ Module Formula.
     exact H4.
   Qed.
 
+  Lemma Rule6 {atom : Set} (Γ : @formula atom -> Prop) (A B : @formula atom) (Φ : @formula atom -> @formula atom) :
+    Γ |- $A -> B$ -> Γ |- $B -> A$ -> (Γ |- (implication (Φ A) (Φ B))).
+    intros H1 H2.
+
+  (* Lemma meta_equivalence {atom : Set} (A B : @formula atom) : $A <-> B$ -> $A -> B$ /\ $B -> A$. *)
   (*
      Если формула A является подформулой формулы Φ, что мы будем обозначать как Φ(A). Если (|- A -> B и |- B -> A) --- теоремы, то (|- Φ(A) -> Φ(B) и |- Φ(B) -> Φ(A)) --- тоже теоремы.
      Это правило можно переформулировать следующим образом: дву формулы, которые находятся в отношении взаимной импликации, могут быть заменены друг на друга в любом месте любой теоремы.
@@ -333,6 +338,8 @@ Module Formula.
     exact H1.
   Qed.
 
+
+  Lemma Rule7 {atom : Set} (Γ : @formula atom -> Prop) (A B : @formula atom) : occurs A Φ -> Γ |- $A -> B$ -> Γ |- $B -> A$ -> (Γ |- (implication ) /\ Γ |-)
   (* Lemma T9 {atom : Set} (Γ : @formula atom -> Prop) (A B : @formula atom) : Γ |- $~(A \/ B) -> ~A /\ ~B$. *)
   (* Proof. *)
   (*   unfold conjunction. *)
