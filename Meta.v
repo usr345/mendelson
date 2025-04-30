@@ -3,8 +3,8 @@ From Mendelson Require Import FSignature.
 From Mendelson Require Import Formula.
 From Mendelson Require Import Syntactic.
 From Mendelson Require Import Semantic.
-Require Import Coq.Bool.BoolEq.
-Require Import Coq.Lists.List.
+From Mendelson Require Import EqDec.
+From Stdlib Require Import Lists.List.
 Import ListNotations.
 
 Module Meta.
@@ -154,19 +154,6 @@ Proof.
   - intro H.
     simpl in H.
     exact H.
-Qed.
-
-Class EqDec A :=
-  {
-    eqb: A -> A -> bool;
-    eqb_eq : forall x y, (eqb x y) = true <-> x = y
-  }.
-
-Proposition eqb_reflexive {A : Type} `{EqDec A}: forall x : A, (eqb x x) = true.
-Proof.
-  intro x.
-  rewrite eqb_eq.
-  reflexivity.
 Qed.
 
 (* Check if an element is in the list *)

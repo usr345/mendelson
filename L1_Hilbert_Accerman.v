@@ -1,5 +1,6 @@
 From Mendelson Require Import Sets.
 From Mendelson Require Import FSignature.
+From Mendelson Require Import EqDec.
 
 Module L1_Hilbert_Accerman <: TFormula.
   Inductive formula {atom : Type} : Type :=
@@ -283,18 +284,19 @@ Module Formula.
     exact H4.
   Qed.
 
-  Lemma Rule6 {atom : Set} (Γ : @formula atom -> Prop) (A B : @formula atom) (Φ : @formula atom -> @formula atom) :
-    Γ |- $A -> B$ -> Γ |- $B -> A$ -> (Γ |- (implication (Φ A) (Φ B))).
-    intros H1 H2.
-
+  (* Lemma Rule6 {atom : Set} (Γ : @formula atom -> Prop) (A B : @formula atom) (Φ : @formula atom -> @formula atom) : *)
+  (*   Γ |- $A -> B$ -> Γ |- $B -> A$ -> (Γ |- (implication (Φ A) (Φ B))). *)
+  (*   intros H1 H2. *)
+  (*   induction (Φ A) eqn:H3. *)
+  (*   - *)
   (* Lemma meta_equivalence {atom : Set} (A B : @formula atom) : $A <-> B$ -> $A -> B$ /\ $B -> A$. *)
   (*
      Если формула A является подформулой формулы Φ, что мы будем обозначать как Φ(A). Если (|- A -> B и |- B -> A) --- теоремы, то (|- Φ(A) -> Φ(B) и |- Φ(B) -> Φ(A)) --- тоже теоремы.
-     Это правило можно переформулировать следующим образом: дву формулы, которые находятся в отношении взаимной импликации, могут быть заменены друг на друга в любом месте любой теоремы.
-     Если Φ(X) = X -> X \/ Y, то Φ(A) можно представить в следующих смыслах:
-     *
-     *
-     *
+     Это правило можно переформулировать следующим образом: две формулы, которые находятся в отношении взаимной импликации, могут быть заменены друг на друга в любом месте любой теоремы.
+     Если Φ(X) = X -> X \/ Y, то Φ(A) можно представить следующими формулами:
+     * Φ(A) = A -> X \/ Y
+     * Φ(A) = X -> A \/ Y
+     * Φ(A) = A -> A \/ Y
   *)
 
   (* Formula A is a subformula of formula Φ *)
@@ -305,21 +307,21 @@ Module Formula.
     | f_disj F1 F2 => A = (f_disj F1 F2) \/ (occurs A F1) \/ (occurs A F2)
     end.
 
-  Fixpoint replaceF {atom : Set} (A B Φ : @formula atom) (H: occurs A Φ) : @formula atom :=
-    Φ.
+  (* Fixpoint replaceF {atom : Set} (A B Φ : @formula atom) (H: occurs A Φ) : @formula atom := *)
+  (*   Φ. *)
 
 
-  Lemma Rule6 {atom : Set} (Γ : @formula atom -> Prop) (A Φ B : @formula atom) (H : occurs A Φ) :
-    Γ |- $A -> B$ -> Γ |- $B -> A$ -> (Γ |- (implication Φ (replaceF A B Φ H)) /\ (Γ |- (implication (replaceF A B Φ H) Φ))).
-  Proof.
+  (* Lemma Rule6 {atom : Set} (Γ : @formula atom -> Prop) (A Φ B : @formula atom) (H : occurs A Φ) : *)
+  (*   Γ |- $A -> B$ -> Γ |- $B -> A$ -> (Γ |- (implication Φ (replaceF A B Φ H)) /\ (Γ |- (implication (replaceF A B Φ H) Φ))). *)
+  (* Proof. *)
 
 
   (* Соответствие между высказывательной формой до замены одного вхождения A на B и после вхождения *)
-  Inductive substi {atom : Set} (Φ : @formula atom) (A B : @formula atom) : @formula atom -> Prop :=
-  | s_full: Φ = A -> substi Φ A B B
-  | s_not (Φ' : @formula atom) : (substi Φ A B Φ') -> substi (f_not Φ) A B (f_not Φ')
-  | s_disj1 (Φ' Φ1: @formula atom): (substi Φ A B Φ') -> substi (f_disj Φ Φ1) A B (f_disj Φ' Φ1)
-  | s_disj2 (Φ' Φ1: @formula atom): (substi Φ A B Φ') -> substi (f_disj Φ1 Φ) A B (f_disj Φ1 Φ').
+  (* Inductive substi {atom : Set} (Φ : @formula atom) (A B : @formula atom) : @formula atom -> Prop := *)
+  (* | s_full: Φ = A -> substi Φ A B B *)
+  (* | s_not (Φ' : @formula atom) : (substi Φ A B Φ') -> substi (f_not Φ) A B (f_not Φ') *)
+  (* | s_disj1 (Φ' Φ1: @formula atom): (substi Φ A B Φ') -> substi (f_disj Φ Φ1) A B (f_disj Φ' Φ1) *)
+  (* | s_disj2 (Φ' Φ1: @formula atom): (substi Φ A B Φ') -> substi (f_disj Φ1 Φ) A B (f_disj Φ1 Φ'). *)
 
   Lemma T7 {atom : Set} (Γ : @formula atom -> Prop) (A B : @formula atom) : Γ |- $~(A /\ B) -> (~A \/ ~B)$.
   Proof.
@@ -339,17 +341,16 @@ Module Formula.
   Qed.
 
 
-  Lemma Rule7 {atom : Set} (Γ : @formula atom -> Prop) (A B : @formula atom) : occurs A Φ -> Γ |- $A -> B$ -> Γ |- $B -> A$ -> (Γ |- (implication ) /\ Γ |-)
+  (* Lemma Rule7 {atom : Set} (Γ : @formula atom -> Prop) (A B : @formula atom) : occurs A Φ -> Γ |- $A -> B$ -> Γ |- $B -> A$ -> (Γ |- (implication ) /\ Γ |-) *)
   (* Lemma T9 {atom : Set} (Γ : @formula atom -> Prop) (A B : @formula atom) : Γ |- $~(A \/ B) -> ~A /\ ~B$. *)
   (* Proof. *)
   (*   unfold conjunction. *)
   (*   unfold implication. *)
 
 
-  (* Lemma T11 {atom : Set} (Γ : @formula atom -> Prop) (A B : @formula atom) : Γ |- $A /\ B -> B /\ A$. *)
-  (* Proof. *)
-  (*   unfold conjunction. *)
-  (*   unfold implication. *)
+  Lemma T11 {atom : Set} (Γ : @formula atom -> Prop) (A B : @formula atom) : Γ |- $A /\ B -> B /\ A$.
+  Proof.
+    unfold conjunction.
 
   Lemma T12 {atom : Set} (Γ : @formula atom -> Prop) (A B : @formula atom) : Γ |- $A /\ B -> A$.
   Proof.

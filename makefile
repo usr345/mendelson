@@ -17,7 +17,10 @@ Semantic.vo : Semantic.v Sets.vo Formula.vo
 Syntactic.vo : Syntactic.v Sets.vo Formula.vo
 	$(COQC) Syntactic.v
 
-Meta.vo : Meta.v Syntactic.vo Semantic.vo
+EqDec.vo : EqDec.v
+	$(COQC) EqDec.v
+
+Meta.vo : Meta.v Syntactic.vo Semantic.vo EqDec.vo
 	$(COQC) Meta.v
 
 L1_Hilbert_Accerman.vo : L1_Hilbert_Accerman.v Sets.vo FSignature.vo
