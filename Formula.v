@@ -111,5 +111,16 @@ Module Formula.
         apply IHA2.
   Qed.
 
+  #[export] Instance eqFormula {atom : Set} `{EqDec atom} : EqDec (@formula atom)  :=
+    {
+      eqb := formula_beq;
+      eqb_eq := formula_beq_eq;
+    }.
+
+  Fixpoint replace_atom {atom : Set} `{EqDec atom} (F : @formula atom) (a : atom) (G : @formula atom) : @formula atom :=
+    match F with
+    | f_atom a' => if (eqb a'
+      .
+
 End Formula.
 Export Formula.
