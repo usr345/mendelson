@@ -117,10 +117,23 @@ Module Formula.
       eqb_eq := formula_beq_eq;
     }.
 
-  Fixpoint replace_atom {atom : Set} `{EqDec atom} (F : @formula atom) (a : atom) (G : @formula atom) : @formula atom :=
+  Fixpoint replace_atom {atom : Set} `{EqDec atom} (F : @formula atom) (a : atom) (G : @formula atom) {struct F} : @formula atom :=
     match F with
-    | f_atom a' => if (eqb a'
-      .
+    | f_atom a' => if (eqb a' a) then G else F
+    | f_not F' => f_not (replace_atom F' a G)
+    | f_imp F1 F2 => f_imp (replace_atom F1 a G) (replace_atom F2 a G)
+    end.
+
+  (* Заменяет все вхождения атомов, для которых v a = true на F1
+     и атомов с v a = false на F2
+  *)
+  Fixpoint replace_true_false {atom : Set} `{EqDec atom} (F : @formula atom) (v : atom -> bool) (F1 F2 : @formula atom) {struct F} : @formula atom :=
+    match F with
+    | f_atom a => if (v a) then F1 else F2
+    | f_not F' => f_not (replace_true_false F' v F1 F2)
+    | f_imp A B => f_imp (replace_true_false A v F1 F2) (replace_true_false B v F1 F2)
+    end.
+
 
 End Formula.
 Export Formula.

@@ -4,7 +4,8 @@ From Mendelson Require Import Formula.
 From Mendelson Require Import Syntactic.
 From Mendelson Require Import Semantic.
 From Mendelson Require Import EqDec.
-From Stdlib Require Import Lists.List.
+(* From Stdlib Require Import Lists.List. *)
+Require Import Lists.List.
 Import ListNotations.
 
 Module Meta.
@@ -137,23 +138,73 @@ Proof.
     exact H.
 Qed.
 
-Fixpoint occurs {atom : Set} (a : atom) (F : formula) {struct F} : Prop :=
+Fixpoint occurs {atom : Set} `{EqDec atom} (a : atom) (F : formula) {struct F} : Prop :=
   match F with
   | f_atom a' => a = a'
   | f_not p1 => occurs a p1
   | f_imp p1 p2 => occurs a p1 \/ occurs a p2
   end.
 
-Proposition occurs_f_occurs_not_f {atom : Set} (f : @formula atom) : forall x : atom, occurs x f <-> occurs x $~f$.
+Fixpoint occurs_b {atom : Set} `{EqDec atom} (a : atom) (F : formula) {struct F} : bool :=
+  match F with
+  | f_atom a' => (eqb a a')
+  | f_not F1 => occurs_b a F1
+  | f_imp F1 F2 => (occurs_b a F1) || (occurs_b a F2)
+  end.
+
+Proposition occurs_reflection {atom : Set} `{EqDec atom} (a : atom) (F : formula) : (occurs a F) <-> (occurs_b a F) = true.
+  split ; intro H1.
+  - induction F.
+    + simpl in H1.
+      simpl.
+      rewrite H1.
+      apply eqb_reflexive.
+    + simpl in H1.
+      simpl.
+      specialize (IHF H1).
+      exact IHF.
+    + simpl in H1.
+      simpl.
+      destruct H1.
+      * specialize (IHF1 H0).
+        rewrite IHF1.
+        simpl.
+        reflexivity.
+      * specialize (IHF2 H0).
+        rewrite IHF2.
+        rewrite Bool.orb_true_r.
+        reflexivity.
+  - induction F.
+    + simpl in H1.
+      simpl.
+      rewrite eqb_eq in H1.
+      exact H1.
+    + simpl in H1.
+      simpl.
+      specialize (IHF H1).
+      exact IHF.
+    + simpl in H1.
+      simpl.
+      apply Bool.orb_prop in H1.
+      destruct H1.
+      * specialize (IHF1 H0).
+        left.
+        exact IHF1.
+      * specialize (IHF2 H0).
+        right.
+        exact IHF2.
+Qed.
+
+Proposition occurs_f_occurs_not_f {atom : Set} `{EqDec atom} (f : @formula atom) : forall x : atom, occurs x f <-> occurs x $~f$.
 Proof.
   intro x.
   split.
-  intro H.
+  intro H1.
   - simpl.
-    exact H.
-  - intro H.
-    simpl in H.
-    exact H.
+    exact H1.
+  - intro H1.
+    simpl in H1.
+    exact H1.
 Qed.
 
 (* Check if an element is in the list *)
@@ -850,4 +901,73 @@ Proof.
     specialize (meta_T_1_10_7 (f_atom h) F HTrue HFalse) as HResult.
     exact HResult.
 Qed.
+
+Lemma replace_not_accours {atom : Set} `{EqDec atom} (F : @formula atom) (a : atom) (H1 : (occurs_b a F) = false) (G : @formula atom) : (replace_atom F a G) = F.
+Proof.
+  induction F.
+  - simpl.
+    simpl in H1.
+    rewrite eqb_symmetric in H1.
+    rewrite H1.
+    reflexivity.
+  - simpl.
+    simpl in H1.
+    specialize (IHF H1).
+    rewrite IHF.
+    reflexivity.
+  - simpl.
+    simpl in H1.
+    rewrite Bool.orb_false_iff in H1.
+    destruct H1 as [H1 H2].
+    specialize (IHF1 H1).
+    specialize (IHF2 H2).
+    rewrite IHF1.
+    rewrite IHF2.
+    reflexivity.
+Qed.
+
+Lemma replace_same {atom : Set} `{EqDec atom} (F : @formula atom) (a : atom) (H1 : occurs a F) (v : atom -> bool)
+  (G : @formula atom) (H2 : (eval v G) = (v a)):
+  (eval v F) = (eval v (replace_atom F a G)).
+Proof.
+  induction F.
+  - simpl.
+    simpl in H1.
+    rewrite <-H1.
+    rewrite eqb_reflexive.
+    rewrite H2.
+    reflexivity.
+  - simpl.
+    rewrite <-occurs_f_occurs_not_f in H1.
+    specialize (IHF H1).
+    rewrite <-IHF.
+    reflexivity.
+  - simpl.
+    simpl in H1.
+    destruct H1.
+    (* a встречается в F1 *)
+    + specialize (IHF1 H0).
+      rewrite <-IHF1.
+      destruct (occurs_b a F2) eqn:H3.
+      * rewrite <-occurs_reflection in H3.
+        specialize (IHF2 H3).
+        rewrite <-IHF2.
+        reflexivity.
+      * specialize (replace_not_accours F2 a H3 G) as H4.
+        rewrite H4.
+        reflexivity.
+    (* a встречается в F2 *)
+    + specialize (IHF2 H0).
+      rewrite <-IHF2.
+      destruct (occurs_b a F1) eqn:H3.
+      * rewrite <-occurs_reflection in H3.
+        specialize (IHF1 H3).
+        rewrite <-IHF1.
+        reflexivity.
+      * specialize (replace_not_accours F1 a H3 G) as H4.
+        rewrite H4.
+        reflexivity.
+Qed.
+
 End Meta.
+Export Meta.

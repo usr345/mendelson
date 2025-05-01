@@ -15,16 +15,20 @@ Module Export EqDec.
     reflexivity.
   Qed.
 
-  Proposition eqb_symmetric {A : Type} `{EqDec A}: forall x y : A, (eqb x y) = true <-> (eqb y x) = true.
+  Proposition eqb_symmetric {A : Type} `{EqDec A}: forall x y : A, (eqb x y) = (eqb y x).
   Proof.
     intros x y.
-    split ; intro H1.
-    - rewrite eqb_eq in H1.
-      rewrite <-H1.
-      apply eqb_reflexive.
-    - rewrite eqb_eq in H1.
-      rewrite <-H1.
-      apply eqb_reflexive.
+    destruct (eqb x y) eqn:Heq.
+    - rewrite eqb_eq in Heq.
+      rewrite Heq.
+      rewrite eqb_reflexive.
+      reflexivity.
+    - destruct (eqb y x) eqn:Heq1.
+      + rewrite eqb_eq in Heq1.
+        rewrite Heq1 in Heq.
+        rewrite eqb_reflexive in Heq.
+        discriminate Heq.
+      + reflexivity.
   Qed.
 
   Proposition eqb_transitive {A : Type} `{EqDec A}: forall x y z : A, (eqb x y) = true -> (eqb y z) = true -> (eqb x z) = true.

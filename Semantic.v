@@ -1,5 +1,6 @@
 Require Import Setoid.
-From Stdlib Require Import Classical.
+(* From Stdlib Require Import Classical. *)
+Require Import Classical.
 From Mendelson Require Import Sets.
 From Mendelson Require Import Formula.
 From Mendelson Require Import FSignature.
