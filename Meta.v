@@ -969,5 +969,28 @@ Proof.
         reflexivity.
 Qed.
 
+Lemma replace_true_false_same {atom : Set} `{EqDec atom} (F F1 F2 : @formula atom) (v : atom -> bool) (H1 : tautology F1) (H2 : contradictory F2) :
+  (eval v F) = (eval v (replace_true_false F v F1 F2)).
+Proof.
+  unfold tautology in H1.
+  unfold is_true in H1.
+  unfold contradictory in H2.
+  induction F.
+  - simpl.
+    destruct (v a) eqn:H3.
+    + specialize (H1 v).
+      rewrite H1.
+      reflexivity.
+    + specialize (H2 v).
+      rewrite H2.
+      reflexivity.
+  - simpl.
+    rewrite <-IHF.
+    reflexivity.
+  - simpl.
+    rewrite <-IHF1.
+    rewrite <-IHF2.
+    reflexivity.
+Qed.
 End Meta.
 Export Meta.
