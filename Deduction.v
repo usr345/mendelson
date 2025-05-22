@@ -1,5 +1,6 @@
 Require Import Classical.
 From Coq Require Import Arith.
+From Mendelson Require Import EqDec.
 From Mendelson Require Import Sets.
 From Mendelson Require Import FSignature.
 From Mendelson Require Import Formula.
@@ -55,8 +56,79 @@ Definition A : @formula string := f_atom "A".
 Definition B : @formula string := f_atom "B".
 Definition C : @formula string := f_atom "C".
 
+Theorem deduction' {atom : Set} `{HeqDec1 : EqDec atom} {Γ : @formula atom -> Prop} {A B} : extend Γ A |- B -> Γ |- $A -> B$.
+Proof.
+  intro H.
+  induction H as [B H|?|?|?|B C H1 IH1 H2 IH2].
+  (* Пусть B является элементом Γ,, A *)
+  - unfold elem in H.
+    unfold extend in H.
+    destruct (eqb A B) as [Heq|Hneq].
+    (* Если B = A, применяем лемму imply_self *)
+    + rewrite Heq.
+      apply imply_self.
+    (* Если B != A, по аксиоме 1 получаем формулу *)
+    (* $B \supset (A \supset B)$ *)
+    + specialize_axiom (@axiom1 _ Γ B A) H1.
+      (* Поскольку B != A, B содержится в Γ *)
+      assert (H2: Γ |- B).
+      {
+        apply hypo.
+        unfold elem in H.
+        destruct H as [Hin|Heq].
+        * unfold elem.
+          exact Hin.
+        * apply Hneq in Heq.
+          contradiction Heq.
+      }
+
+      (* По MP из H1 : Γ |- $B -> (A -> B)$ *)
+      (* и H2 : Γ |- B получаем Γ |- $A -> B$ *)
+      specialize (mp H1 H2) as H3.
+      exact H3.
+  - (* Пусть B является аксиомой *)
+    apply drop_antecedent.
+    apply axiom1.
+  - apply drop_antecedent.
+    apply axiom2.
+  - apply drop_antecedent.
+    apply axiom3.
+  - (* Modus Ponens:
+       Пусть C получена по MP из 2-х формул B и $B -> C$ по Modus Ponens, и пусть они доказуемы в контексте (Γ,, A):
+       H1 : Γ,, A |- $B -> C$
+       H2 : Γ,, A |- B
+
+       Пусть истинны индуктивные гипотезы:
+       IH1 : Γ |- $A -> B -> C$
+       IH2 : Γ |- $A -> B$
+    *)
+
+    (* По аксиоме 2: $(A -> (B -> C)) -> ((A -> B) -> (A -> C))$ *)
+    specialize_axiom (@axiom2 _ Γ A B C) H3.
+
+    (* MP *)
+    (* IH1 : Γ |- $A -> B -> C$ *)
+    (*  H3 : Γ |- $(A -> B -> C) -> (A -> B) -> A -> C$ *)
+    specialize (mp H3 IH1) as H4.
+
+    (* MP *)
+    (* IH2 : Γ |- $A -> B$ *)
+    (*  H4 : Γ |- $(A -> B) -> A -> C$ *)
+    specialize (mp H4 IH2) as H5.
+    exact H5.
+Defined.
+
+
+#[export] Instance EqDecString : EqDec string :=
+{
+    eqb := String.eqb;
+    eqb_eq := String.eqb_eq
+}.
+
 (* Check (T1 A B). *)
 (* Compute (T1 A B). *)
+Compute (deduction (T1 A B)).
+(* Compute (formula_beq (f_atom "A") (f_atom "A")). *)
 
 Fixpoint traveler {atom : Set} {F : @formula atom} {Gamma : @formula atom -> Prop} (T : @entails atom Gamma F) {struct T} : nat :=
   match T with
@@ -110,9 +182,10 @@ Fixpoint traveler1 {F : @formula string} {Gamma : @formula string -> Prop} (T : 
 
 Definition caller {F : @formula string} {Gamma : @formula string -> Prop} (T : @entails string Gamma F) (accum : nat * list string) : list string :=
   let res := traveler1 T (0, nil) in
-  ("$\vdash " ++ (stringify F "" "") ++ "$\\") :: (rev (snd res)).
+  ("$\neg B \supset \neg A \vdash " ++ (stringify F "" "") ++ "$\\") :: (rev (snd res)).
 
-Compute fold_left append (caller (T1_7ex2 empty A B C) (0, nil)) "".
+(* Compute fold_left append (caller (T1_7ex2 empty A B C) (0, nil)) "". *)
+Compute fold_left append (caller (deduction (T1 A B)) (0, nil)) "".
 
 (* Compute (traveler (T1 A B)). *)
 (* Compute ( *)

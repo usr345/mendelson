@@ -23,14 +23,17 @@ Module Formula.
   Export F1.
 
   (* We assume atomic propositions form a set with decidable equality. *)
-  Parameter atom_eq : forall {atom : Set} (a b : atom), {a = b} + {a <> b}.
+  Definition atom_eq : forall {atom : Set} `{EqDec atom} (a b : atom), {a = b} + {a <> b} :=
+    let c := eqb a b in
+    match c with
+      | true => Right (eqb_eq c.
 
   (* Equality of formulas is decidable. *)
   Lemma formula_eq {atom : Set} (A B : @formula atom) : {A = B} + {A <> B}.
   Proof.
     decide equality.
     now apply atom_eq.
-  Qed.
+  Defined.
 
   Fixpoint formula_beq {atom : Set} `{EqDec atom} (A B : @formula atom) : bool :=
     match A, B with

@@ -105,6 +105,7 @@ Proof.
   exact H2.
 Qed.
 
+Check atom_eq.
 (* We conclude with the proof of the deduction theorem, just to show
    that it is quite painless to formalize. *)
 Theorem deduction {atom : Set} {Γ : @formula atom -> Prop} {A B} : extend Γ A |- B -> Γ |- $A -> B$.
@@ -167,7 +168,7 @@ Proof.
     (*  H4 : Γ |- $(A -> B) -> A -> C$ *)
     specialize (mp H4 IH2) as H5.
     exact H5.
-Qed.
+Defined.
 
 (* Упражнения *)
 Lemma T1_7ex1 {atom : Set} (Γ : @formula atom -> Prop) A : Γ |- $(~A -> A) -> A$.
