@@ -23,13 +23,20 @@ Module Formula.
   Export F1.
 
   (* We assume atomic propositions form a set with decidable equality. *)
-  Definition atom_eq : forall {atom : Set} `{EqDec atom} (a b : atom), {a = b} + {a <> b} :=
-    let c := eqb a b in
-    match c with
-      | true => Right (eqb_eq c.
+  Definition atom_eq : forall {atom : Set} `{EqDec atom} (a b : atom), {a = b} + {a <> b}.
+  Proof.
+    intros atom H a b.
+    destruct (eqb a b) eqn:Heq.
+    - apply eqb_eq1 in Heq.
+      apply left.
+      exact Heq.
+    - rewrite eqb_false_neq in Heq.
+      apply right.
+      exact Heq.
+  Defined.
 
   (* Equality of formulas is decidable. *)
-  Lemma formula_eq {atom : Set} (A B : @formula atom) : {A = B} + {A <> B}.
+  Lemma formula_eq {atom : Set} `{HeqDec: EqDec atom} (A B : @formula atom) : {A = B} + {A <> B}.
   Proof.
     decide equality.
     now apply atom_eq.
@@ -43,71 +50,76 @@ Module Formula.
     | _, _ => false
     end.
 
-  Lemma formula_beq_eq {atom : Set} `{EqDec atom} (A B : @formula atom) :
-    (formula_beq A B) = true <-> A = B.
+  Lemma formula_beq_eq1 {atom : Set} `{EqDec atom} (A B : @formula atom) :
+    (formula_beq A B) = true -> A = B.
   Proof.
-    split ; intro H1.
-    - generalize dependent B.
-      induction A.
-      + intros B H1.
-        destruct B ; unfold formula_beq in H1.
-        * apply eqb_eq in H1.
-          rewrite H1.
-          reflexivity.
-        * discriminate H1.
-        * discriminate H1.
-      + intros B H1.
+    intro H1.
+    generalize dependent B.
+    induction A.
+    - intros B H1.
+      destruct B ; unfold formula_beq in H1.
+      + apply eqb_eq1 in H1.
+        rewrite H1.
+        reflexivity.
+      + discriminate H1.
+      + discriminate H1.
+    - intros B H1.
         destruct B.
-        * unfold formula_beq in H1.
+        + unfold formula_beq in H1.
           discriminate H1.
-        * simpl in H1.
+        + simpl in H1.
           specialize (IHA B).
           specialize (IHA H1).
           rewrite IHA.
           reflexivity.
-        * simpl in H1.
+        + simpl in H1.
           discriminate H1.
-      + intros B H1.
-        destruct B.
-        * simpl in H1.
-          discriminate H1.
-        * simpl in H1.
-          discriminate H1.
-        * simpl in H1.
-          apply andb_prop in H1.
-          destruct H1 as [H1 H2].
-          specialize (IHA1 B1).
-          specialize (IHA1 H1).
-          specialize (IHA2 B2).
-          specialize (IHA2 H2).
-          rewrite IHA1.
-          rewrite IHA2.
-          reflexivity.
-    - generalize dependent B.
-      induction A.
-      + intros B H1.
-        rewrite <-H1.
-        simpl.
-        apply eqb_reflexive.
-      + intros B H1.
-        rewrite <-H1.
-        simpl.
-        specialize (IHA A).
-        assert (Ha : A = A).
-        { reflexivity. }
-        specialize (IHA Ha).
-        apply IHA.
-      + intros B H1.
-        rewrite <-H1.
-        simpl.
-        apply andb_true_intro.
-        split.
-        * specialize (IHA1 A1).
+    - intros B H1.
+      destruct B.
+      + simpl in H1.
+        discriminate H1.
+      + simpl in H1.
+        discriminate H1.
+      + simpl in H1.
+        apply andb_prop in H1.
+        destruct H1 as [H1 H2].
+        specialize (IHA1 B1).
+        specialize (IHA1 H1).
+        specialize (IHA2 B2).
+        specialize (IHA2 H2).
+        rewrite IHA1.
+        rewrite IHA2.
+        reflexivity.
+  Qed.
+
+  Lemma formula_beq_eq2 {atom : Set} `{EqDec atom} (A B : @formula atom) :
+    A = B -> (formula_beq A B) = true.
+  Proof.
+    generalize dependent B.
+    induction A.
+    - intros B H1.
+      rewrite <-H1.
+      simpl.
+      apply eqb_reflexive.
+    - intros B H1.
+      rewrite <-H1.
+      simpl.
+      specialize (IHA A).
+      assert (Ha : A = A).
+      { reflexivity. }
+      specialize (IHA Ha).
+      apply IHA.
+    - intros B H1.
+      rewrite <-H1.
+      simpl.
+      apply andb_true_intro.
+      split.
+      + specialize (IHA1 A1).
         assert (Ha : A1 = A1).
         { reflexivity. }
         specialize (IHA1 Ha).
         apply IHA1.
-        * specialize (IHA2 A2).
+      + specialize (IHA2 A2).
         assert (Ha : A2 = A2).
         { reflexivity. }
         specialize (IHA2 Ha).
@@ -117,7 +129,8 @@ Module Formula.
   #[export] Instance eqFormula {atom : Set} `{EqDec atom} : EqDec (@formula atom)  :=
     {
       eqb := formula_beq;
-      eqb_eq := formula_beq_eq;
+      eqb_eq1 := formula_beq_eq1;
+      eqb_eq2 := formula_beq_eq2;
     }.
 
   Fixpoint replace_atom {atom : Set} `{EqDec atom} (F : @formula atom) (a : atom) (G : @formula atom) {struct F} : @formula atom :=
@@ -136,7 +149,6 @@ Module Formula.
     | f_not F' => f_not (replace_true_false F' v F1 F2)
     | f_imp A B => f_imp (replace_true_false A v F1 F2) (replace_true_false B v F1 F2)
     end.
-
 
 End Formula.
 Export Formula.

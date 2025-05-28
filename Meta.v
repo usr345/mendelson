@@ -112,7 +112,7 @@ Definition rewriter {atom : Set} (v : atom -> bool) (F : @formula atom) : formul
   | true => F
   end.
 
-Lemma rewriter_neg_pos {atom : Set} (Γ : @formula atom -> Prop) (f : @formula atom) (v : atom -> bool) : (Γ |- rewriter v $~f$) -> (Γ |- rewriter v f).
+Lemma rewriter_neg_pos {atom : Set} `{HEqDec : EqDec atom} (Γ : @formula atom -> Prop) (f : @formula atom) (v : atom -> bool) : (Γ |- rewriter v $~f$) -> (Γ |- rewriter v f).
 Proof.
   unfold rewriter.
   intro H.
@@ -125,7 +125,7 @@ Proof.
     exact H.
 Qed.
 
-Lemma rewriter_pos_neg {atom : Set} (Γ : @formula atom -> Prop) (f : @formula atom) (v : atom -> bool) : (Γ |- rewriter v f) -> (Γ |- rewriter v $~f$).
+Lemma rewriter_pos_neg {atom : Set} `{HEqDec : EqDec atom} (Γ : @formula atom -> Prop) (f : @formula atom) (v : atom -> bool) : (Γ |- rewriter v f) -> (Γ |- rewriter v $~f$).
 Proof.
   unfold rewriter.
   intro H.
@@ -177,7 +177,7 @@ Proposition occurs_reflection {atom : Set} `{EqDec atom} (a : atom) (F : formula
   - induction F.
     + simpl in H1.
       simpl.
-      rewrite eqb_eq in H1.
+      apply eqb_eq1 in H1.
       exact H1.
     + simpl in H1.
       simpl.
@@ -225,7 +225,7 @@ Proof.
       simpl in H.
       destruct H.
       * symmetry in H.
-        rewrite <-eqb_eq in H.
+        apply eqb_eq2 in H.
         rewrite H.
         reflexivity.
       * apply IH in H.
@@ -239,7 +239,7 @@ Proof.
     + simpl.
       simpl in H.
       destruct (eqb x h) eqn:IEq.
-      * rewrite eqb_eq in IEq.
+      * apply eqb_eq1 in IEq.
         symmetry in IEq.
         left.
         exact IEq.
@@ -261,7 +261,7 @@ Proof.
       destruct H as [H1 H2].
       apply IH in H2.
       destruct (eqb x h) eqn:H.
-      * apply eqb_eq in H.
+      * apply eqb_eq1 in H.
         assert (H3 : true = true).
         { reflexivity. }
         symmetry in H.
@@ -278,7 +278,7 @@ Proof.
       simpl in H.
       destruct H1 as [H1 | H1].
       * symmetry in H1.
-        rewrite <-eqb_eq in H1.
+        apply eqb_eq2 in H1.
         rewrite H1 in H.
         discriminate H.
       * apply IH.
@@ -757,7 +757,7 @@ Proof.
     unfold rewriter.
     unfold eval.
     destruct (eqb a x) eqn:Heq.
-    + rewrite eqb_eq in Heq.
+    + apply eqb_eq1 in Heq.
       apply H1 in Heq.
       contradiction Heq.
     + unfold extend.

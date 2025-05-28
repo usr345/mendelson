@@ -56,67 +56,26 @@ Definition A : @formula string := f_atom "A".
 Definition B : @formula string := f_atom "B".
 Definition C : @formula string := f_atom "C".
 
-Theorem deduction' {atom : Set} `{HeqDec1 : EqDec atom} {Γ : @formula atom -> Prop} {A B} : extend Γ A |- B -> Γ |- $A -> B$.
+Print String.
+Search (sumbool string).
+
+Lemma str_eqb_eq1 : forall x y : string, (String.eqb x y) = true -> x = y.
 Proof.
-  intro H.
-  induction H as [B H|?|?|?|B C H1 IH1 H2 IH2].
-  (* Пусть B является элементом Γ,, A *)
-  - unfold elem in H.
-    unfold extend in H.
-    destruct (eqb A B) as [Heq|Hneq].
-    (* Если B = A, применяем лемму imply_self *)
-    + rewrite Heq.
-      apply imply_self.
-    (* Если B != A, по аксиоме 1 получаем формулу *)
-    (* $B \supset (A \supset B)$ *)
-    + specialize_axiom (@axiom1 _ Γ B A) H1.
-      (* Поскольку B != A, B содержится в Γ *)
-      assert (H2: Γ |- B).
-      {
-        apply hypo.
-        unfold elem in H.
-        destruct H as [Hin|Heq].
-        * unfold elem.
-          exact Hin.
-        * apply Hneq in Heq.
-          contradiction Heq.
-      }
-
-      (* По MP из H1 : Γ |- $B -> (A -> B)$ *)
-      (* и H2 : Γ |- B получаем Γ |- $A -> B$ *)
-      specialize (mp H1 H2) as H3.
-      exact H3.
-  - (* Пусть B является аксиомой *)
-    apply drop_antecedent.
-    apply axiom1.
-  - apply drop_antecedent.
-    apply axiom2.
-  - apply drop_antecedent.
-    apply axiom3.
-  - (* Modus Ponens:
-       Пусть C получена по MP из 2-х формул B и $B -> C$ по Modus Ponens, и пусть они доказуемы в контексте (Γ,, A):
-       H1 : Γ,, A |- $B -> C$
-       H2 : Γ,, A |- B
-
-       Пусть истинны индуктивные гипотезы:
-       IH1 : Γ |- $A -> B -> C$
-       IH2 : Γ |- $A -> B$
-    *)
-
-    (* По аксиоме 2: $(A -> (B -> C)) -> ((A -> B) -> (A -> C))$ *)
-    specialize_axiom (@axiom2 _ Γ A B C) H3.
-
-    (* MP *)
-    (* IH1 : Γ |- $A -> B -> C$ *)
-    (*  H3 : Γ |- $(A -> B -> C) -> (A -> B) -> A -> C$ *)
-    specialize (mp H3 IH1) as H4.
-
-    (* MP *)
-    (* IH2 : Γ |- $A -> B$ *)
-    (*  H4 : Γ |- $(A -> B) -> A -> C$ *)
-    specialize (mp H4 IH2) as H5.
-    exact H5.
-Defined.
+  intros x.
+  induction x ; intros y H.
+  - simpl in H.
+    destruct y.
+    + reflexivity.
+    + discriminate H.
+  - simpl in H.
+    destruct y.
+    + discriminate H.
+    + destruct (Ascii.eqb a a0) eqn:Heq.
+      * specialize (IHx y H).
+        rewrite IHx.
+        Check Ascii.eqb_eq.
+        Compute Ascii.eqb_eq 'a' 'b'.
+        apply Ascii.eqb_eq in Heq.
 
 
 #[export] Instance EqDecString : EqDec string :=
