@@ -39,5 +39,20 @@ Module Export EqDec.
     apply H2.
   Qed.
 
+  Proposition eqb_false_neq {A : Type} `{EqDec A} : forall x y : A, (eqb x y) = false <-> x <> y.
+  Proof.
+    intros x y.
+    split ; intro Heq.
+    - intro Heq1.
+      apply eqb_eq in Heq1.
+      rewrite Heq1 in Heq.
+      discriminate Heq.
+    - destruct (eqb x y) eqn:Heq1.
+      + apply eqb_eq in Heq1.
+        assert (Htrue : true = true) by (reflexivity).
+        apply Heq in Heq1.
+        destruct Heq1.
+      + reflexivity.
+  Defined.
 End EqDec.
 Export EqDec.
