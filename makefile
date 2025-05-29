@@ -1,4 +1,12 @@
-COQC=rocq c -R . Mendelson
+OUTPUT=$(shell which rocq 2>/dev/null)
+
+ifneq ($(OUTPUT), )
+    COQC=rocq c
+else
+    COQC=coqc
+endif
+
+COQC := $(COQC) -R . Mendelson
 
 all: Meta.vo
 
