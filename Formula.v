@@ -30,7 +30,7 @@ Module Formula.
   Proof.
     decide equality.
     now apply atom_eq.
-  Defined.
+  Qed.
 
   Fixpoint formula_beq {atom : Set} `{EqDec atom} (A B : @formula atom) : bool :=
     match A, B with

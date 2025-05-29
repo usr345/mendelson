@@ -167,7 +167,7 @@ Proof.
     (*  H4 : Γ |- $(A -> B) -> A -> C$ *)
     specialize (mp H4 IH2) as H5.
     exact H5.
-Defined.
+Qed.
 
 (* Упражнения *)
 Lemma T1_7ex1 {atom : Set} (Γ : @formula atom -> Prop) A : Γ |- $(~A -> A) -> A$.

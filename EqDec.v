@@ -53,6 +53,6 @@ Module Export EqDec.
         apply Heq in Heq1.
         destruct Heq1.
       + reflexivity.
-  Defined.
+  Qed.
 End EqDec.
 Export EqDec.
