@@ -1,6 +1,20 @@
-COQC=rocq c -R . Mendelson
+OUTPUT=$(shell which rocq 2>/dev/null)
 
-all: Meta.vo
+# COQC=rocq c -R . Mendelson
+# COQC=coqc -R . Mendelson
+# rocq
+ifneq ($(OUTPUT), "")
+	COQC=rocq c
+else
+	COQC=coqc
+endif
+
+COQC := $(COQC)" -R . Mendelson"
+all:
+	@echo [$(COQC)]
+	@echo [$(OUTPUT)]
+
+#Meta.vo
 
 FSignature.vo : FSignature.v
 	$(COQC) FSignature.v

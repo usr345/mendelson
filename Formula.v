@@ -23,10 +23,7 @@ Module Formula.
   Export F1.
 
   (* We assume atomic propositions form a set with decidable equality. *)
-  Definition atom_eq : forall {atom : Set} `{EqDec atom} (a b : atom), {a = b} + {a <> b} :=
-    let c := eqb a b in
-    match c with
-      | true => Right (eqb_eq c.
+  Parameter atom_eq : forall {atom : Set} (a b : atom), {a = b} + {a <> b}.
 
   (* Equality of formulas is decidable. *)
   Lemma formula_eq {atom : Set} (A B : @formula atom) : {A = B} + {A <> B}.

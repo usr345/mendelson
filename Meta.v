@@ -766,7 +766,7 @@ Proof.
       exact IH.
 Qed.
 
-(* Эта теорема будет выступать в роли индективной гипотезы для семантической полноты *)
+(* Эта теорема будет выступать в роли индуктивной гипотезы для семантической полноты *)
 Lemma is_theorem_if_it_true_for_all_cases {atom : Set} `{HEqDec: EqDec atom} (f : @formula atom) (letters : list atom) (HUnique: unique letters) :
   (forall v : atom -> bool, apply_rewriter v letters |- f) -> theorem f.
 Proof.

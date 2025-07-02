@@ -105,7 +105,6 @@ Proof.
   exact H2.
 Qed.
 
-Check atom_eq.
 (* We conclude with the proof of the deduction theorem, just to show
    that it is quite painless to formalize. *)
 Theorem deduction {atom : Set} {Γ : @formula atom -> Prop} {A B} : extend Γ A |- B -> Γ |- $A -> B$.
