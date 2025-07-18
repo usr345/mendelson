@@ -97,6 +97,52 @@ Module Formula.
           discriminate H1.
         * simpl in H1.
           discriminate H1.
+      + intros B H1.
+        destruct B.
+        * simpl in H1.
+          discriminate H1.
+        (* conj *)
+        * simpl in H1.
+          discriminate H1.
+        (* disj *)
+        * simpl in H1.
+          discriminate H1.
+        (* impl *)
+        * simpl in H1.
+          apply andb_prop in H1.
+          destruct H1 as [H1 H2].
+          specialize (IHA1 B1).
+          specialize (IHA1 H1).
+          specialize (IHA2 B2).
+          specialize (IHA2 H2).
+          rewrite IHA1.
+          rewrite IHA2.
+          reflexivity.
+        * simpl in H1.
+          discriminate H1.
+      + intros B H1.
+        destruct B.
+        * simpl in H1.
+          discriminate H1.
+        (* conj *)
+        * simpl in H1.
+          discriminate H1.
+        (* disj *)
+        * simpl in H1.
+          discriminate H1.
+        (* impl *)
+        * simpl in H1.
+          discriminate H1.
+        * simpl in H1.
+          apply andb_prop in H1.
+          destruct H1 as [H1 H2].
+          specialize (IHA1 B1).
+          specialize (IHA1 H1).
+          specialize (IHA2 B2).
+          specialize (IHA2 H2).
+          rewrite IHA1.
+          rewrite IHA2.
+          reflexivity.
     - generalize dependent B.
       induction A.
       + intros B H1.
@@ -126,6 +172,7 @@ Module Formula.
         { reflexivity. }
         specialize (IHA2 Ha).
         apply IHA2.
+      + intros B H1.
   Qed.
 
   #[export] Instance eqFormula {atom : Set} `{EqDec atom} : EqDec (@formula atom)  :=
