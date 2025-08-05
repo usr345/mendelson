@@ -10,7 +10,9 @@ Module Formula1 <: TFormula.
   | f_not  : formula -> formula
   | f_conj  : formula -> formula -> formula
   | f_disj  : formula -> formula -> formula
-  | f_imp  : formula -> formula -> formula.
+  | f_imp  : formula -> formula -> formula
+  | f_box  : formula -> formula
+  | f_diamond : formula -> formula.
 
   Definition t {atom : Type} := @formula atom.
   Definition negation {atom : Type} := @f_not atom.
@@ -44,6 +46,8 @@ Module Formula.
     | f_conj A1 A2, f_conj B1 B2 => andb (formula_beq A1 B1) (formula_beq A2 B2)
     | f_disj A1 A2, f_disj B1 B2 => andb (formula_beq A1 B1) (formula_beq A2 B2)
     | f_imp A1 A2, f_imp B1 B2 => andb (formula_beq A1 B1) (formula_beq A2 B2)
+    | f_box A', f_box B' => formula_beq A' B'
+    | f_diamond A', f_diamond B' => formula_beq A' B'
     | _, _ => false
     end.
 
@@ -55,35 +59,21 @@ Module Formula.
       induction A.
       + intros B H1.
         destruct B ; unfold formula_beq in H1 ; try discriminate H1.
+        (* f_atom *)
         * apply eqb_eq in H1.
           rewrite H1.
           reflexivity.
       + intros B H1.
-        destruct B.
-        * unfold formula_beq in H1.
-          discriminate H1.
-        * simpl in H1.
-          specialize (IHA B).
+        destruct B ; simpl in H1 ; try discriminate H1.
+        (* f_not *)
+        * specialize (IHA B).
           specialize (IHA H1).
           rewrite IHA.
           reflexivity.
-        * simpl in H1.
-          discriminate H1.
-        * simpl in H1.
-          discriminate H1.
-        * simpl in H1.
-          discriminate H1.
       + intros B H1.
-        destruct B.
-        (* atom *)
-        * simpl in H1.
-          discriminate H1.
+        destruct B ; simpl in H1 ; try discriminate H1.
         (* conj *)
-        * simpl in H1.
-          discriminate H1.
-        (* disj *)
-        * simpl in H1.
-          apply andb_prop in H1.
+        * apply andb_prop in H1.
           destruct H1 as [H1 H2].
           specialize (IHA1 B1).
           specialize (IHA1 H1).
@@ -92,24 +82,10 @@ Module Formula.
           rewrite IHA1.
           rewrite IHA2.
           reflexivity.
-        (* impl *)
-        * simpl in H1.
-          discriminate H1.
-        * simpl in H1.
-          discriminate H1.
       + intros B H1.
-        destruct B.
-        * simpl in H1.
-          discriminate H1.
-        (* conj *)
-        * simpl in H1.
-          discriminate H1.
+        destruct B ; simpl in H1 ; try discriminate H1.
         (* disj *)
-        * simpl in H1.
-          discriminate H1.
-        (* impl *)
-        * simpl in H1.
-          apply andb_prop in H1.
+        * apply andb_prop in H1.
           destruct H1 as [H1 H2].
           specialize (IHA1 B1).
           specialize (IHA1 H1).
@@ -118,23 +94,10 @@ Module Formula.
           rewrite IHA1.
           rewrite IHA2.
           reflexivity.
-        * simpl in H1.
-          discriminate H1.
       + intros B H1.
-        destruct B.
-        * simpl in H1.
-          discriminate H1.
-        (* conj *)
-        * simpl in H1.
-          discriminate H1.
-        (* disj *)
-        * simpl in H1.
-          discriminate H1.
+        destruct B ; simpl in H1 ; try discriminate H1.
         (* impl *)
-        * simpl in H1.
-          discriminate H1.
-        * simpl in H1.
-          apply andb_prop in H1.
+        * apply andb_prop in H1.
           destruct H1 as [H1 H2].
           specialize (IHA1 B1).
           specialize (IHA1 H1).
@@ -142,13 +105,29 @@ Module Formula.
           specialize (IHA2 H2).
           rewrite IHA1.
           rewrite IHA2.
+          reflexivity.
+      + intros B H1.
+        destruct B ; try (simpl in H1 ; discriminate H1).
+        (* f_box *)
+        * specialize (IHA B).
+          specialize (IHA H1).
+          rewrite IHA.
+          reflexivity.
+      + intros B H1.
+        destruct B ; try (simpl in H1 ; discriminate H1).
+        (* f_diamond *)
+        * specialize (IHA B).
+          specialize (IHA H1).
+          rewrite IHA.
           reflexivity.
     - generalize dependent B.
       induction A.
+      (* atom *)
       + intros B H1.
         rewrite <-H1.
         simpl.
         apply eqb_reflexive.
+      (* not *)
       + intros B H1.
         rewrite <-H1.
         simpl.
@@ -157,6 +136,7 @@ Module Formula.
         { reflexivity. }
         specialize (IHA Ha).
         apply IHA.
+      (* conj *)
       + intros B H1.
         rewrite <-H1.
         simpl.
@@ -172,7 +152,56 @@ Module Formula.
         { reflexivity. }
         specialize (IHA2 Ha).
         apply IHA2.
+      (* disj *)
       + intros B H1.
+        rewrite <-H1.
+        simpl.
+        apply andb_true_intro.
+        split.
+        * specialize (IHA1 A1).
+        assert (Ha : A1 = A1).
+        { reflexivity. }
+        specialize (IHA1 Ha).
+        apply IHA1.
+        * specialize (IHA2 A2).
+        assert (Ha : A2 = A2).
+        { reflexivity. }
+        specialize (IHA2 Ha).
+        apply IHA2.
+      (* impl *)
+      + intros B H1.
+        rewrite <-H1.
+        simpl.
+        apply andb_true_intro.
+        split.
+        * specialize (IHA1 A1).
+        assert (Ha : A1 = A1).
+        { reflexivity. }
+        specialize (IHA1 Ha).
+        apply IHA1.
+        * specialize (IHA2 A2).
+        assert (Ha : A2 = A2).
+        { reflexivity. }
+        specialize (IHA2 Ha).
+        apply IHA2.
+      (* box *)
+      + intros B H1.
+        rewrite <-H1.
+        simpl.
+        specialize (IHA A).
+        assert (Ha : A = A).
+        { reflexivity. }
+        specialize (IHA Ha).
+        apply IHA.
+      (* diamond *)
+      + intros B H1.
+        rewrite <-H1.
+        simpl.
+        specialize (IHA A).
+        assert (Ha : A = A).
+        { reflexivity. }
+        specialize (IHA Ha).
+        apply IHA.
   Qed.
 
   #[export] Instance eqFormula {atom : Set} `{EqDec atom} : EqDec (@formula atom)  :=
@@ -185,6 +214,8 @@ Module Formula.
     match F with
     | f_atom a' => if (eqb a' a) then G else F
     | f_not F' => f_not (replace_atom F' a G)
+    | f_conj F1 F2 => f_conj (replace_atom F1 a G) (replace_atom F2 a G)
+    | f_disj F1 F2 => f_disj (replace_atom F1 a G) (replace_atom F2 a G)
     | f_imp F1 F2 => f_imp (replace_atom F1 a G) (replace_atom F2 a G)
     end.
 
@@ -195,17 +226,17 @@ Module Formula.
     match F with
     | f_atom a => if (v a) then F1 else F2
     | f_not F' => f_not (replace_true_false F' v F1 F2)
+    | f_conj A B => f_conj (replace_true_false A v F1 F2) (replace_true_false B v F1 F2)
+    | f_disj A B => f_disj (replace_true_false A v F1 F2) (replace_true_false B v F1 F2)
     | f_imp A B => f_imp (replace_true_false A v F1 F2) (replace_true_false B v F1 F2)
     end.
-
 
 End Formula.
 Export Formula.
 
-
-
 Module Fitting_Mendelson.
 
+(* стр. 27 *)
 Definition f_axiom1 {atom : Set} (A B : @formula atom) : formula :=
   $A -> (B -> A)$.
 
@@ -213,7 +244,28 @@ Definition f_axiom2 {atom : Set} (A B C : @formula atom) : formula :=
   $(A -> B -> C) -> (A -> B) -> (A -> C)$.
 
 Definition f_axiom3 {atom : Set} (A B : @formula atom) : formula :=
-  $(~ B -> ~ A) -> (~ B -> A) -> B$.
+  $(A /\ B) -> A$.
+
+Definition f_axiom4 {atom : Set} (A B : @formula atom) : formula :=
+  $(A /\ B) -> B$.
+
+Definition f_axiom5 {atom : Set} (A B : @formula atom) : formula :=
+  $A -> (B -> (A /\ B))$.
+
+Definition f_axiom6 {atom : Set} (A B : @formula atom) : formula :=
+  $A -> (A \/ B)$.
+
+Definition f_axiom7 {atom : Set} (A B : @formula atom) : formula :=
+  $B -> (A \/ B)$.
+
+Definition f_axiom8 {atom : Set} (A B C : @formula atom) : formula :=
+  $(A -> C) -> (B -> C) -> (A \/ B -> C)$.
+
+Definition f_axiom9 {atom : Set} (A B : @formula atom) : formula :=
+  $~A -> (A -> B)$.
+
+Definition f_axiom10 {atom : Set} (A : @formula atom) : formula :=
+  $A \/ ~A$.
 
 Reserved Notation "Γ |- A" (at level 98).
 Inductive entails {atom : Set} (Γ : @formula atom -> Prop) : @formula atom -> Type :=
@@ -222,12 +274,12 @@ Inductive entails {atom : Set} (Γ : @formula atom -> Prop) : @formula atom -> T
   | axiom2 : forall A B C, Γ |- f_axiom2 A B C
   | axiom3 : forall A B, Γ |- f_axiom3 A B
   | axiom4 : forall A B , Γ |- f_axiom4 A B
-  | axiom5 : forall A B C, Γ |- f_axiom5 A B C
+  | axiom5 : forall A B, Γ |- f_axiom5 A B
   | axiom6 : forall A B, Γ |- f_axiom6 A B
   | axiom7 : forall A B , Γ |- f_axiom7 A B
   | axiom8 : forall A B C, Γ |- f_axiom8 A B C
   | axiom9 : forall A B, Γ |- f_axiom9 A B
-  | axiom10 : forall A B, Γ |- f_axiom10 A B
+  | axiom10 : forall A, Γ |- f_axiom10 A
   | mp : forall A B, Γ |- $A -> B$ -> Γ |- A -> Γ |- B (* modus ponens *)
 where "Γ |- A" := (entails Γ A).
 
