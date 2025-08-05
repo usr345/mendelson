@@ -2,6 +2,8 @@ Require Import Setoid.
 From Mendelson Require Import Sets.
 From Mendelson Require Import FSignature.
 From Mendelson Require Import EqDec.
+Require Import Lists.List.
+Import ListNotations.
 
 Module Formula1 <: TFormula.
   (* Синтаксис модальной формулы *)
@@ -210,31 +212,10 @@ Module Formula.
       eqb_eq := formula_beq_eq;
     }.
 
-  Fixpoint replace_atom {atom : Set} `{EqDec atom} (F : @formula atom) (a : atom) (G : @formula atom) {struct F} : @formula atom :=
-    match F with
-    | f_atom a' => if (eqb a' a) then G else F
-    | f_not F' => f_not (replace_atom F' a G)
-    | f_conj F1 F2 => f_conj (replace_atom F1 a G) (replace_atom F2 a G)
-    | f_disj F1 F2 => f_disj (replace_atom F1 a G) (replace_atom F2 a G)
-    | f_imp F1 F2 => f_imp (replace_atom F1 a G) (replace_atom F2 a G)
-    end.
-
-  (* Заменяет все вхождения атомов, для которых v a = true на F1
-     и атомов с v a = false на F2
-  *)
-  Fixpoint replace_true_false {atom : Set} `{EqDec atom} (F : @formula atom) (v : atom -> bool) (F1 F2 : @formula atom) {struct F} : @formula atom :=
-    match F with
-    | f_atom a => if (v a) then F1 else F2
-    | f_not F' => f_not (replace_true_false F' v F1 F2)
-    | f_conj A B => f_conj (replace_true_false A v F1 F2) (replace_true_false B v F1 F2)
-    | f_disj A B => f_disj (replace_true_false A v F1 F2) (replace_true_false B v F1 F2)
-    | f_imp A B => f_imp (replace_true_false A v F1 F2) (replace_true_false B v F1 F2)
-    end.
-
 End Formula.
 Export Formula.
 
-Module Fitting_Mendelson.
+Module Syntactic.
 
 (* стр. 27 *)
 Definition f_axiom1 {atom : Set} (A B : @formula atom) : formula :=
@@ -288,7 +269,39 @@ Arguments hypo {_} {_} _.
 Arguments axiom1 {_} {_} _ _.
 Arguments axiom2 {_} {_} _ _ _.
 Arguments axiom3 {_} {_} _ _.
+Arguments axiom4 {_} {_} _ _.
+Arguments axiom5 {_} {_} _ _.
+Arguments axiom6 {_} {_} _ _.
+Arguments axiom7 {_} {_} _ _.
+Arguments axiom8 {_} {_} _ _ _.
+Arguments axiom9 {_} {_} _ _.
+Arguments axiom10 {_} {_} _.
 Arguments mp {_} {_} {_} {_} (_) (_).
 
+End Syntactic.
 
-End Fitting_Mendelson.
+Module Kripke.
+
+Import Formula.
+
+(* Worlds - тип для миров *)
+Class Model {atom : Set} (Worlds : Type) :=
+{
+  G : list Worlds;
+  R : Worlds -> Worlds -> bool;
+  values : Worlds -> atom -> bool;
+}.
+
+(* Вычисление формулы в мире *)
+Fixpoint eval {atom : Set} {Worlds : Type} (M : Type) `{M : @Model atom Worlds} (World : Worlds) (f : @formula atom) : bool :=
+  match f with
+  | f_atom a => values World a
+  | f_not f' => negb (eval M World f')
+  | f_conj f1 f2 => conjb (eval M World f1) (eval M World f2)
+  | f_disj f1 f2 => disjb (eval M World f1) (eval M World f2)
+  | f_imp f1 f2 => implb (eval M World f1) (eval M World f2)
+  | f_box f1 f2 => formula -> formula
+  | f_diamond f1 f2 => formula -> formula.
+  | _ => true
+  end.
+End Kripke.
