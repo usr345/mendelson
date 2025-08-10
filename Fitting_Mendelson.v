@@ -13,8 +13,7 @@ Module Formula1 <: TFormula.
   | f_conj  : formula -> formula -> formula
   | f_disj  : formula -> formula -> formula
   | f_imp  : formula -> formula -> formula
-  | f_box  : formula -> formula
-  | f_diamond : formula -> formula.
+  | f_box  : formula -> formula.
 
   Definition t {atom : Type} := @formula atom.
   Definition negation {atom : Type} := @f_not atom.
@@ -22,6 +21,10 @@ Module Formula1 <: TFormula.
   Definition disjunction {atom : Type} := @f_imp atom.
   Definition implication {atom : Type} := @f_imp atom.
   Definition equivalence {atom : Type} (A B: @formula atom) : formula := conjunction (implication A B) (implication B A).
+  Definition diamond {atom : Type} (A: @formula atom) : formula :=
+    f_not (f_box (f_not A)).
+
+  #[global] Notation "box p" := (f_box p) (p custom formula_view at level 1, in custom formula_view at level 1).
 End Formula1.
 Export Formula1.
 
@@ -49,7 +52,6 @@ Module Formula.
     | f_disj A1 A2, f_disj B1 B2 => andb (formula_beq A1 B1) (formula_beq A2 B2)
     | f_imp A1 A2, f_imp B1 B2 => andb (formula_beq A1 B1) (formula_beq A2 B2)
     | f_box A', f_box B' => formula_beq A' B'
-    | f_diamond A', f_diamond B' => formula_beq A' B'
     | _, _ => false
     end.
 
@@ -111,13 +113,6 @@ Module Formula.
       + intros B H1.
         destruct B ; try (simpl in H1 ; discriminate H1).
         (* f_box *)
-        * specialize (IHA B).
-          specialize (IHA H1).
-          rewrite IHA.
-          reflexivity.
-      + intros B H1.
-        destruct B ; try (simpl in H1 ; discriminate H1).
-        (* f_diamond *)
         * specialize (IHA B).
           specialize (IHA H1).
           rewrite IHA.
@@ -195,15 +190,6 @@ Module Formula.
         { reflexivity. }
         specialize (IHA Ha).
         apply IHA.
-      (* diamond *)
-      + intros B H1.
-        rewrite <-H1.
-        simpl.
-        specialize (IHA A).
-        assert (Ha : A = A).
-        { reflexivity. }
-        specialize (IHA Ha).
-        apply IHA.
   Qed.
 
   #[export] Instance eqFormula {atom : Set} `{EqDec atom} : EqDec (@formula atom)  :=
@@ -248,6 +234,9 @@ Definition f_axiom9 {atom : Set} (A B : @formula atom) : formula :=
 Definition f_axiom10 {atom : Set} (A : @formula atom) : formula :=
   $A \/ ~A$.
 
+Definition f_axiomK {atom : Set} (A B : @formula atom) : formula :=
+  $box (A -> B) -> (box A -> box B)$.
+
 Reserved Notation "Γ |- A" (at level 98).
 Inductive entails {atom : Set} (Γ : @formula atom -> Prop) : @formula atom -> Type :=
   | hypo : forall A, A ∈ Γ -> Γ |- A (* every hypothesis is provable *)
@@ -261,7 +250,9 @@ Inductive entails {atom : Set} (Γ : @formula atom -> Prop) : @formula atom -> T
   | axiom8 : forall A B C, Γ |- f_axiom8 A B C
   | axiom9 : forall A B, Γ |- f_axiom9 A B
   | axiom10 : forall A, Γ |- f_axiom10 A
+  | axiomK : forall A B, Γ |- f_axiomK A B
   | mp : forall A B, Γ |- $A -> B$ -> Γ |- A -> Γ |- B (* modus ponens *)
+  | nec : forall A, Γ |- A -> Γ |- $box A$            (* necessitation *)
 where "Γ |- A" := (entails Γ A).
 
 (* It is convenient to make some parameters implicit. *)
@@ -276,13 +267,51 @@ Arguments axiom7 {_} {_} _ _.
 Arguments axiom8 {_} {_} _ _ _.
 Arguments axiom9 {_} {_} _ _.
 Arguments axiom10 {_} {_} _.
+Arguments axiomK {_} {_} _ _.
 Arguments mp {_} {_} {_} {_} (_) (_).
+Arguments nec {_} {_} {_} (_).
 
+Theorem contraposition {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $(A -> B) -> ~B -> ~ A$.
+Proof.
+Admitted.
+
+(* 6.1.1 *)
+Proposition impl_diamond {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ ,, $X -> Y$ |- (f_imp (diamond X) (diamond Y)).
+Proof.
+  assert (H1 : Γ ,, $X -> Y$ |- $X -> Y$).
+  {
+    apply hypo.
+    unfold extend.
+    unfold elem.
+    right.
+    reflexivity.
+  }
+
+  specialize (contraposition (Γ,, $X -> Y$) X Y) as H2.
+  specialize (mp H2 H1) as H3.
+  specialize (nec H3) as H4.
+  pose proof (@axiomK _ (Γ,, $X -> Y$) $~Y$ $~X$) as H5.
+  unfold f_axiomK in H5.
+  specialize (mp H5 H4) as H6.
+  specialize (contraposition (Γ,, $X -> Y$) $box ~ Y$ $box ~ X$) as H7.
+  specialize (mp H7 H6) as H8.
+  unfold diamond.
+  exact H8.
+Qed.
 End Syntactic.
 
 Module Kripke.
 
 Import Formula.
+
+(* Worlds - тип для миров *)
+Record Model {atom : Set} (Worlds : Type) :=
+{
+  G : Worlds;
+  R : Worlds -> Worlds -> Prop;
+  values : Worlds -> atom -> Prop;
+}.
+
 
 (* Worlds - тип для миров *)
 Class Model {atom : Set} (Worlds : Type) :=
