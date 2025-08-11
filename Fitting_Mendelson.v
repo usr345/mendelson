@@ -15,8 +15,6 @@ Module Formula1 <: TFormula.
   | f_imp  : formula -> formula -> formula
   | f_box  : formula -> formula.
 
-  #[global] Notation "box p" := (f_box p) (p custom formula_view at level 1, in custom formula_view at level 1).
-
   Definition t {atom : Type} := @formula atom.
   Definition negation {atom : Type} := @f_not atom.
   Definition conjunction {atom : Type} := @f_imp atom.
@@ -26,6 +24,7 @@ Module Formula1 <: TFormula.
   Definition f_diamond {atom : Type} (A: @formula atom) : formula := negation (f_box (negation A)).
 
   #[global] Notation "diamond p" := (f_diamond p) (p custom formula_view at level 1, in custom formula_view at level 1).
+  #[global] Notation "box p" := (f_box p) (p custom formula_view at level 1, in custom formula_view at level 1).
 End Formula1.
 Export Formula1.
 
@@ -204,7 +203,6 @@ Export Formula.
 
 Module Syntactic.
 
-(* стр. 27 *)
 Definition f_axiom1 {atom : Set} (A B : @formula atom) : formula :=
   $A -> (B -> A)$.
 
@@ -318,8 +316,23 @@ Proof.
   exact H2.
 Qed.
 
-(* Lemma reguarity {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $A -> B$ -> Γ |- $box A -> box B$. *)
-(* Proof. *)
+Lemma reguarity {atom : Set} {Γ : @formula atom -> Prop} {A B : @formula atom} : Γ |- $A -> B$ -> Γ |- $box A -> box B$.
+Proof.
+  intro H1.
+  specialize (nec H1) as H2.
+  specialize_axiom (@axiomK _ Γ A B) H3.
+  specialize (mp H3 H2) as H4.
+  exact H4.
+Qed.
+
+(* 6.1.4 *)
+Lemma box_conj {atom : Set} {Γ : @formula atom -> Prop} (A B : @formula atom) : Γ |- $box (A /\ B) -> (box A /\ box B)$.
+Proof.
+  specialize_axiom (@axiom3 _ Γ A B) H1.
+  specialize (reguarity H1) as H2.
+  specialize_axiom (@axiom4 _ Γ A B) H3.
+  specialize (reguarity H3) as H4.
+
 
 Theorem contraposition {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $(A -> B) -> ~B -> ~ A$.
 Proof.
