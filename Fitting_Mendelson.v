@@ -15,16 +15,17 @@ Module Formula1 <: TFormula.
   | f_imp  : formula -> formula -> formula
   | f_box  : formula -> formula.
 
+  #[global] Notation "box p" := (f_box p) (p custom formula_view at level 1, in custom formula_view at level 1).
+
   Definition t {atom : Type} := @formula atom.
   Definition negation {atom : Type} := @f_not atom.
   Definition conjunction {atom : Type} := @f_imp atom.
   Definition disjunction {atom : Type} := @f_imp atom.
   Definition implication {atom : Type} := @f_imp atom.
   Definition equivalence {atom : Type} (A B: @formula atom) : formula := conjunction (implication A B) (implication B A).
-  Definition diamond {atom : Type} (A: @formula atom) : formula :=
-    f_not (f_box (f_not A)).
+  Definition f_diamond {atom : Type} (A: @formula atom) : formula := negation (f_box (negation A)).
 
-  #[global] Notation "box p" := (f_box p) (p custom formula_view at level 1, in custom formula_view at level 1).
+  #[global] Notation "diamond p" := (f_diamond p) (p custom formula_view at level 1, in custom formula_view at level 1).
 End Formula1.
 Export Formula1.
 
@@ -271,12 +272,61 @@ Arguments axiomK {_} {_} _ _.
 Arguments mp {_} {_} {_} {_} (_) (_).
 Arguments nec {_} {_} {_} (_).
 
+Ltac hypo := (apply hypo ; cbv in * ; auto 6).
+
+Ltac specialize_axiom A H :=
+  pose proof A as H;
+  try match type of H with
+  | (_ |- f_axiom1 _ _) => unfold f_axiom1 in H
+  | (_ |- f_axiom2 _ _ _) => unfold f_axiom2 in H
+  | (_ |- f_axiom3 _ _) => unfold f_axiom3 in H
+  | (_ |- f_axiom4 _ _) => unfold f_axiom4 in H
+  | (_ |- f_axiom5 _ _) => unfold f_axiom5 in H
+  | (_ |- f_axiom6 _ _) => unfold f_axiom6 in H
+  | (_ |- f_axiom7 _ _) => unfold f_axiom7 in H
+  | (_ |- f_axiom8 _ _ _) => unfold f_axiom8 in H
+  | (_ |- f_axiom9 _ _) => unfold f_axiom9 in H
+  | (_ |- f_axiom10 _) => unfold f_axiom10 in H
+  | (_ |- f_axiomK _ _) => unfold f_axiomK in H
+  end.
+
+(* Here are some basic observation about |-. *)
+(* Лемма 1.7. $\vdash_L A \supset A$ для любой формулы A. *)
+Lemma imply_self {atom : Set} (Γ : @formula atom -> Prop) (A : @formula atom) : Γ |- $A -> A$.
+Proof.
+  (* (1) $(A \supset ((A \supset A) \supset A)) \supset ((A \supset (A \supset A)) \supset (A \supset A))$ --- подстановка в схему аксиом A2 *)
+  specialize_axiom (@axiom2 _ Γ A $A -> A$ A) H1.
+  (* (2) $A \supset ((A \supset A) \supset A)$ --- схема аксиом A1 *)
+  specialize_axiom (@axiom1 _ Γ A $A -> A$) H2.
+  (* (3) $((A \supset (A \supset A)) \supset (A \supset A))$ --- из (1) и (2) по MP *)
+  specialize (mp H1 H2) as H3.
+  (* (4) $A \supset (A \supset A)$ --- схема аксиом A1 *)
+  specialize_axiom (@axiom1 _ Γ A A) H4.
+  (* (5) $A \supset A$ --- из (3) и (4) по MP *)
+  specialize (mp H3 H4) as H5.
+  exact H5.
+Qed.
+
+(* We need this lemma in the deduction theorem. *)
+Lemma drop_antecedent {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- B -> Γ |- $A -> B$.
+Proof.
+  intro H.
+  (* 1. $B \supset (A \supset B)$ --- схема аксиом A1 *)
+  specialize_axiom (@axiom1 _ Γ B A) H1.
+  (* 2. $A \supset B$ --- из H и H1 по MP *)
+  specialize (mp H1 H) as H2.
+  exact H2.
+Qed.
+
+(* Lemma reguarity {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $A -> B$ -> Γ |- $box A -> box B$. *)
+(* Proof. *)
+
 Theorem contraposition {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $(A -> B) -> ~B -> ~ A$.
 Proof.
 Admitted.
 
 (* 6.1.1 *)
-Proposition impl_diamond {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ ,, $X -> Y$ |- (f_imp (diamond X) (diamond Y)).
+Proposition impl_diamond {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ ,, $X -> Y$ |- $diamond X -> diamond Y$.
 Proof.
   assert (H1 : Γ ,, $X -> Y$ |- $X -> Y$).
   {
@@ -295,7 +345,7 @@ Proof.
   specialize (mp H5 H4) as H6.
   specialize (contraposition (Γ,, $X -> Y$) $box ~ Y$ $box ~ X$) as H7.
   specialize (mp H7 H6) as H8.
-  unfold diamond.
+  unfold f_diamond.
   exact H8.
 Qed.
 End Syntactic.
