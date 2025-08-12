@@ -328,6 +328,11 @@ Lemma transitivity {atom : Set} {Γ : @formula atom -> Prop} {A} B {C} :
 Proof.
 Admitted.
 
+Lemma impl_conj {atom : Set} (Γ : @formula atom -> Prop) X Y Z :
+  Γ |- $(X -> (Y -> Z)) -> (X /\ Y -> Z)$.
+Proof.
+Admitted.
+
 Lemma reguarity {atom : Set} {Γ : @formula atom -> Prop} {A B : @formula atom} : Γ |- $A -> B$ -> Γ |- $box A -> box B$.
 Proof.
   intro H1.
@@ -351,12 +356,18 @@ Proof.
 Qed.
 
 (* Example 6.1.5 *)
-Lemma conj_box {atom : Set} {Γ : @formula atom -> Prop} (A B : @formula atom) : Γ |- $(box A /\ box B) -> box (A /\ B)$.
+Lemma conj_box {atom : Set} {Γ : @formula atom -> Prop} (X Y : @formula atom) : Γ |- $(box X /\ box Y) -> box (X /\ Y)$.
 Proof.
-  specialize_axiom (@axiom5 _ Γ A B) H1.
+  specialize_axiom (@axiom5 _ Γ X Y) H1.
   specialize (reguarity H1) as H2.
-  specialize_axiom (@axiomK _ Γ B $A /\ B$) H3.
-
+  specialize_axiom (@axiomK _ Γ Y $X /\ Y$) H3.
+  specialize (@transitivity _ Γ $box X$ $box (Y -> X /\ Y)$ $box Y -> box (X /\ Y)$) as H4.
+  specialize (mp H4 H2) as H5.
+  specialize (mp H5 H3) as H6.
+  specialize (impl_conj Γ $box X$ $box Y$ $box (X /\ Y)$) as H7.
+  specialize (mp H7 H6) as H8.
+  exact H8.
+Qed.
 
 Theorem contraposition {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $(A -> B) -> ~B -> ~ A$.
 Proof.
