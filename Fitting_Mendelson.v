@@ -316,6 +316,12 @@ Proof.
   exact H2.
 Qed.
 
+Lemma A_impl_conj {atom : Set} (Γ : @formula atom -> Prop) (A X Y : @formula atom) : Γ |- $(A -> X) -> (A -> Y) -> (A -> (X /\ Y))$.
+Proof.
+  specialize_axiom (@axiom1 _ Γ $A -> X$ $A -> Y$) H1.
+  specialize (imply_self Γ $A -> Y$) as H2.
+  specialize (drop_antecedent Γ $A -> X$ $(A -> Y) -> (A -> Y)$ H2) as H3.
+
 Lemma reguarity {atom : Set} {Γ : @formula atom -> Prop} {A B : @formula atom} : Γ |- $A -> B$ -> Γ |- $box A -> box B$.
 Proof.
   intro H1.
