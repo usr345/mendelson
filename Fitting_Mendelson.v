@@ -321,6 +321,12 @@ Proof.
   specialize_axiom (@axiom1 _ Γ $A -> X$ $A -> Y$) H1.
   specialize (imply_self Γ $A -> Y$) as H2.
   specialize (drop_antecedent Γ $A -> X$ $(A -> Y) -> (A -> Y)$ H2) as H3.
+Admitted.
+
+Lemma transitivity {atom : Set} {Γ : @formula atom -> Prop} {A} B {C} :
+  Γ |- $(A -> B) -> (B -> C) -> A -> C$.
+Proof.
+Admitted.
 
 Lemma reguarity {atom : Set} {Γ : @formula atom -> Prop} {A B : @formula atom} : Γ |- $A -> B$ -> Γ |- $box A -> box B$.
 Proof.
@@ -331,13 +337,25 @@ Proof.
   exact H4.
 Qed.
 
-(* 6.1.4 *)
+(* Example 6.1.4 *)
 Lemma box_conj {atom : Set} {Γ : @formula atom -> Prop} (A B : @formula atom) : Γ |- $box (A /\ B) -> (box A /\ box B)$.
 Proof.
   specialize_axiom (@axiom3 _ Γ A B) H1.
   specialize (reguarity H1) as H2.
   specialize_axiom (@axiom4 _ Γ A B) H3.
   specialize (reguarity H3) as H4.
+  specialize (A_impl_conj Γ $box (A /\ B)$ $box A$ $box B$) as H5.
+  specialize (mp H5 H2) as H6.
+  specialize (mp H6 H4) as H7.
+  exact H7.
+Qed.
+
+(* Example 6.1.5 *)
+Lemma conj_box {atom : Set} {Γ : @formula atom -> Prop} (A B : @formula atom) : Γ |- $(box A /\ box B) -> box (A /\ B)$.
+Proof.
+  specialize_axiom (@axiom5 _ Γ A B) H1.
+  specialize (reguarity H1) as H2.
+  specialize_axiom (@axiomK _ Γ B $A /\ B$) H3.
 
 
 Theorem contraposition {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $(A -> B) -> ~B -> ~ A$.
