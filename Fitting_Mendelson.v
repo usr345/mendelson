@@ -373,7 +373,7 @@ Theorem contraposition {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $(A
 Proof.
 Admitted.
 
-(* 6.1.1 *)
+(* Exercize 6.1.1 *)
 Proposition impl_diamond {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ ,, $X -> Y$ |- $diamond X -> diamond Y$.
 Proof.
   assert (H1 : Γ ,, $X -> Y$ |- $X -> Y$).
@@ -396,6 +396,43 @@ Proof.
   unfold f_diamond.
   exact H8.
 Qed.
+
+(* Example 6.1.7 *)
+Proposition E6_1_7 {atom : Set} (Γ : @formula atom -> Prop) (X : @formula atom) : Γ |- $diamond diamond ~X -> ~ box box X$.
+Proof.
+Admitted.
+
+
+(* Exercize 6.1.3.1 *)
+Proposition E6_1_3_1 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $diamond (X \/ Y) -> (diamond X \/ diamond Y)$.
+Proof.
+Admitted.
+
+(* Exercize 6.1.3.2 *)
+Proposition E6_1_3_2 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $box (X -> Y) -> (diamond X -> diamond Y)$.
+Proof.
+Admitted.
+
+(* Exercize 6.1.3.3 *)
+Proposition E6_1_3_3 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $(box X \/ box Y) -> box(X \/ Y)$.
+Proof.
+Admitted.
+
+(* Exercize 6.1.3.4 *)
+Proposition E6_1_3_4 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $box (X \/ Y) -> (box X \/ diamond Y)$.
+Proof.
+Admitted.
+
+(* Exercize 6.1.3.5 *)
+Proposition E6_1_3_5 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $(box X \/ diamond Y) -> diamond(X /\ Y)$.
+Proof.
+Admitted.
+
+(* Exercize 6.1.3.6 *)
+Proposition E6_1_3_6 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $(diamond X -> box Y) -> box(X \/ Y)$.
+Proof.
+Admitted.
+
 End Syntactic.
 
 Module Kripke.
