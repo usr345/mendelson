@@ -23,7 +23,7 @@ Module Formula1 <: TFormula.
   Definition equivalence {atom : Type} (A B: @formula atom) : formula := conjunction (implication A B) (implication B A).
   Definition f_diamond {atom : Type} (A: @formula atom) : formula := negation (f_box (negation A)).
 
-  #[global] Notation "diamond p" := (f_diamond p) (p custom formula_view at level 1, in custom formula_view at level 1).
+  (* #[global] Notation "diamond p" := (f_diamond p) (p custom formula_view at level 1, in custom formula_view at level 1). *)
   #[global] Notation "box p" := (f_box p) (p custom formula_view at level 1, in custom formula_view at level 1).
 End Formula1.
 Export Formula1.
@@ -328,6 +328,16 @@ Lemma transitivity {atom : Set} {Γ : @formula atom -> Prop} {A} B {C} :
 Proof.
 Admitted.
 
+Lemma meta_transitivity {atom : Set} {Γ : @formula atom -> Prop} {A} B {C} :
+  Γ |- $A -> B$ -> Γ |- $B -> C$ -> Γ |- $A -> C$.
+Proof.
+  intros H1 H2.
+  specialize (@transitivity _ Γ A B C) as H3.
+  specialize (mp H3 H1) as H4.
+  specialize (mp H4 H2) as H5.
+  exact H5.
+Qed.
+
 Lemma impl_conj {atom : Set} (Γ : @formula atom -> Prop) X Y Z :
   Γ |- $(X -> (Y -> Z)) -> (X /\ Y -> Z)$.
 Proof.
@@ -343,7 +353,7 @@ Proof.
 Qed.
 
 (* Example 6.1.4 *)
-Lemma box_conj {atom : Set} {Γ : @formula atom -> Prop} (A B : @formula atom) : Γ |- $box (A /\ B) -> (box A /\ box B)$.
+Lemma box_conj {atom : Set} (Γ : @formula atom -> Prop) (A B : @formula atom) : Γ |- $box (A /\ B) -> (box A /\ box B)$.
 Proof.
   specialize_axiom (@axiom3 _ Γ A B) H1.
   specialize (reguarity H1) as H2.
@@ -353,6 +363,14 @@ Proof.
   specialize (mp H5 H2) as H6.
   specialize (mp H6 H4) as H7.
   exact H7.
+Qed.
+
+Lemma meta_box_conj {atom : Set} {Γ : @formula atom -> Prop} (A B : @formula atom) : Γ |- $box (A /\ B)$ -> Γ |-  $box A /\ box B$.
+Proof.
+  intro H1.
+  specialize (box_conj Γ A B) as H2.
+  specialize (mp H2 H1) as H3.
+  exact H3.
 Qed.
 
 (* Example 6.1.5 *)
@@ -373,8 +391,37 @@ Theorem contraposition {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $(A
 Proof.
 Admitted.
 
+Theorem deMorganDisj {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $~(A \/ B) -> ~A /\ ~B$.
+Proof.
+Admitted.
+
+Theorem meta_deMorganDisj {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $~(A \/ B)$ -> Γ |- $~A /\ ~B$.
+Proof.
+  intro H1.
+  specialize (deMorganDisj Γ A B) as H2.
+  specialize (mp H2 H1) as H3.
+  exact H3.
+Qed.
+
+Theorem deMorganDisj2 {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $~A /\ ~B -> ~(A \/ B)$.
+Proof.
+Admitted.
+
+Theorem deMorganConj {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $~(A /\ B) -> ~A \/ ~B$.
+Proof.
+Admitted.
+
+Theorem meta_deMorganConj {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $~(A /\ B)$ -> Γ |- $~A \/ ~B$.
+Proof.
+  intro H1.
+  specialize (deMorganConj Γ A B) as H2.
+  specialize (mp H2 H1) as H3.
+  exact H3.
+Qed.
+
+
 (* Exercize 6.1.1 *)
-Proposition impl_diamond {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ ,, $X -> Y$ |- $diamond X -> diamond Y$.
+Proposition impl_diamond {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ ,, $X -> Y$ |- (f_imp (f_diamond X) (f_diamond Y)).
 Proof.
   assert (H1 : Γ ,, $X -> Y$ |- $X -> Y$).
   {
@@ -404,9 +451,15 @@ Admitted.
 
 
 (* Exercize 6.1.3.1 *)
-Proposition E6_1_3_1 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $diamond (X \/ Y) -> (diamond X \/ diamond Y)$.
+Proposition E6_1_3_1 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- (implication (f_diamond $X \/ Y$)  (disjunction (f_diamond X) (f_diamond Y))).
 Proof.
-Admitted.
+  specialize (deMorganDisj2 Γ X Y) as H1.
+  apply reguarity in H1.
+  specialize (deMorganConj Γ X Y) as H2.
+  (* specialize (box_conj Γ (A B : @formula atom) : Γ |- $box (A /\ B) -> (box A /\ box B)$. *)
+  specialize (contraposition Γ ($box (~ X /\ ~ Y)$) (f_box $~ (X \/ Y)$)) as H2.
+  specialize (mp H2 H1) as H3.
+  negation (f_box $~ X /\ ~ Y$)
 
 (* Exercize 6.1.3.2 *)
 Proposition E6_1_3_2 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $box (X -> Y) -> (diamond X -> diamond Y)$.
