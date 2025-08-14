@@ -215,7 +215,7 @@ Definition f_axiom3 {atom : Set} (A B : @formula atom) : formula :=
 Definition f_axiom4 {atom : Set} (A B : @formula atom) : formula :=
   $(A /\ B) -> B$.
 
-Definition f_axiom5 {atom : Set} (A B : @formula atom) : formula :=
+Definition f_axiom_conj_intro {atom : Set} (A B : @formula atom) : formula :=
   $A -> (B -> (A /\ B))$.
 
 Definition f_axiom6 {atom : Set} (A B : @formula atom) : formula :=
@@ -243,7 +243,7 @@ Inductive entails {atom : Set} (Γ : @formula atom -> Prop) : @formula atom -> T
   | axiom2 : forall A B C, Γ |- f_axiom2 A B C
   | axiom3 : forall A B, Γ |- f_axiom3 A B
   | axiom4 : forall A B , Γ |- f_axiom4 A B
-  | axiom5 : forall A B, Γ |- f_axiom5 A B
+  | axiom_conj_intro : forall A B, Γ |- f_axiom_conj_intro A B
   | axiom6 : forall A B, Γ |- f_axiom6 A B
   | axiom7 : forall A B , Γ |- f_axiom7 A B
   | axiom8 : forall A B C, Γ |- f_axiom8 A B C
@@ -260,7 +260,7 @@ Arguments axiom1 {_} {_} _ _.
 Arguments axiom2 {_} {_} _ _ _.
 Arguments axiom3 {_} {_} _ _.
 Arguments axiom4 {_} {_} _ _.
-Arguments axiom5 {_} {_} _ _.
+Arguments axiom_conj_intro {_} {_} _ _.
 Arguments axiom6 {_} {_} _ _.
 Arguments axiom7 {_} {_} _ _.
 Arguments axiom8 {_} {_} _ _ _.
@@ -279,7 +279,7 @@ Ltac specialize_axiom A H :=
   | (_ |- f_axiom2 _ _ _) => unfold f_axiom2 in H
   | (_ |- f_axiom3 _ _) => unfold f_axiom3 in H
   | (_ |- f_axiom4 _ _) => unfold f_axiom4 in H
-  | (_ |- f_axiom5 _ _) => unfold f_axiom5 in H
+  | (_ |- f_axiom_conj_intro _ _) => unfold f_axiom_conj_intro in H
   | (_ |- f_axiom6 _ _) => unfold f_axiom6 in H
   | (_ |- f_axiom7 _ _) => unfold f_axiom7 in H
   | (_ |- f_axiom8 _ _ _) => unfold f_axiom8 in H
@@ -287,6 +287,16 @@ Ltac specialize_axiom A H :=
   | (_ |- f_axiom10 _) => unfold f_axiom10 in H
   | (_ |- f_axiomK _ _) => unfold f_axiomK in H
   end.
+
+Lemma meta_conj_intro {atom : Set} {Γ : @formula atom -> Prop} {A B : @formula atom} : Γ |- A -> Γ |- B -> Γ |- $A /\ B$.
+Proof.
+  intros H1 H2.
+  pose proof (@axiom_conj_intro _ Γ A B) as H3.
+  unfold f_axiom_conj_intro in H3.
+  specialize (mp H3 H1) as H4.
+  specialize (mp H4 H2) as H5.
+  exact H5.
+Qed.
 
 (* Here are some basic observation about |-. *)
 (* Лемма 1.7. $\vdash_L A \supset A$ для любой формулы A. *)
@@ -328,7 +338,7 @@ Lemma transitivity {atom : Set} {Γ : @formula atom -> Prop} {A} B {C} :
 Proof.
 Admitted.
 
-Lemma meta_transitivity {atom : Set} {Γ : @formula atom -> Prop} {A} B {C} :
+Lemma meta_transitivity {atom : Set} {Γ : @formula atom -> Prop} {A B C: @formula atom} :
   Γ |- $A -> B$ -> Γ |- $B -> C$ -> Γ |- $A -> C$.
 Proof.
   intros H1 H2.
@@ -374,9 +384,9 @@ Proof.
 Qed.
 
 (* Example 6.1.5 *)
-Lemma conj_box {atom : Set} {Γ : @formula atom -> Prop} (X Y : @formula atom) : Γ |- $(box X /\ box Y) -> box (X /\ Y)$.
+Lemma conj_box {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $(box X /\ box Y) -> box (X /\ Y)$.
 Proof.
-  specialize_axiom (@axiom5 _ Γ X Y) H1.
+  specialize_axiom (@axiom_conj_intro _ Γ X Y) H1.
   specialize (reguarity H1) as H2.
   specialize_axiom (@axiomK _ Γ Y $X /\ Y$) H3.
   specialize (@transitivity _ Γ $box X$ $box (Y -> X /\ Y)$ $box Y -> box (X /\ Y)$) as H4.
@@ -391,6 +401,14 @@ Theorem contraposition {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $(A
 Proof.
 Admitted.
 
+Theorem meta_contraposition {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $(A -> B)$ -> Γ |- $~B -> ~ A$.
+Proof.
+  intro H1.
+  specialize (contraposition Γ A B) as H2.
+  specialize (mp H2 H1) as H3.
+  exact H3.
+Qed.
+
 Theorem deMorganDisj {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $~(A \/ B) -> ~A /\ ~B$.
 Proof.
 Admitted.
@@ -403,7 +421,7 @@ Proof.
   exact H3.
 Qed.
 
-Theorem deMorganDisj2 {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $~A /\ ~B -> ~(A \/ B)$.
+Theorem deMorganDisj_rev {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $~A /\ ~B -> ~(A \/ B)$.
 Proof.
 Admitted.
 
@@ -419,6 +437,9 @@ Proof.
   exact H3.
 Qed.
 
+Theorem deMorganConj_rev {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $~A \/ ~B -> ~(A /\ B)$.
+Proof.
+Admitted.
 
 (* Exercize 6.1.1 *)
 Proposition impl_diamond {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ ,, $X -> Y$ |- (f_imp (f_diamond X) (f_diamond Y)).
@@ -450,16 +471,43 @@ Proof.
 Admitted.
 
 
-(* Exercize 6.1.3.1 *)
-Proposition E6_1_3_1 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- (implication (f_diamond $X \/ Y$)  (disjunction (f_diamond X) (f_diamond Y))).
+(* Exercize 6.1.3.1 -> *)
+Proposition diamond_disj_1 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- (implication (f_diamond $X \/ Y$)  (disjunction (f_diamond X) (f_diamond Y))).
 Proof.
-  specialize (deMorganDisj2 Γ X Y) as H1.
+  specialize (deMorganDisj_rev Γ X Y) as H1.
   apply reguarity in H1.
-  specialize (deMorganConj Γ X Y) as H2.
-  (* specialize (box_conj Γ (A B : @formula atom) : Γ |- $box (A /\ B) -> (box A /\ box B)$. *)
-  specialize (contraposition Γ ($box (~ X /\ ~ Y)$) (f_box $~ (X \/ Y)$)) as H2.
-  specialize (mp H2 H1) as H3.
-  negation (f_box $~ X /\ ~ Y$)
+  specialize (conj_box Γ $~X$ $~Y$) as H2.
+  specialize (meta_transitivity H2 H1) as H3.
+  apply meta_contraposition in H3.
+  specialize (deMorganConj Γ $box ~X$ $box ~Y$) as H4.
+  specialize (meta_transitivity H3 H4) as H5.
+  unfold f_diamond.
+  exact H5.
+Qed.
+
+(* Exercize 6.1.3.1 <- *)
+Proposition diamond_disj_2 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- (implication (disjunction (f_diamond X) (f_diamond Y)) (f_diamond $X \/ Y$)).
+Proof.
+  specialize (deMorganDisj Γ X Y) as H1.
+  apply reguarity in H1.
+  specialize (box_conj Γ $~X$ $~Y$) as H2.
+  specialize (meta_transitivity H1 H2) as H3.
+  apply meta_contraposition in H3.
+  specialize (deMorganConj_rev Γ $box ~X$ $box ~Y$) as H4.
+  specialize (meta_transitivity H4 H3) as H5.
+  unfold f_diamond.
+  exact H5.
+Qed.
+
+(* Exercize 6.1.3.1 <-> *)
+Proposition diamond_disj {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- (equivalence (f_diamond $X \/ Y$) (disjunction (f_diamond X) (f_diamond Y))).
+Proof.
+  specialize (diamond_disj_1 Γ X Y) as H1.
+  specialize (diamond_disj_2 Γ X Y) as H2.
+  specialize (meta_conj_intro H1 H2) as H3.
+  unfold equivalence.
+  exact H3.
+Qed.
 
 (* Exercize 6.1.3.2 *)
 Proposition E6_1_3_2 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $box (X -> Y) -> (diamond X -> diamond Y)$.
