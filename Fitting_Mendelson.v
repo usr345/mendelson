@@ -21,10 +21,9 @@ Module Formula1 <: TFormula.
   Definition disjunction {atom : Type} := @f_imp atom.
   Definition implication {atom : Type} := @f_imp atom.
   Definition equivalence {atom : Type} (A B: @formula atom) : formula := conjunction (implication A B) (implication B A).
-  Definition f_diamond {atom : Type} (A: @formula atom) : formula := negation (f_box (negation A)).
+  Definition f_diamond {atom : Type} (A: @formula atom) : formula := f_not (f_box (f_not A)).
 
-  (* #[global] Notation "diamond p" := (f_diamond p) (p custom formula_view at level 1, in custom formula_view at level 1). *)
-  #[global] Notation "box p" := (f_box p) (p custom formula_view at level 1, in custom formula_view at level 1).
+  #[global] Notation "'box' p" := (f_box p) (in custom formula_view at level 1) : formula_scope.
 End Formula1.
 Export Formula1.
 
@@ -34,6 +33,8 @@ Module Formula.
   Import F1.
   Export F1.
 
+  Definition f_diamond {atom : Type} (A: @formula atom) : formula := $~ (box ~A)$.
+  #[global] Notation "'diamond' p" := (f_diamond p) (p custom formula_view at level 1, in custom formula_view at level 1).
   (* We assume atomic propositions form a set with decidable equality. *)
   Parameter atom_eq : forall {atom : Set} (a b : atom), {a = b} + {a <> b}.
 
@@ -233,6 +234,7 @@ Definition f_axiom9 {atom : Set} (A B : @formula atom) : formula :=
 Definition f_axiom10 {atom : Set} (A : @formula atom) : formula :=
   $A \/ ~A$.
 
+Print f_axiom10.
 Definition f_axiomK {atom : Set} (A B : @formula atom) : formula :=
   $box (A -> B) -> (box A -> box B)$.
 
@@ -472,7 +474,7 @@ Admitted.
 
 
 (* Exercize 6.1.3.1 -> *)
-Proposition diamond_disj_1 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- (implication (f_diamond $X \/ Y$)  (disjunction (f_diamond X) (f_diamond Y))).
+Proposition diamond_disj_1 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $diamond (X \/ Y) ->  (diamond X \/ diamond Y)$.
 Proof.
   specialize (deMorganDisj_rev Γ X Y) as H1.
   apply reguarity in H1.
@@ -486,7 +488,7 @@ Proof.
 Qed.
 
 (* Exercize 6.1.3.1 <- *)
-Proposition diamond_disj_2 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- (implication (disjunction (f_diamond X) (f_diamond Y)) (f_diamond $X \/ Y$)).
+Proposition diamond_disj_2 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $(diamond X \/ diamond Y) -> diamond (X \/ Y)$.
 Proof.
   specialize (deMorganDisj Γ X Y) as H1.
   apply reguarity in H1.
@@ -500,7 +502,7 @@ Proof.
 Qed.
 
 (* Exercize 6.1.3.1 <-> *)
-Proposition diamond_disj {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- (equivalence (f_diamond $X \/ Y$) (disjunction (f_diamond X) (f_diamond Y))).
+Proposition diamond_disj {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $diamond (X \/ Y) <-> (diamond X \/ diamond Y)$.
 Proof.
   specialize (diamond_disj_1 Γ X Y) as H1.
   specialize (diamond_disj_2 Γ X Y) as H2.
@@ -512,7 +514,15 @@ Qed.
 (* Exercize 6.1.3.2 *)
 Proposition E6_1_3_2 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $box (X -> Y) -> (diamond X -> diamond Y)$.
 Proof.
-Admitted.
+  specialize (contraposition Γ X Y) as H1.
+  apply reguarity in H1.
+  specialize_axiom (@axiomK _ Γ $~Y$ $~X$) H2.
+  specialize (meta_transitivity H1 H2) as H3.
+  specialize (contraposition Γ $box ~ Y$ $box ~ X$) as H4.
+  specialize (meta_transitivity H3 H4) as H5.
+  unfold f_diamond.
+  exact H5.
+Qed.
 
 (* Exercize 6.1.3.3 *)
 Proposition E6_1_3_3 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $(box X \/ box Y) -> box(X \/ Y)$.
