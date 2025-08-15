@@ -584,20 +584,32 @@ Fixpoint replace_subformula_int {atom : Set} `{EqDec atom} `{EqDec (@formula ato
 Definition replace_subformula {atom : Set} `{EqDec atom} `{EqDec (@formula atom)} (X X' Y : @formula atom) (n : nat) : @formula atom := fst (replace_subformula_int X X' Y n).
 
 (* X - подформула Y *)
-Fixpoint subformula {atom : Set} `{EqDec atom} `{EqDec (@formula atom)} (X Y : @formula atom) : bool :=
+Fixpoint subformulab {atom : Set} `{EqDec atom} `{EqDec (@formula atom)} (X Y : @formula atom) : bool :=
   if eqb X Y then
     true
   else
     match Y with
-    | f_not Y' => subformula X Y'
-    | f_conj F1 F2 => orb (subformula X F1) (subformula X F2)
-    | f_disj F1 F2 => orb (subformula X F1) (subformula X F2)
-    | f_imp F1 F2 => orb (subformula X F1) (subformula X F2)
-    | f_box Y' => subformula X Y'
+    | f_not Y' => subformulab X Y'
+    | f_conj F1 F2 => orb (subformulab X F1) (subformulab X F2)
+    | f_disj F1 F2 => orb (subformulab X F1) (subformulab X F2)
+    | f_imp F1 F2 => orb (subformulab X F1) (subformulab X F2)
+    | f_box Y' => subformulab X Y'
     | _ => false
     end.
 
-Theorem Replacement {atom : Set} `{EqDec atom} `{EqDec (@formula atom)} (Γ : @formula atom -> Prop) (X X' Y Y' : @formula atom) : forall n : nat, n > 0 -> (subformula X Y = true) -> Γ |- $X <-> X'$ -> Y' = (replace_subformula X X' Y n) -> Γ |- $Y <-> Y'$.
+Inductive subformula {atom : Set} `{EqDec atom} `{EqDec (@formula atom)} : (@formula atom) -> (@formula atom) -> Prop :=
+| s_eq (X Y : @formula atom): (X = Y) -> subformula X Y
+| s_not (X Y : @formula atom): subformula X Y -> subformula X $~ Y$ (* унарные конструкторы формулы *)
+| s_box (X Y : @formula atom): subformula X Y -> subformula X $box Y$
+| s_conj1 (X F1 F2 : @formula atom): subformula X F1 -> subformula X $F1 /\ F2$ (* бинарные конструкторы формулы *)
+| s_conj2 (X F1 F2 : @formula atom): subformula X F2 -> subformula X $F1 /\ F2$
+| s_disj1 (X F1 F2 : @formula atom): subformula X F1 -> subformula X $F1 \/ F2$
+| s_disj2 (X F1 F2 : @formula atom): subformula X F2 -> subformula X $F1 \/ F2$
+| s_imp1 (X F1 F2 : @formula atom): subformula X F1 -> subformula X $F1 -> F2$
+| s_imp2 (X F1 F2 : @formula atom): subformula X F2 -> subformula X $F1 -> F2$.
+
+
+Theorem Replacement {atom : Set} `{EqDec atom} `{EqDec (@formula atom)} (Γ : @formula atom -> Prop) (X X' Y Y' : @formula atom) : forall n : nat, n > 0 -> subformula X Y -> Γ |- $X <-> X'$ -> Y' = (replace_subformula X X' Y n) -> Γ |- $Y <-> Y'$.
 Admitted.
 
 (* Example 6.1.7 *)
@@ -658,8 +670,38 @@ Proof.
 Qed.
 
 (* Exercize 6.1.3.3 *)
-Proposition E6_1_3_3 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $(box X \/ box Y) -> box(X \/ Y)$.
+Proposition E6_1_3_3 {atom : Set} `{EqDec atom} `{EqDec (@formula atom)} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $(box X \/ box Y) -> box(X \/ Y)$.
 Proof.
+  specialize (disj_comm Γ $box X$ $box Y$) as H1.
+  assert (H2 : subformula $box X \/ box Y$ $(box X \/ box Y) -> box(X \/ Y)$).
+  {
+    apply s_imp1.
+    apply s_eq.
+    reflexivity.
+  }
+
+  assert (H3 : 1 > 0).
+  {
+    unfold gt.
+    unfold lt.
+    apply le_n.
+  }
+
+  specialize (Replacement Γ
+                $box X \/ box Y$
+                $box Y \/ box X$
+                $(box X \/ box Y) -> box (X \/ Y)$
+                $(box Y \/ box X) -> box (X \/ Y)$
+               1
+               H3 H2) as H4.
+  specialize (disj_comm Γ $box X$ $box Y$) as Hdisj.
+  specialize (H4 Hdisj).
+(* Lemma obj_meta_equiv1 {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $A <-> B$ -> (Γ |- A -> Γ |- B). *)
+  (* specialize (obj_meta_equiv1 Γ $box X \/ box Y$ $box Y \/ box X$) as H5. *)
+  assert (H5 : (replace_subformula $box X \/ box Y$ $box Y \/ box X$ $box X \/ box Y -> box (X \/ Y)$ 1) = $box Y \/ box X -> box (X \/ Y)$).
+  {
+    unfold replace_subformula.
+  specialize (H5 Hdisj)
 Admitted.
 
 (* Exercize 6.1.3.4 *)
