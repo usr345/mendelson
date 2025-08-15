@@ -220,22 +220,21 @@ Definition f_conj_elim2 {atom : Set} (A B : @formula atom) : formula :=
 Definition f_conj_intro {atom : Set} (A B : @formula atom) : formula :=
   $A -> (B -> (A /\ B))$.
 
-Definition f_axiom6 {atom : Set} (A B : @formula atom) : formula :=
+Definition f_disj_intro1 {atom : Set} (A B : @formula atom) : formula :=
   $A -> (A \/ B)$.
 
-Definition f_axiom7 {atom : Set} (A B : @formula atom) : formula :=
+Definition f_disj_intro2 {atom : Set} (A B : @formula atom) : formula :=
   $B -> (A \/ B)$.
 
 Definition f_axiom8 {atom : Set} (A B C : @formula atom) : formula :=
   $(A -> C) -> (B -> C) -> (A \/ B -> C)$.
 
-Definition f_axiom9 {atom : Set} (A B : @formula atom) : formula :=
+Definition f_ex_falso {atom : Set} (A B : @formula atom) : formula :=
   $~A -> (A -> B)$.
 
-Definition f_axiom10 {atom : Set} (A : @formula atom) : formula :=
+Definition f_tertium_non_datur {atom : Set} (A : @formula atom) : formula :=
   $A \/ ~A$.
 
-Print f_axiom10.
 Definition f_axiomK {atom : Set} (A B : @formula atom) : formula :=
   $box (A -> B) -> (box A -> box B)$.
 
@@ -247,11 +246,11 @@ Inductive entails {atom : Set} (Γ : @formula atom -> Prop) : @formula atom -> T
   | conj_elim1 : forall A B, Γ |- f_conj_elim1 A B
   | conj_elim2 : forall A B , Γ |- f_conj_elim2 A B
   | conj_intro : forall A B, Γ |- f_conj_intro A B
-  | axiom6 : forall A B, Γ |- f_axiom6 A B
-  | axiom7 : forall A B , Γ |- f_axiom7 A B
+  | disj_intro1 : forall A B, Γ |- f_disj_intro1 A B
+  | disj_intro2 : forall A B , Γ |- f_disj_intro2 A B
   | axiom8 : forall A B C, Γ |- f_axiom8 A B C
-  | axiom9 : forall A B, Γ |- f_axiom9 A B
-  | axiom10 : forall A, Γ |- f_axiom10 A
+  | ex_falso : forall A B, Γ |- f_ex_falso A B
+  | tertium_non_datur : forall A, Γ |- f_tertium_non_datur A
   | axiomK : forall A B, Γ |- f_axiomK A B
   | mp : forall A B, Γ |- $A -> B$ -> Γ |- A -> Γ |- B (* modus ponens *)
   | nec : forall A, Γ |- A -> Γ |- $box A$            (* necessitation *)
@@ -264,11 +263,11 @@ Arguments axiom2 {_} {_} _ _ _.
 Arguments conj_elim1 {_} (_) _ _.
 Arguments conj_elim2 {_} (_) _ _.
 Arguments conj_intro {_} (_) _ _.
-Arguments axiom6 {_} {_} _ _.
-Arguments axiom7 {_} {_} _ _.
+Arguments disj_intro1 {_} {_} _ _.
+Arguments disj_intro2 {_} {_} _ _.
 Arguments axiom8 {_} {_} _ _ _.
-Arguments axiom9 {_} {_} _ _.
-Arguments axiom10 {_} {_} _.
+Arguments ex_falso {_} {_} _ _.
+Arguments tertium_non_datur {_} {_} _.
 Arguments axiomK {_} {_} _ _.
 Arguments mp {_} {_} {_} {_} (_) (_).
 Arguments nec {_} {_} {_} (_).
@@ -283,11 +282,11 @@ Ltac specialize_axiom A H :=
   | (_ |- f_conj_elim1 _ _) => unfold f_conj_elim1 in H
   | (_ |- f_conj_elim2 _ _) => unfold f_conj_elim2 in H
   | (_ |- f_conj_intro _ _) => unfold f_conj_intro in H
-  | (_ |- f_axiom6 _ _) => unfold f_axiom6 in H
-  | (_ |- f_axiom7 _ _) => unfold f_axiom7 in H
+  | (_ |- f_disj_intro1 _ _) => unfold f_disj_intro1 in H
+  | (_ |- f_disj_intro2 _ _) => unfold f_disj_intro2 in H
   | (_ |- f_axiom8 _ _ _) => unfold f_axiom8 in H
-  | (_ |- f_axiom9 _ _) => unfold f_axiom9 in H
-  | (_ |- f_axiom10 _) => unfold f_axiom10 in H
+  | (_ |- f_ex_falso _ _) => unfold f_ex_falso in H
+  | (_ |- f_tertium_non_datur _) => unfold f_tertium_non_datur in H
   | (_ |- f_axiomK _ _) => unfold f_axiomK in H
   end.
 
