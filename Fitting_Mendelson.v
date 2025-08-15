@@ -263,11 +263,11 @@ Arguments axiom2 {_} {_} _ _ _.
 Arguments conj_elim1 {_} (_) _ _.
 Arguments conj_elim2 {_} (_) _ _.
 Arguments conj_intro {_} (_) _ _.
-Arguments disj_intro1 {_} {_} _ _.
-Arguments disj_intro2 {_} {_} _ _.
-Arguments axiom8 {_} {_} _ _ _.
-Arguments ex_falso {_} {_} _ _.
-Arguments tertium_non_datur {_} {_} _.
+Arguments disj_intro1 {_} (_) _ _.
+Arguments disj_intro2 {_} (_) _ _.
+Arguments axiom8 {_} (_) _ _ _.
+Arguments ex_falso {_} (_) _ _.
+Arguments tertium_non_datur {_} (_) _.
 Arguments axiomK {_} {_} _ _.
 Arguments mp {_} {_} {_} {_} (_) (_).
 Arguments nec {_} {_} {_} (_).
@@ -315,6 +315,33 @@ Proof.
   specialize (mp H4 H2) as H5.
   exact H5.
 Qed.
+
+(* Импликация из объектного в метаязык *)
+Lemma obj_meta_impl {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $A -> B$ -> (Γ |- A -> Γ |- B).
+Proof.
+  intros H1 H2.
+  specialize (mp H1 H2) as H3.
+  exact H3.
+Qed.
+
+Lemma obj_meta_equiv1 {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $A <-> B$ -> (Γ |- A -> Γ |- B).
+Proof.
+  intros H1 H2.
+  unfold equivalence in H1.
+  specialize (meta_conj_elim1 H1) as H3.
+  specialize (mp H3 H2) as H4.
+  exact H4.
+Qed.
+
+Lemma obj_meta_equiv2 {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $A <-> B$ -> (Γ |- B -> Γ |- A).
+Proof.
+  intros H1 H2.
+  unfold equivalence in H1.
+  specialize (meta_conj_elim2 H1) as H3.
+  specialize (mp H3 H2) as H4.
+  exact H4.
+Qed.
+
 
 (* Here are some basic observation about |-. *)
 (* Лемма 1.7. $\vdash_L A \supset A$ для любой формулы A. *)
@@ -371,11 +398,28 @@ Lemma impl_conj {atom : Set} (Γ : @formula atom -> Prop) X Y Z :
 Proof.
 Admitted.
 
-Lemma disj_comm {atom : Set} (Γ : @formula atom -> Prop) (X Y: @formula atom) :
+Lemma disj_impl {atom : Set} (Γ : @formula atom -> Prop) (X Y: @formula atom) :
   Γ |- $(X \/ Y) -> (Y \/ X)$.
 Proof.
-Admitted.
+  specialize_axiom (disj_intro2 Γ Y X) H1.
+  specialize_axiom (disj_intro1 Γ Y X) H2.
+  specialize_axiom (axiom8 Γ X Y $Y \/ X$) H3.
+  specialize (mp H3 H1) as H4.
+  specialize (mp H4 H2) as H5.
+  exact H5.
+Qed.
 
+Lemma disj_comm {atom : Set} (Γ : @formula atom -> Prop) (X Y: @formula atom) :
+  Γ |- $(X \/ Y) <-> (Y \/ X)$.
+Proof.
+  unfold equivalence.
+  specialize (disj_impl Γ X Y) as H1.
+  specialize (disj_impl Γ Y X) as H2.
+  specialize_axiom (conj_intro Γ $(X \/ Y -> Y \/ X)$ $(Y \/ X -> X \/ Y)$) H3.
+  specialize (mp H3 H1) as H4.
+  specialize (mp H4 H2) as H5.
+  exact H5.
+Qed.
 
 Lemma reguarity {atom : Set} {Γ : @formula atom -> Prop} {A B : @formula atom} : Γ |- $A -> B$ -> Γ |- $box A -> box B$.
 Proof.
@@ -464,32 +508,6 @@ Qed.
 Theorem deMorganConj_rev {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $~A \/ ~B -> ~(A /\ B)$.
 Proof.
 Admitted.
-
-(* Импликация из объектного в метаязык *)
-Lemma obj_meta_impl {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $A -> B$ -> (Γ |- A -> Γ |- B).
-Proof.
-  intros H1 H2.
-  specialize (mp H1 H2) as H3.
-  exact H3.
-Qed.
-
-Lemma obj_meta_equiv1 {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $A <-> B$ -> (Γ |- A -> Γ |- B).
-Proof.
-  intros H1 H2.
-  unfold equivalence in H1.
-  specialize (meta_conj_elim1 H1) as H3.
-  specialize (mp H3 H2) as H4.
-  exact H4.
-Qed.
-
-Lemma obj_meta_equiv2 {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $A <-> B$ -> (Γ |- B -> Γ |- A).
-Proof.
-  intros H1 H2.
-  unfold equivalence in H1.
-  specialize (meta_conj_elim2 H1) as H3.
-  specialize (mp H3 H2) as H4.
-  exact H4.
-Qed.
 
 (* Импликация из метаязыка в объектный *)
 (* Lemma meta_obj_impl {atom : Set} (Γ : @formula atom -> Prop) A B : (Γ |- A -> Γ |- B) -> Γ |- $A -> B$. *)
