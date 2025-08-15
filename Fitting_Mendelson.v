@@ -3,6 +3,7 @@ From Mendelson Require Import Sets.
 From Mendelson Require Import FSignature.
 From Mendelson Require Import EqDec.
 Require Import Lists.List.
+Require Import Coq.Arith.PeanoNat.
 Import ListNotations.
 
 Module Formula1 <: TFormula.
@@ -210,13 +211,13 @@ Definition f_axiom1 {atom : Set} (A B : @formula atom) : formula :=
 Definition f_axiom2 {atom : Set} (A B C : @formula atom) : formula :=
   $(A -> B -> C) -> (A -> B) -> (A -> C)$.
 
-Definition f_axiom3 {atom : Set} (A B : @formula atom) : formula :=
+Definition f_conj_elim1 {atom : Set} (A B : @formula atom) : formula :=
   $(A /\ B) -> A$.
 
-Definition f_axiom4 {atom : Set} (A B : @formula atom) : formula :=
+Definition f_conj_elim2 {atom : Set} (A B : @formula atom) : formula :=
   $(A /\ B) -> B$.
 
-Definition f_axiom_conj_intro {atom : Set} (A B : @formula atom) : formula :=
+Definition f_conj_intro {atom : Set} (A B : @formula atom) : formula :=
   $A -> (B -> (A /\ B))$.
 
 Definition f_axiom6 {atom : Set} (A B : @formula atom) : formula :=
@@ -243,9 +244,9 @@ Inductive entails {atom : Set} (Γ : @formula atom -> Prop) : @formula atom -> T
   | hypo : forall A, A ∈ Γ -> Γ |- A (* every hypothesis is provable *)
   | axiom1 : forall A B , Γ |- f_axiom1 A B
   | axiom2 : forall A B C, Γ |- f_axiom2 A B C
-  | axiom3 : forall A B, Γ |- f_axiom3 A B
-  | axiom4 : forall A B , Γ |- f_axiom4 A B
-  | axiom_conj_intro : forall A B, Γ |- f_axiom_conj_intro A B
+  | conj_elim1 : forall A B, Γ |- f_conj_elim1 A B
+  | conj_elim2 : forall A B , Γ |- f_conj_elim2 A B
+  | conj_intro : forall A B, Γ |- f_conj_intro A B
   | axiom6 : forall A B, Γ |- f_axiom6 A B
   | axiom7 : forall A B , Γ |- f_axiom7 A B
   | axiom8 : forall A B C, Γ |- f_axiom8 A B C
@@ -260,9 +261,9 @@ where "Γ |- A" := (entails Γ A).
 Arguments hypo {_} {_} _.
 Arguments axiom1 {_} {_} _ _.
 Arguments axiom2 {_} {_} _ _ _.
-Arguments axiom3 {_} {_} _ _.
-Arguments axiom4 {_} {_} _ _.
-Arguments axiom_conj_intro {_} {_} _ _.
+Arguments conj_elim1 {_} (_) _ _.
+Arguments conj_elim2 {_} (_) _ _.
+Arguments conj_intro {_} (_) _ _.
 Arguments axiom6 {_} {_} _ _.
 Arguments axiom7 {_} {_} _ _.
 Arguments axiom8 {_} {_} _ _ _.
@@ -279,9 +280,9 @@ Ltac specialize_axiom A H :=
   try match type of H with
   | (_ |- f_axiom1 _ _) => unfold f_axiom1 in H
   | (_ |- f_axiom2 _ _ _) => unfold f_axiom2 in H
-  | (_ |- f_axiom3 _ _) => unfold f_axiom3 in H
-  | (_ |- f_axiom4 _ _) => unfold f_axiom4 in H
-  | (_ |- f_axiom_conj_intro _ _) => unfold f_axiom_conj_intro in H
+  | (_ |- f_conj_elim1 _ _) => unfold f_conj_elim1 in H
+  | (_ |- f_conj_elim2 _ _) => unfold f_conj_elim2 in H
+  | (_ |- f_conj_intro _ _) => unfold f_conj_intro in H
   | (_ |- f_axiom6 _ _) => unfold f_axiom6 in H
   | (_ |- f_axiom7 _ _) => unfold f_axiom7 in H
   | (_ |- f_axiom8 _ _ _) => unfold f_axiom8 in H
@@ -290,11 +291,27 @@ Ltac specialize_axiom A H :=
   | (_ |- f_axiomK _ _) => unfold f_axiomK in H
   end.
 
+Lemma meta_conj_elim1 {atom : Set} {Γ : @formula atom -> Prop} {A B : @formula atom} : Γ |- $(A /\ B)$ -> Γ |- A.
+Proof.
+  intro H1.
+  pose proof (conj_elim1 Γ A B) as H2.
+  specialize (mp H2 H1) as H3.
+  exact H3.
+Qed.
+
+Lemma meta_conj_elim2 {atom : Set} {Γ : @formula atom -> Prop} {A B : @formula atom} : Γ |- $(A /\ B)$ -> Γ |- B.
+Proof.
+  intro H1.
+  pose proof (conj_elim2 Γ A B) as H2.
+  specialize (mp H2 H1) as H3.
+  exact H3.
+Qed.
+
 Lemma meta_conj_intro {atom : Set} {Γ : @formula atom -> Prop} {A B : @formula atom} : Γ |- A -> Γ |- B -> Γ |- $A /\ B$.
 Proof.
   intros H1 H2.
-  pose proof (@axiom_conj_intro _ Γ A B) as H3.
-  unfold f_axiom_conj_intro in H3.
+  pose proof (conj_intro Γ A B) as H3.
+  unfold f_conj_intro in H3.
   specialize (mp H3 H1) as H4.
   specialize (mp H4 H2) as H5.
   exact H5.
@@ -355,6 +372,12 @@ Lemma impl_conj {atom : Set} (Γ : @formula atom -> Prop) X Y Z :
 Proof.
 Admitted.
 
+Lemma disj_comm {atom : Set} (Γ : @formula atom -> Prop) (X Y: @formula atom) :
+  Γ |- $(X \/ Y) -> (Y \/ X)$.
+Proof.
+Admitted.
+
+
 Lemma reguarity {atom : Set} {Γ : @formula atom -> Prop} {A B : @formula atom} : Γ |- $A -> B$ -> Γ |- $box A -> box B$.
 Proof.
   intro H1.
@@ -367,9 +390,9 @@ Qed.
 (* Example 6.1.4 *)
 Lemma box_conj {atom : Set} (Γ : @formula atom -> Prop) (A B : @formula atom) : Γ |- $box (A /\ B) -> (box A /\ box B)$.
 Proof.
-  specialize_axiom (@axiom3 _ Γ A B) H1.
+  specialize_axiom (@conj_elim1 _ Γ A B) H1.
   specialize (reguarity H1) as H2.
-  specialize_axiom (@axiom4 _ Γ A B) H3.
+  specialize_axiom (@conj_elim2 _ Γ A B) H3.
   specialize (reguarity H3) as H4.
   specialize (A_impl_conj Γ $box (A /\ B)$ $box A$ $box B$) as H5.
   specialize (mp H5 H2) as H6.
@@ -388,7 +411,7 @@ Qed.
 (* Example 6.1.5 *)
 Lemma conj_box {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $(box X /\ box Y) -> box (X /\ Y)$.
 Proof.
-  specialize_axiom (@axiom_conj_intro _ Γ X Y) H1.
+  specialize_axiom (@conj_intro _ Γ X Y) H1.
   specialize (reguarity H1) as H2.
   specialize_axiom (@axiomK _ Γ Y $X /\ Y$) H3.
   specialize (@transitivity _ Γ $box X$ $box (Y -> X /\ Y)$ $box Y -> box (X /\ Y)$) as H4.
@@ -443,6 +466,36 @@ Theorem deMorganConj_rev {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $
 Proof.
 Admitted.
 
+(* Импликация из объектного в метаязык *)
+Lemma obj_meta_impl {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $A -> B$ -> (Γ |- A -> Γ |- B).
+Proof.
+  intros H1 H2.
+  specialize (mp H1 H2) as H3.
+  exact H3.
+Qed.
+
+Lemma obj_meta_equiv1 {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $A <-> B$ -> (Γ |- A -> Γ |- B).
+Proof.
+  intros H1 H2.
+  unfold equivalence in H1.
+  specialize (meta_conj_elim1 H1) as H3.
+  specialize (mp H3 H2) as H4.
+  exact H4.
+Qed.
+
+Lemma obj_meta_equiv2 {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $A <-> B$ -> (Γ |- B -> Γ |- A).
+Proof.
+  intros H1 H2.
+  unfold equivalence in H1.
+  specialize (meta_conj_elim2 H1) as H3.
+  specialize (mp H3 H2) as H4.
+  exact H4.
+Qed.
+
+(* Импликация из метаязыка в объектный *)
+(* Lemma meta_obj_impl {atom : Set} (Γ : @formula atom -> Prop) A B : (Γ |- A -> Γ |- B) -> Γ |- $A -> B$. *)
+(* Proof. *)
+
 (* Exercize 6.1.1 *)
 Proposition impl_diamond {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ ,, $X -> Y$ |- (f_imp (f_diamond X) (f_diamond Y)).
 Proof.
@@ -466,6 +519,69 @@ Proof.
   unfold f_diamond.
   exact H8.
 Qed.
+
+Instance eqNat: EqDec nat :=
+{
+  eqb := Nat.eqb;
+  eqb_eq := Nat.eqb_eq;
+}.
+
+(*
+n > 0
+Возвращает
+*)
+Fixpoint replace_subformula_int {atom : Set} `{EqDec atom} `{EqDec (@formula atom)} (X X' Y : @formula atom) (n : nat) {struct Y} : (@formula atom * nat) :=
+  if (eqb X Y) then
+    if (eqb n 1) then
+      (X', 0)
+    else
+      (* Формулы равны, n > 1 *)
+      (Y, n - 1)
+  else
+    match Y with
+    | f_atom _ => (Y, n)
+    | f_not Y' => let (f_res, m) := (replace_subformula_int X X' Y' n) in
+                 ((f_not f_res), m)
+    | f_conj f1 f2 => let (f1_res, m) := (replace_subformula_int X X' f1 n) in
+                    if (eqb m 0) then
+                      ((f_conj f1_res f2), m)
+                    else
+                      let (f2_res, k) := (replace_subformula_int X X' f2 m) in
+                      ((f_conj f1_res f2_res), k)
+    | f_disj f1 f2 => let (f1_res, m) := (replace_subformula_int X X' f1 n) in
+                    if (eqb m 0) then
+                      ((f_disj f1_res f2), m)
+                    else
+                      let (f2_res, k) := (replace_subformula_int X X' f2 m) in
+                      ((f_disj f1_res f2_res), k)
+    | f_imp f1 f2 => let (f1_res, m) := (replace_subformula_int X X' f1 n) in
+                    if (eqb m 0) then
+                      ((f_imp f1_res f2), m)
+                    else
+                      let (f2_res, k) := (replace_subformula_int X X' f2 m) in
+                      ((f_imp f1_res f2_res), k)
+    | f_box Y' => let (f_res, m) := (replace_subformula_int X X' Y' n) in
+                 ((f_box f_res), m)
+    end.
+
+Definition replace_subformula {atom : Set} `{EqDec atom} `{EqDec (@formula atom)} (X X' Y : @formula atom) (n : nat) : @formula atom := fst (replace_subformula_int X X' Y n).
+
+(* X - подформула Y *)
+Fixpoint subformula {atom : Set} `{EqDec atom} `{EqDec (@formula atom)} (X Y : @formula atom) : bool :=
+  if eqb X Y then
+    true
+  else
+    match Y with
+    | f_not Y' => subformula X Y'
+    | f_conj F1 F2 => orb (subformula X F1) (subformula X F2)
+    | f_disj F1 F2 => orb (subformula X F1) (subformula X F2)
+    | f_imp F1 F2 => orb (subformula X F1) (subformula X F2)
+    | f_box Y' => subformula X Y'
+    | _ => false
+    end.
+
+Theorem Replacement {atom : Set} `{EqDec atom} `{EqDec (@formula atom)} (Γ : @formula atom -> Prop) (X X' Y Y' : @formula atom) : forall n : nat, n > 0 -> (subformula X Y = true) -> Γ |- $X <-> X'$ -> Y' = (replace_subformula X X' Y n) -> Γ |- $Y <-> Y'$.
+Admitted.
 
 (* Example 6.1.7 *)
 Proposition E6_1_7 {atom : Set} (Γ : @formula atom -> Prop) (X : @formula atom) : Γ |- $diamond diamond ~X -> ~ box box X$.
@@ -560,23 +676,23 @@ Record Model {atom : Set} (Worlds : Type) :=
 
 
 (* Worlds - тип для миров *)
-Class Model {atom : Set} (Worlds : Type) :=
-{
-  G : list Worlds;
-  R : Worlds -> Worlds -> bool;
-  values : Worlds -> atom -> bool;
-}.
+(* Class Model {atom : Set} (Worlds : Type) := *)
+(* { *)
+(*   G : list Worlds; *)
+(*   R : Worlds -> Worlds -> bool; *)
+(*   values : Worlds -> atom -> bool; *)
+(* }. *)
 
 (* Вычисление формулы в мире *)
-Fixpoint eval {atom : Set} {Worlds : Type} (M : Type) `{M : @Model atom Worlds} (World : Worlds) (f : @formula atom) : bool :=
-  match f with
-  | f_atom a => values World a
-  | f_not f' => negb (eval M World f')
-  | f_conj f1 f2 => conjb (eval M World f1) (eval M World f2)
-  | f_disj f1 f2 => disjb (eval M World f1) (eval M World f2)
-  | f_imp f1 f2 => implb (eval M World f1) (eval M World f2)
-  | f_box f1 f2 => formula -> formula
-  | f_diamond f1 f2 => formula -> formula.
-  | _ => true
-  end.
+(* Fixpoint eval {atom : Set} {Worlds : Type} (M : Type) `{M : @Model atom Worlds} (World : Worlds) (f : @formula atom) : bool := *)
+(*   match f with *)
+(*   | f_atom a => values World a *)
+(*   | f_not f' => negb (eval M World f') *)
+(*   | f_conj f1 f2 => conjb (eval M World f1) (eval M World f2) *)
+(*   | f_disj f1 f2 => disjb (eval M World f1) (eval M World f2) *)
+(*   | f_imp f1 f2 => implb (eval M World f1) (eval M World f2) *)
+(*   | f_box f1 f2 => formula -> formula *)
+(*   | f_diamond f1 f2 => formula -> formula. *)
+(*   | _ => true *)
+(*   end. *)
 End Kripke.
