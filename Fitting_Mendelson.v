@@ -258,8 +258,8 @@ where "Γ |- A" := (entails Γ A).
 
 (* It is convenient to make some parameters implicit. *)
 Arguments hypo {_} {_} _.
-Arguments axiom1 {_} {_} _ _.
-Arguments axiom2 {_} {_} _ _ _.
+Arguments axiom1 {_} (_) _ _.
+Arguments axiom2 {_} (_) _ _ _.
 Arguments conj_elim1 {_} (_) _ _.
 Arguments conj_elim2 {_} (_) _ _.
 Arguments conj_intro {_} (_) _ _.
@@ -393,10 +393,23 @@ Proof.
   exact H5.
 Qed.
 
-Lemma impl_conj {atom : Set} (Γ : @formula atom -> Prop) X Y Z :
+Lemma conj_impl_conj {atom : Set} (Γ : @formula atom -> Prop) X Y Z :
   Γ |- $(X -> (Y -> Z)) -> (X /\ Y -> Z)$.
 Proof.
 Admitted.
+
+Lemma conj_impl {atom : Set} (Γ : @formula atom -> Prop) (X Y: @formula atom) :
+  Γ |- $(X /\ Y) -> (Y /\ X)$.
+Proof.
+  specialize_axiom (conj_elim1 Γ X Y) H1.
+  specialize_axiom (conj_elim2 Γ X Y) H2.
+  specialize_axiom (conj_intro Γ Y X) H3.
+  specialize (meta_transitivity H2 H3) as H4.
+  specialize_axiom (axiom2 Γ $X /\ Y$ X $Y /\ X$) H5.
+  specialize (mp H5 H4) as H6.
+  specialize (mp H6 H1) as H7.
+  exact H7.
+Qed.
 
 Lemma disj_impl {atom : Set} (Γ : @formula atom -> Prop) (X Y: @formula atom) :
   Γ |- $(X \/ Y) -> (Y \/ X)$.
