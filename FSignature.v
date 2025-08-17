@@ -22,9 +22,9 @@ Module Make_Formula(ARG:TFormula).
   Module F := ARG.
   Export F.
   (* Filling notations according to priority *)
-  #[global] Notation "~ p" := (negation p) (in custom formula_view at level 1): formula_scope.
-  #[global] Notation "A /\ B" := (conjunction A B) (in custom formula_view at level 2, left associativity) : formula_scope.
-  #[global] Notation "A \/ B" := (disjunction A B) (in custom formula_view at level 3, left associativity) : formula_scope.
-  #[global] Notation "p -> q" := (implication p q) (in custom formula_view at level 4, right associativity).
-  #[global] Notation "A <-> B" := (equivalence A B) (in custom formula_view at level 5, left associativity) : formula_scope.
+  #[global] Notation "~ P" := (negation P) (in custom formula_view at level 1, P custom formula_view at level 1): formula_scope.
+  #[global] Notation "A /\ B" := (conjunction A B) (in custom formula_view at level 2, B custom formula_view at level 2,  left associativity) : formula_scope.
+  #[global] Notation "A \/ B" := (disjunction A B) (in custom formula_view at level 3, B custom formula_view at level 3, left associativity) : formula_scope.
+  #[global] Notation "A -> B" := (implication A B) (in custom formula_view at level 4, B custom formula_view at level 4, right associativity).
+  #[global] Notation "A <-> B" := (equivalence A B) (in custom formula_view at level 5, B custom formula_view at level 5, left associativity) : formula_scope.
 End Make_Formula.

@@ -226,7 +226,7 @@ Definition f_disj_intro1 {atom : Set} (A B : @formula atom) : formula :=
 Definition f_disj_intro2 {atom : Set} (A B : @formula atom) : formula :=
   $B -> (A \/ B)$.
 
-Definition f_axiom8 {atom : Set} (A B C : @formula atom) : formula :=
+Definition f_case_analysis {atom : Set} (A B C : @formula atom) : formula :=
   $(A -> C) -> (B -> C) -> (A \/ B -> C)$.
 
 Definition f_ex_falso {atom : Set} (A B : @formula atom) : formula :=
@@ -248,7 +248,7 @@ Inductive entails {atom : Set} (Γ : @formula atom -> Prop) : @formula atom -> T
   | conj_intro : forall A B, Γ |- f_conj_intro A B
   | disj_intro1 : forall A B, Γ |- f_disj_intro1 A B
   | disj_intro2 : forall A B , Γ |- f_disj_intro2 A B
-  | axiom8 : forall A B C, Γ |- f_axiom8 A B C
+  | case_analysis : forall A B C, Γ |- f_case_analysis A B C
   | ex_falso : forall A B, Γ |- f_ex_falso A B
   | tertium_non_datur : forall A, Γ |- f_tertium_non_datur A
   | axiomK : forall A B, Γ |- f_axiomK A B
@@ -265,7 +265,7 @@ Arguments conj_elim2 {_} (_) _ _.
 Arguments conj_intro {_} (_) _ _.
 Arguments disj_intro1 {_} (_) _ _.
 Arguments disj_intro2 {_} (_) _ _.
-Arguments axiom8 {_} (_) _ _ _.
+Arguments case_analysis {_} _ _ _ _.
 Arguments ex_falso {_} (_) _ _.
 Arguments tertium_non_datur {_} (_) _.
 Arguments axiomK {_} {_} _ _.
@@ -284,7 +284,7 @@ Ltac specialize_axiom A H :=
   | (_ |- f_conj_intro _ _) => unfold f_conj_intro in H
   | (_ |- f_disj_intro1 _ _) => unfold f_disj_intro1 in H
   | (_ |- f_disj_intro2 _ _) => unfold f_disj_intro2 in H
-  | (_ |- f_axiom8 _ _ _) => unfold f_axiom8 in H
+  | (_ |- f_case_analysis _ _ _) => unfold f_case_analysis in H
   | (_ |- f_ex_falso _ _) => unfold f_ex_falso in H
   | (_ |- f_tertium_non_datur _) => unfold f_tertium_non_datur in H
   | (_ |- f_axiomK _ _) => unfold f_axiomK in H
@@ -293,7 +293,7 @@ Ltac specialize_axiom A H :=
 Lemma meta_conj_elim1 {atom : Set} {Γ : @formula atom -> Prop} {A B : @formula atom} : Γ |- $(A /\ B)$ -> Γ |- A.
 Proof.
   intro H1.
-  pose proof (conj_elim1 Γ A B) as H2.
+  specialize_axiom (conj_elim1 Γ A B) H2.
   specialize (mp H2 H1) as H3.
   exact H3.
 Qed.
@@ -301,7 +301,7 @@ Qed.
 Lemma meta_conj_elim2 {atom : Set} {Γ : @formula atom -> Prop} {A B : @formula atom} : Γ |- $(A /\ B)$ -> Γ |- B.
 Proof.
   intro H1.
-  pose proof (conj_elim2 Γ A B) as H2.
+  specialize_axiom (conj_elim2 Γ A B) H2.
   specialize (mp H2 H1) as H3.
   exact H3.
 Qed.
@@ -309,8 +309,7 @@ Qed.
 Lemma meta_conj_intro {atom : Set} {Γ : @formula atom -> Prop} {A B : @formula atom} : Γ |- A -> Γ |- B -> Γ |- $A /\ B$.
 Proof.
   intros H1 H2.
-  pose proof (conj_intro Γ A B) as H3.
-  unfold f_conj_intro in H3.
+  specialize_axiom (conj_intro Γ A B) H3.
   specialize (mp H3 H1) as H4.
   specialize (mp H4 H2) as H5.
   exact H5.
@@ -361,7 +360,7 @@ Proof.
 Qed.
 
 (* We need this lemma in the deduction theorem. *)
-Lemma drop_antecedent {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- B -> Γ |- $A -> B$.
+Lemma add_context {atom : Set} (Γ : @formula atom -> Prop) (A B : @formula atom) : Γ |- B -> Γ |- $A -> B$.
 Proof.
   intro H.
   (* 1. $B \supset (A \supset B)$ --- схема аксиом A1 *)
@@ -375,7 +374,7 @@ Lemma A_impl_conj {atom : Set} (Γ : @formula atom -> Prop) (A X Y : @formula at
 Proof.
   specialize_axiom (@axiom1 _ Γ $A -> X$ $A -> Y$) H1.
   specialize (imply_self Γ $A -> Y$) as H2.
-  specialize (drop_antecedent Γ $A -> X$ $(A -> Y) -> (A -> Y)$ H2) as H3.
+  specialize (add_context Γ $A -> X$ $(A -> Y) -> (A -> Y)$ H2) as H3.
 Admitted.
 
 Lemma transitivity {atom : Set} {Γ : @formula atom -> Prop} {A} B {C} :
@@ -393,12 +392,12 @@ Proof.
   exact H5.
 Qed.
 
-Lemma conj_impl_conj {atom : Set} (Γ : @formula atom -> Prop) X Y Z :
+Lemma impl_conj {atom : Set} (Γ : @formula atom -> Prop) X Y Z :
   Γ |- $(X -> (Y -> Z)) -> (X /\ Y -> Z)$.
 Proof.
 Admitted.
 
-Lemma conj_impl {atom : Set} (Γ : @formula atom -> Prop) (X Y: @formula atom) :
+Lemma conj_comm {atom : Set} (Γ : @formula atom -> Prop) (X Y: @formula atom) :
   Γ |- $(X /\ Y) -> (Y /\ X)$.
 Proof.
   specialize_axiom (conj_elim1 Γ X Y) H1.
@@ -411,12 +410,13 @@ Proof.
   exact H7.
 Qed.
 
-Lemma disj_impl {atom : Set} (Γ : @formula atom -> Prop) (X Y: @formula atom) :
+(* 2.6.3 *)
+Lemma disj_commutativity_impl {atom : Set} (Γ : @formula atom -> Prop) (X Y: @formula atom) :
   Γ |- $(X \/ Y) -> (Y \/ X)$.
 Proof.
   specialize_axiom (disj_intro2 Γ Y X) H1.
   specialize_axiom (disj_intro1 Γ Y X) H2.
-  specialize_axiom (axiom8 Γ X Y $Y \/ X$) H3.
+  specialize_axiom (case_analysis Γ X Y $Y \/ X$) H3.
   specialize (mp H3 H1) as H4.
   specialize (mp H4 H2) as H5.
   exact H5.
@@ -426,8 +426,8 @@ Lemma disj_comm {atom : Set} (Γ : @formula atom -> Prop) (X Y: @formula atom) :
   Γ |- $(X \/ Y) <-> (Y \/ X)$.
 Proof.
   unfold equivalence.
-  specialize (disj_impl Γ X Y) as H1.
-  specialize (disj_impl Γ Y X) as H2.
+  specialize (disj_commutativity_impl Γ X Y) as H1.
+  specialize (disj_commutativity_impl Γ Y X) as H2.
   specialize_axiom (conj_intro Γ $(X \/ Y -> Y \/ X)$ $(Y \/ X -> X \/ Y)$) H3.
   specialize (mp H3 H1) as H4.
   specialize (mp H4 H2) as H5.
@@ -531,11 +531,7 @@ Proposition impl_diamond {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formu
 Proof.
   assert (H1 : Γ ,, $X -> Y$ |- $X -> Y$).
   {
-    apply hypo.
-    unfold extend.
-    unfold elem.
-    right.
-    reflexivity.
+    hypo.
   }
 
   specialize (contraposition (Γ,, $X -> Y$) X Y) as H2.
@@ -560,7 +556,7 @@ Instance eqNat: EqDec nat :=
 n > 0
 Возвращает
 *)
-Fixpoint replace_subformula_int {atom : Set} `{EqDec atom} `{EqDec (@formula atom)} (X X' Y : @formula atom) (n : nat) {struct Y} : (@formula atom * nat) :=
+Fixpoint replace_subformula_int {atom : Set} `{EqDec atom} (X X' Y : @formula atom) (n : nat) {struct Y} : (@formula atom * nat) :=
   if (eqb X Y) then
     if (eqb n 1) then
       (X', 0)
@@ -594,10 +590,10 @@ Fixpoint replace_subformula_int {atom : Set} `{EqDec atom} `{EqDec (@formula ato
                  ((f_box f_res), m)
     end.
 
-Definition replace_subformula {atom : Set} `{EqDec atom} `{EqDec (@formula atom)} (X X' Y : @formula atom) (n : nat) : @formula atom := fst (replace_subformula_int X X' Y n).
+Definition replace_subformula {atom : Set} `{EqDec atom} (X X' Y : @formula atom) (n : nat) : @formula atom := fst (replace_subformula_int X X' Y n).
 
 (* X - подформула Y *)
-Fixpoint subformulab {atom : Set} `{EqDec atom} `{EqDec (@formula atom)} (X Y : @formula atom) : bool :=
+Fixpoint subformulab {atom : Set} `{EqDec atom} (X Y : @formula atom) : bool :=
   if eqb X Y then
     true
   else
@@ -610,7 +606,7 @@ Fixpoint subformulab {atom : Set} `{EqDec atom} `{EqDec (@formula atom)} (X Y : 
     | _ => false
     end.
 
-Inductive subformula {atom : Set} `{EqDec atom} `{EqDec (@formula atom)} : (@formula atom) -> (@formula atom) -> Prop :=
+Inductive subformula {atom : Set} : (@formula atom) -> (@formula atom) -> Prop :=
 | s_eq (X Y : @formula atom): (X = Y) -> subformula X Y
 | s_not (X Y : @formula atom): subformula X Y -> subformula X $~ Y$ (* унарные конструкторы формулы *)
 | s_box (X Y : @formula atom): subformula X Y -> subformula X $box Y$
@@ -622,7 +618,7 @@ Inductive subformula {atom : Set} `{EqDec atom} `{EqDec (@formula atom)} : (@for
 | s_imp2 (X F1 F2 : @formula atom): subformula X F2 -> subformula X $F1 -> F2$.
 
 
-Theorem Replacement {atom : Set} `{EqDec atom} `{EqDec (@formula atom)} (Γ : @formula atom -> Prop) (X X' Y Y' : @formula atom) : forall n : nat, n > 0 -> subformula X Y -> Γ |- $X <-> X'$ -> Y' = (replace_subformula X X' Y n) -> Γ |- $Y <-> Y'$.
+Theorem Replacement {atom : Set} `{EqDec atom} (Γ : @formula atom -> Prop) (X X' Y Y' : @formula atom) : forall n : nat, n > 0 -> subformula X Y -> Γ |- $X <-> X'$ -> Y' = (replace_subformula X X' Y n) -> Γ |- $Y <-> Y'$.
 Admitted.
 
 (* Example 6.1.7 *)
@@ -683,10 +679,30 @@ Proof.
 Qed.
 
 (* Exercize 6.1.3.3 *)
-Proposition E6_1_3_3 {atom : Set} `{EqDec atom} `{EqDec (@formula atom)} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $(box X \/ box Y) -> box(X \/ Y)$.
+Proposition E6_1_3_3 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $(box X \/ box Y) -> box(X \/ Y)$.
+Proof.
+  specialize_axiom (disj_intro1 Γ X Y) H1.
+  specialize_axiom (disj_intro2 Γ X Y) H2.
+  specialize_axiom (case_analysis Γ $box X$ $box Y$ $box (X \/ Y)$) H3.
+  apply reguarity in H1.
+  apply reguarity in H2.
+  specialize (mp H3 H1) as H4.
+  specialize (mp H4 H2) as H5.
+  exact H5.
+Qed.
+
+Theorem formula_beq_true {atom : Set} `{EqDec atom} (X : @formula atom) :
+ formula_beq X X = true.
+Proof.
+  rewrite formula_beq_eq.
+  reflexivity.
+Qed.
+
+(* Exercize 6.1.3.3 *)
+Proposition E6_1_3_3 {atom : Set} `{EqDec atom} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $(box X \/ box Y) -> box(X \/ Y)$.
 Proof.
   specialize (disj_comm Γ $box X$ $box Y$) as H1.
-  assert (H2 : subformula $box X \/ box Y$ $(box X \/ box Y) -> box(X \/ Y)$).
+  assert (Hsubformula : subformula $box X \/ box Y$ $(box X \/ box Y) -> box(X \/ Y)$).
   {
     apply s_imp1.
     apply s_eq.
@@ -706,14 +722,32 @@ Proof.
                 $(box X \/ box Y) -> box (X \/ Y)$
                 $(box Y \/ box X) -> box (X \/ Y)$
                1
-               H3 H2) as H4.
+               H3 Hsubformula) as Hreplace.
   specialize (disj_comm Γ $box X$ $box Y$) as Hdisj.
-  specialize (H4 Hdisj).
+  specialize (Hreplace Hdisj).
 (* Lemma obj_meta_equiv1 {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $A <-> B$ -> (Γ |- A -> Γ |- B). *)
   (* specialize (obj_meta_equiv1 Γ $box X \/ box Y$ $box Y \/ box X$) as H5. *)
-  assert (H5 : (replace_subformula $box X \/ box Y$ $box Y \/ box X$ $box X \/ box Y -> box (X \/ Y)$ 1) = $box Y \/ box X -> box (X \/ Y)$).
+  assert (HY' : (replace_subformula $box X \/ box Y$ $box Y \/ box X$ $box X \/ box Y -> box (X \/ Y)$ 1) = $box Y \/ box X -> box (X \/ Y)$).
   {
     unfold replace_subformula.
+    unfold replace_subformula_int.
+    simpl.
+    rewrite (formula_beq_true X).
+    rewrite (formula_beq_true Y).
+    simpl.
+    reflexivity.
+  }
+
+  symmetry in HY'.
+  specialize (Hreplace HY').
+
+forall n : nat,
+n > 0 +
+subformula X Y +
+Γ |- $X <-> X'$ +
+Y' = (replace_subformula X X' Y n)
+Γ |- $Y <-> Y'$.
+Admitted.
   specialize (H5 Hdisj)
 Admitted.
 

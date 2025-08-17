@@ -291,9 +291,9 @@ Proof.
 Qed.
 
 (* 1.10 a *)
-Theorem neg_neg_pos {atom : Set} (Γ : @formula atom -> Prop) B : Γ |- $~~B -> B$.
+Theorem neg_neg_pos {atom : Set} (Γ : @formula atom -> Prop) B : Γ |- $~ ~B -> B$.
 Proof.
-  apply (transitivity $~B -> ~~B$).
+  apply transitivity with (B := $~B -> ~~B$).
   - apply axiom1.
   - apply (flip $~B -> ~B$).
     + apply axiom3 with (B := B) (A := $~B$).
