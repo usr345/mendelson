@@ -5,6 +5,9 @@ From Mendelson Require Import EqDec.
 Require Import Lists.List.
 Require Import Coq.Arith.PeanoNat.
 Import ListNotations.
+Require Import Coq.Logic.ClassicalFacts.
+Require Import Coq.Logic.Classical_Prop.
+Require Import Coq.Logic.Classical_Pred_Type.
 
 Module Formula1 <: TFormula.
   (* Синтаксис модальной формулы *)
@@ -724,29 +727,26 @@ Proof.
                1
                H3 Hsubformula) as Hreplace.
 
-  specialize (Hreplace Hdisj).
-  assert (HY' : (replace_subformula $X \/ Y$ $Y \/ X$ $box (X \/ Y) -> box X \/ ~ box (~ Y)$ 1) = $box (Y \/ X) -> box X \/ ~ box (~ Y)$).
-  {
-    unfold replace_subformula.
-    unfold replace_subformula_int.
-    simpl.
-    rewrite (formula_beq_true X).
-    rewrite (formula_beq_true Y).
-    simpl.
-    reflexivity.
-  }
+  (* specialize (Hreplace Hdisj). *)
+  (* assert (Hneq : ~(X = $box (X \/ Y)$)). *)
+  (* { *)
+  (*   intro H4. *)
+  (*   Unset Printing Notations. *)
 
-  symmetry in HY'.
-  specialize (Hreplace HY').
+  (* assert (HY' : (replace_subformula $X \/ Y$ $Y \/ X$ $box (X \/ Y) -> box X \/ ~ box (~ Y)$ 1) = $box (Y \/ X) -> box X \/ ~ box (~ Y)$). *)
+  (* { *)
+  (*   unfold replace_subformula. *)
+  (*   unfold replace_subformula_int. *)
+  (*   simpl. *)
+  (*   rewrite (formula_beq_true X). *)
+  (*   rewrite (formula_beq_true Y). *)
+  (*   simpl. *)
+  (*   rewrite formula_beq_eq. *)
+  (*   reflexivity. *)
+  (* } *)
 
-forall n : nat,
-n > 0 +
-subformula X Y +
-Γ |- $X <-> X'$ +
-Y' = (replace_subformula X X' Y n)
-Γ |- $Y <-> Y'$.
-Admitted.
-  specialize (H5 Hdisj)
+  (* symmetry in HY'. *)
+  (* specialize (Hreplace HY'). *)
 Admitted.
 
 (* Exercize 6.1.3.5 *)
@@ -770,12 +770,91 @@ Record Model {atom : Set} (Worlds : Type) :=
 {
   G : Worlds;
   R : Worlds -> Worlds -> Prop;
-  values : Worlds -> atom -> Prop;
+  valuation : Worlds -> atom -> Prop;
 }.
 
+Fixpoint satisfies {atom : Set} {Worlds : Type} (M : Model Worlds) (w0 : Worlds) (f : @formula atom) : Prop :=
+  match f with
+  | f_atom p => valuation Worlds M w0 p
+  | f_not f' => ~(satisfies M w0 f')
+  | f_conj f1 f2 => (satisfies M w0 f1) /\ (satisfies M w0 f2)
+  | f_disj f1 f2 => (satisfies M w0 f1) \/ (satisfies M w0 f2)
+  | f_imp f1 f2 => (satisfies M w0 f1) -> (satisfies M w0 f2)
+  | f_box f' => forall w, (R Worlds M w0 w) -> (satisfies M w f')
+  end.
+
+Import Relation.
+
+Theorem implication_as_disjunction : forall P Q : Prop, (P -> Q) <-> (~P \/ Q).
+Proof.
+  split.
+  - intros H.
+    destruct (classic P) as [Hp | Hnp].
+    + apply or_intror.
+      apply H.
+      apply Hp.
+    + apply or_introl.
+      exact Hnp.
+    - intros H.
+      destruct H.
+      + intros HP.
+        apply H in HP.
+        destruct HP.
+      + intro Hp.
+        apply H.
+Qed.
+
+Theorem diamond_exists {atom : Set} {Worlds : Type} (M : @Model atom Worlds) (w0 : Worlds) (P : @formula atom) : satisfies M w0 $diamond P$ -> exists w, ((R Worlds M w0 w) /\ (satisfies M w P)).
+Proof.
+  intro H.
+  simpl in H.
+  apply not_all_ex_not in H.
+  destruct H as [w H].
+  rewrite implication_as_disjunction in H.
+  Admitted.
+
+(* 5.4.3.1 стр. 87 *)
+Theorem boxP_P {atom : Set} {Worlds : Type} (M : @Model atom Worlds) (w0 : Worlds) (P : @formula atom) : reflexive (R Worlds M) -> satisfies M w0 $box P -> P$.
+Proof.
+  intros Hrefl.
+  unfold reflexive in Hrefl.
+  simpl.
+  intro Hbox.
+  specialize (Hrefl w0).
+  specialize (Hbox w0 Hrefl).
+  exact Hbox.
+Qed.
+
+Theorem E5_4_3_2 {atom : Set} {Worlds : Type} (M : @Model atom Worlds) (w0 : Worlds) (P : @formula atom) : symmetric (R Worlds M) -> satisfies M w0 $P -> box diamond P$.
+Proof.
+  intro Hsym.
+  unfold symmetric in Hsym.
+  simpl.
+  intro H.
+  intros w Hw0_R_w.
+  intro Hcontra.
+  specialize (Hsym w0 w).
+  apply Hsym in Hw0_R_w as Hw_R_w0.
+  specialize (Hcontra w0).
+  specialize (Hcontra Hw_R_w0).
+  specialize (Hcontra H).
+  exact Hcontra.
+Qed.
+
+Theorem E5_4_3_3 {atom : Set} {Worlds : Type} (M : @Model atom Worlds) (w0 : Worlds) (P : @formula atom) : symmetric (R Worlds M) -> transitive (R Worlds M) -> satisfies M w0 $diamond P -> box diamond P$.
+Proof.
+  intros Hsym Htrans.
+  unfold symmetric in Hsym.
+  unfold transitive in Htrans.
+  simpl.
+  intro Hdiamond.
+  intros w Hw0_R_w.
+  intro Hcontra.
+  apply not_all_ex_not in Hdiamond.
+  destruct Hdiamond as [w1 Hdiamond].
 
 (* Worlds - тип для миров *)
-(* Class Model {atom : Set} (Worlds : Type) := *)
+(* Record Model {atom : Set} (Worlds : Type) := *)
 (* { *)
 (*   G : list Worlds; *)
 (*   R : Worlds -> Worlds -> bool; *)
