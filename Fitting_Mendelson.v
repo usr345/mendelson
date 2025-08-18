@@ -553,7 +553,7 @@ Instance eqNat: EqDec nat :=
 }.
 
 (*
-n > 0
+n != 0
 Возвращает
 *)
 Fixpoint replace_subformula_int {atom : Set} `{EqDec atom} (X X' Y : @formula atom) (n : nat) {struct Y} : (@formula atom * nat) :=
@@ -618,7 +618,7 @@ Inductive subformula {atom : Set} : (@formula atom) -> (@formula atom) -> Prop :
 | s_imp2 (X F1 F2 : @formula atom): subformula X F2 -> subformula X $F1 -> F2$.
 
 
-Theorem Replacement {atom : Set} `{EqDec atom} (Γ : @formula atom -> Prop) (X X' Y Y' : @formula atom) : forall n : nat, n > 0 -> subformula X Y -> Γ |- $X <-> X'$ -> Y' = (replace_subformula X X' Y n) -> Γ |- $Y <-> Y'$.
+Theorem Replacement {atom : Set} `{EqDec atom} (Γ : @formula atom -> Prop) (X X' Y Y' : @formula atom) : forall n : nat, n <> 0 -> subformula X Y -> Γ |- $X <-> X'$ -> Y' = (replace_subformula X X' Y n) -> Γ |- $Y <-> Y'$.
 Admitted.
 
 (* Example 6.1.7 *)
@@ -698,36 +698,34 @@ Proof.
   reflexivity.
 Qed.
 
-(* Exercize 6.1.3.3 *)
-Proposition E6_1_3_3 {atom : Set} `{EqDec atom} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $(box X \/ box Y) -> box(X \/ Y)$.
+(* Exercize 6.1.3.4 *)
+Proposition E6_1_3_4 {atom : Set} `{EqDec atom} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $box (X \/ Y) -> (box X \/ diamond Y)$.
 Proof.
-  specialize (disj_comm Γ $box X$ $box Y$) as H1.
-  assert (Hsubformula : subformula $box X \/ box Y$ $(box X \/ box Y) -> box(X \/ Y)$).
+  unfold f_diamond.
+  specialize (disj_comm Γ X Y) as Hdisj.
+  assert (Hsubformula : subformula $X \/ Y$ $box (X \/ Y) -> box X \/ ~ box (~ Y)$).
   {
     apply s_imp1.
+    apply s_box.
     apply s_eq.
     reflexivity.
   }
 
-  assert (H3 : 1 > 0).
+  assert (H3 : 1 <> 0).
   {
-    unfold gt.
-    unfold lt.
-    apply le_n.
+    discriminate.
   }
 
   specialize (Replacement Γ
-                $box X \/ box Y$
-                $box Y \/ box X$
-                $(box X \/ box Y) -> box (X \/ Y)$
-                $(box Y \/ box X) -> box (X \/ Y)$
+                $X \/ Y$
+                $Y \/ X$
+                $box (X \/ Y) -> box X \/ ~ box (~ Y)$
+                $box (Y \/ X) -> box X \/ ~ box (~ Y)$
                1
                H3 Hsubformula) as Hreplace.
-  specialize (disj_comm Γ $box X$ $box Y$) as Hdisj.
+
   specialize (Hreplace Hdisj).
-(* Lemma obj_meta_equiv1 {atom : Set} (Γ : @formula atom -> Prop) A B : Γ |- $A <-> B$ -> (Γ |- A -> Γ |- B). *)
-  (* specialize (obj_meta_equiv1 Γ $box X \/ box Y$ $box Y \/ box X$) as H5. *)
-  assert (HY' : (replace_subformula $box X \/ box Y$ $box Y \/ box X$ $box X \/ box Y -> box (X \/ Y)$ 1) = $box Y \/ box X -> box (X \/ Y)$).
+  assert (HY' : (replace_subformula $X \/ Y$ $Y \/ X$ $box (X \/ Y) -> box X \/ ~ box (~ Y)$ 1) = $box (Y \/ X) -> box X \/ ~ box (~ Y)$).
   {
     unfold replace_subformula.
     unfold replace_subformula_int.
@@ -749,11 +747,6 @@ Y' = (replace_subformula X X' Y n)
 Γ |- $Y <-> Y'$.
 Admitted.
   specialize (H5 Hdisj)
-Admitted.
-
-(* Exercize 6.1.3.4 *)
-Proposition E6_1_3_4 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $box (X \/ Y) -> (box X \/ diamond Y)$.
-Proof.
 Admitted.
 
 (* Exercize 6.1.3.5 *)
