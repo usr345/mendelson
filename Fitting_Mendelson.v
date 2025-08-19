@@ -783,14 +783,14 @@ Module Kripke.
 
 Import Formula.
 
-Record Model :=
+Record Model {atom : Type} :=
 {
   worlds : Type; (* Множество возможных миров *)
   accessible : worlds -> worlds -> Prop;
-  valuation {atom : Set} : worlds -> atom -> Prop;
+  valuation : worlds -> atom -> Prop;
 }.
 
-Fixpoint satisfies {atom : Set} (M : Model) (w0 : worlds M) (f : @formula atom) : Prop :=
+Fixpoint satisfies {atom : Set} (M : @Model atom) (w0 : worlds M) (f : @formula atom) : Prop :=
   match f with
   | f_atom p => valuation M w0 p
   | f_not f' => ~(satisfies M w0 f')
@@ -804,7 +804,7 @@ Fixpoint satisfies {atom : Set} (M : Model) (w0 : worlds M) (f : @formula atom) 
 Import Relation.
 
 (* Exercize 5.2.1 стр. 81 *)
-Proposition Ex5_2_1 {atom : Set} (M : Model) (Γ : worlds M) (X Y : @formula atom) : satisfies M Γ $X <-> Y$ <-> ((satisfies M Γ X) <-> (satisfies M Γ Y)).
+Proposition Ex5_2_1 {atom : Set} (M : @Model atom) (Γ : worlds M) (X Y : @formula atom) : satisfies M Γ $X <-> Y$ <-> ((satisfies M Γ X) <-> (satisfies M Γ Y)).
 Proof.
   split ; intro H.
   - simpl in H.
@@ -827,7 +827,7 @@ Proof.
 Qed.
 
 (* Exercize 5.2.3.1 стр. 81 *)
-Proposition Ex5_2_3_1 {atom : Set} (M : Model) (Γ : worlds M) (P : @formula atom) : ~ (exists w, accessible M Γ w) -> satisfies M Γ $box P$.
+Proposition Ex5_2_3_1 {atom : Set} (M : @Model atom) (Γ : worlds M) (P : @formula atom) : ~ (exists w, accessible M Γ w) -> satisfies M Γ $box P$.
 Proof.
   intro H.
   simpl.
@@ -838,7 +838,7 @@ Proof.
 Qed.
 
 (* Exercize 5.2.3.2 стр. 81 *)
-Proposition Ex5_2_3_2 {atom : Set} (M : Model) (Γ : worlds M) (P : @formula atom) : ~ (exists w, accessible M Γ w) -> ~ (satisfies M Γ $diamond P$).
+Proposition Ex5_2_3_2 {atom : Set} (M : @Model atom) (Γ : worlds M) (P : @formula atom) : ~ (exists w, accessible M Γ w) -> ~ (satisfies M Γ $diamond P$).
 Proof.
   intro H.
   simpl.
@@ -849,7 +849,7 @@ Proof.
   exact Hex.
 Qed.
 
-Section Chapter5_3.
+Section Example_5_3_1.
 
   Inductive atom : Type :=
   | P : atom
@@ -869,25 +869,42 @@ Section Chapter5_3.
 
   Definition V3 (w : worlds3) (a : atom) : Prop :=
     match w, a with
-    | Γ, P => True
+    | Δ, P => True
     | Ω, Q => True
     | _, _ => False
     end.
 
-(* Record Model {atom : Set} (Worlds : Type) := *)
-(* { *)
-(*   G : Worlds; *)
-(*   R : Worlds -> Worlds -> Prop; *)
-(*   valuation : Worlds -> atom -> Prop; *)
-(* }. *)
+  Definition M1 : Model :=
+  {|
+    worlds := worlds3;
+    accessible := R3;
+    valuation := V3
+  |}.
 
+  Proposition Delta_P_or_Q : satisfies M1 Δ (disjunction (f_atom P) (f_atom Q)).
+  Proof.
+    simpl.
+    left.
+    apply I.
+  Qed.
 
-  (* Definition model1 : Model worlds := *)
-  (* {| G := worlds; *)
-  (*    R := R3; *)
-  (*    valuation := V3 |}. *)
+  Proposition Omega_P_or_Q : satisfies M1 Ω (disjunction (f_atom P) (f_atom Q)).
+  Proof.
+    simpl.
+    right.
+    apply I.
+  Qed.
 
-End Chapter5_3.
+  Proposition Omega_box_P_or_Q : satisfies M1 Γ (f_box (disjunction (f_atom P) (f_atom Q))).
+  Proof.
+    unfold satisfies.
+    intros w H.
+    destruct w ; simpl in H.
+    - destruct H.
+    - apply Delta_P_or_Q.
+    - apply Omega_P_or_Q.
+  Qed.
+End Example_5_3_1.
 
 (* Example 5.3.7 стр. 83 *)
 Example Ex5_3_7 {atom : Set} (M : Model) (w0 : worlds M) (P : @formula atom) : transitive (accessible M) -> satisfies M w0 $box P -> box box P$.
