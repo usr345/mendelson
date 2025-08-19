@@ -807,6 +807,29 @@ Fixpoint satisfies {atom : Set} {Worlds : Type} (M : Model Worlds) (w0 : Worlds)
 
 Import Relation.
 
+(* Exercize 5.2.3.1 стр. 81 *)
+Proposition Ex5_2_3_1 {atom : Set} {Worlds : Type} (M : @Model atom Worlds) (Γ : Worlds) (P : @formula atom) : ~ (exists w, R Worlds M Γ w) -> satisfies M Γ $box P$.
+Proof.
+  intro H.
+  simpl.
+  intros w HΓ_R_w.
+  specialize (ex_intro _ w HΓ_R_w) as Hex.
+  apply H in Hex.
+  destruct Hex.
+Qed.
+
+(* Exercize 5.2.3.2 стр. 81 *)
+Proposition Ex5_2_3_2 {atom : Set} {Worlds : Type} (M : @Model atom Worlds) (Γ : Worlds) (P : @formula atom) : ~ (exists w, R Worlds M Γ w) -> ~ (satisfies M Γ $diamond P$).
+Proof.
+  intro H.
+  simpl.
+  intro Hex.
+  destruct Hex as [w [HΓ_R_w Hw_p]].
+  specialize (ex_intro _ w HΓ_R_w) as Hex.
+  apply H in Hex.
+  exact Hex.
+Qed.
+
 (* Example 5.3.7 стр. 83 *)
 Example Ex5_3_7 {atom : Set} {Worlds : Type} (M : @Model atom Worlds) (w0 : Worlds) (P : @formula atom) : transitive (R Worlds M) -> satisfies M w0 $box P -> box box P$.
 Proof.
