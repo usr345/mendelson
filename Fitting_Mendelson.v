@@ -807,6 +807,29 @@ Fixpoint satisfies {atom : Set} {Worlds : Type} (M : Model Worlds) (w0 : Worlds)
 
 Import Relation.
 
+(* Exercize 5.2.1 стр. 81 *)
+Proposition Ex5_2_1 {atom : Set} {Worlds : Type} (M : @Model atom Worlds) (Γ : Worlds) (X Y : @formula atom) : satisfies M Γ $X <-> Y$ <-> ((satisfies M Γ X) <-> (satisfies M Γ Y)).
+Proof.
+  split ; intro H.
+  - simpl in H.
+    destruct H as [H1 H2].
+    split.
+    + intro HΓx.
+      apply H1 in HΓx as HΓy.
+      exact HΓy.
+    + intro HΓy.
+      apply H2 in HΓy as HΓx.
+      exact HΓx.
+  - simpl.
+    split.
+    + intro HΓx.
+      rewrite H in HΓx.
+      exact HΓx.
+    + intro HΓy.
+      rewrite <-H in HΓy.
+      exact HΓy.
+Qed.
+
 (* Exercize 5.2.3.1 стр. 81 *)
 Proposition Ex5_2_3_1 {atom : Set} {Worlds : Type} (M : @Model atom Worlds) (Γ : Worlds) (P : @formula atom) : ~ (exists w, R Worlds M Γ w) -> satisfies M Γ $box P$.
 Proof.
