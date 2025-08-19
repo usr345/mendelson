@@ -17,7 +17,8 @@ Module Formula1 <: TFormula.
   | f_conj  : formula -> formula -> formula
   | f_disj  : formula -> formula -> formula
   | f_imp  : formula -> formula -> formula
-  | f_box  : formula -> formula.
+  | f_box  : formula -> formula
+  | f_diamond  : formula -> formula.
 
   Definition t {atom : Type} := @formula atom.
   Definition negation {atom : Type} := @f_not atom.
@@ -25,9 +26,9 @@ Module Formula1 <: TFormula.
   Definition disjunction {atom : Type} := @f_imp atom.
   Definition implication {atom : Type} := @f_imp atom.
   Definition equivalence {atom : Type} (A B: @formula atom) : formula := conjunction (implication A B) (implication B A).
-  Definition f_diamond {atom : Type} (A: @formula atom) : formula := f_not (f_box (f_not A)).
 
-  #[global] Notation "'box' p" := (f_box p) (in custom formula_view at level 1) : formula_scope.
+  #[global] Notation "'box' p" := (f_box p) (p custom formula_view at level 1, in custom formula_view at level 1) : formula_scope.
+  #[global] Notation "'diamond' p" := (f_diamond p) (p custom formula_view at level 1, in custom formula_view at level 1) : formula_scope.
 End Formula1.
 Export Formula1.
 
@@ -37,8 +38,6 @@ Module Formula.
   Import F1.
   Export F1.
 
-  Definition f_diamond {atom : Type} (A: @formula atom) : formula := $~ (box ~A)$.
-  #[global] Notation "'diamond' p" := (f_diamond p) (p custom formula_view at level 1, in custom formula_view at level 1).
   (* We assume atomic propositions form a set with decidable equality. *)
   Parameter atom_eq : forall {atom : Set} (a b : atom), {a = b} + {a <> b}.
 
@@ -57,6 +56,7 @@ Module Formula.
     | f_disj A1 A2, f_disj B1 B2 => andb (formula_beq A1 B1) (formula_beq A2 B2)
     | f_imp A1 A2, f_imp B1 B2 => andb (formula_beq A1 B1) (formula_beq A2 B2)
     | f_box A', f_box B' => formula_beq A' B'
+    | f_diamond A', f_diamond B' => formula_beq A' B'
     | _, _ => false
     end.
 
@@ -118,6 +118,13 @@ Module Formula.
       + intros B H1.
         destruct B ; try (simpl in H1 ; discriminate H1).
         (* f_box *)
+        * specialize (IHA B).
+          specialize (IHA H1).
+          rewrite IHA.
+          reflexivity.
+      + intros B H1.
+        destruct B ; try (simpl in H1 ; discriminate H1).
+        (* f_diamond *)
         * specialize (IHA B).
           specialize (IHA H1).
           rewrite IHA.
@@ -195,9 +202,18 @@ Module Formula.
         { reflexivity. }
         specialize (IHA Ha).
         apply IHA.
+      (* diamond *)
+      + intros B H1.
+        rewrite <-H1.
+        simpl.
+        specialize (IHA A).
+        assert (Ha : A = A).
+        { reflexivity. }
+        specialize (IHA Ha).
+        apply IHA.
   Qed.
 
-  #[export] Instance eqFormula {atom : Set} `{EqDec atom} : EqDec (@formula atom)  :=
+  #[export] Instance eqFormula {atom : Set} `{EqDec atom} : EqDec (@formula atom) :=
     {
       eqb := formula_beq;
       eqb_eq := formula_beq_eq;
@@ -207,6 +223,8 @@ End Formula.
 Export Formula.
 
 Module Syntactic.
+
+Axiom Possibility : forall {atom : Type} (A: @formula atom), $diamond A$ = $~ (box ~A)$.
 
 Definition f_axiom1 {atom : Set} (A B : @formula atom) : formula :=
   $A -> (B -> A)$.
@@ -235,8 +253,7 @@ Definition f_case_analysis {atom : Set} (A B C : @formula atom) : formula :=
 Definition f_ex_falso {atom : Set} (A B : @formula atom) : formula :=
   $~A -> (A -> B)$.
 
-Definition f_tertium_non_datur {atom : Set} (A : @formula atom) : formula :=
-  $A \/ ~A$.
+Definition f_tertium_non_datur {atom : Set} (A : @formula atom) : formula := $A \/ ~A$.
 
 Definition f_axiomK {atom : Set} (A B : @formula atom) : formula :=
   $box (A -> B) -> (box A -> box B)$.
@@ -545,7 +562,7 @@ Proof.
   specialize (mp H5 H4) as H6.
   specialize (contraposition (Γ,, $X -> Y$) $box ~ Y$ $box ~ X$) as H7.
   specialize (mp H7 H6) as H8.
-  unfold f_diamond.
+  repeat rewrite <-Possibility in H8.
   exact H8.
 Qed.
 
@@ -591,6 +608,8 @@ Fixpoint replace_subformula_int {atom : Set} `{EqDec atom} (X X' Y : @formula at
                       ((f_imp f1_res f2_res), k)
     | f_box Y' => let (f_res, m) := (replace_subformula_int X X' Y' n) in
                  ((f_box f_res), m)
+    | f_diamond Y' => let (f_res, m) := (replace_subformula_int X X' Y' n) in
+                 ((f_diamond f_res), m)
     end.
 
 Definition replace_subformula {atom : Set} `{EqDec atom} (X X' Y : @formula atom) (n : nat) : @formula atom := fst (replace_subformula_int X X' Y n).
@@ -606,6 +625,7 @@ Fixpoint subformulab {atom : Set} `{EqDec atom} (X Y : @formula atom) : bool :=
     | f_disj F1 F2 => orb (subformulab X F1) (subformulab X F2)
     | f_imp F1 F2 => orb (subformulab X F1) (subformulab X F2)
     | f_box Y' => subformulab X Y'
+    | f_diamond Y' => subformulab X Y'
     | _ => false
     end.
 
@@ -613,6 +633,7 @@ Inductive subformula {atom : Set} : (@formula atom) -> (@formula atom) -> Prop :
 | s_eq (X Y : @formula atom): (X = Y) -> subformula X Y
 | s_not (X Y : @formula atom): subformula X Y -> subformula X $~ Y$ (* унарные конструкторы формулы *)
 | s_box (X Y : @formula atom): subformula X Y -> subformula X $box Y$
+| s_diamond (X Y : @formula atom): subformula X Y -> subformula X $diamond Y$
 | s_conj1 (X F1 F2 : @formula atom): subformula X F1 -> subformula X $F1 /\ F2$ (* бинарные конструкторы формулы *)
 | s_conj2 (X F1 F2 : @formula atom): subformula X F2 -> subformula X $F1 /\ F2$
 | s_disj1 (X F1 F2 : @formula atom): subformula X F1 -> subformula X $F1 \/ F2$
@@ -640,7 +661,7 @@ Proof.
   apply meta_contraposition in H3.
   specialize (deMorganConj Γ $box ~X$ $box ~Y$) as H4.
   specialize (meta_transitivity H3 H4) as H5.
-  unfold f_diamond.
+  repeat rewrite <-Possibility in H5.
   exact H5.
 Qed.
 
@@ -654,7 +675,7 @@ Proof.
   apply meta_contraposition in H3.
   specialize (deMorganConj_rev Γ $box ~X$ $box ~Y$) as H4.
   specialize (meta_transitivity H4 H3) as H5.
-  unfold f_diamond.
+  repeat rewrite <-Possibility in H5.
   exact H5.
 Qed.
 
@@ -677,7 +698,7 @@ Proof.
   specialize (meta_transitivity H1 H2) as H3.
   specialize (contraposition Γ $box ~ Y$ $box ~ X$) as H4.
   specialize (meta_transitivity H3 H4) as H5.
-  unfold f_diamond.
+  repeat rewrite <-Possibility in H5.
   exact H5.
 Qed.
 
@@ -704,7 +725,7 @@ Qed.
 (* Exercize 6.1.3.4 *)
 Proposition E6_1_3_4 {atom : Set} `{EqDec atom} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $box (X \/ Y) -> (box X \/ diamond Y)$.
 Proof.
-  unfold f_diamond.
+  rewrite Possibility.
   specialize (disj_comm Γ X Y) as Hdisj.
   assert (Hsubformula : subformula $X \/ Y$ $box (X \/ Y) -> box X \/ ~ box (~ Y)$).
   {
@@ -781,37 +802,10 @@ Fixpoint satisfies {atom : Set} {Worlds : Type} (M : Model Worlds) (w0 : Worlds)
   | f_disj f1 f2 => (satisfies M w0 f1) \/ (satisfies M w0 f2)
   | f_imp f1 f2 => (satisfies M w0 f1) -> (satisfies M w0 f2)
   | f_box f' => forall w, (R Worlds M w0 w) -> (satisfies M w f')
+  | f_diamond f' => exists w, (R Worlds M w0 w) /\ (satisfies M w f')
   end.
 
 Import Relation.
-
-Theorem implication_as_disjunction : forall P Q : Prop, (P -> Q) <-> (~P \/ Q).
-Proof.
-  split.
-  - intros H.
-    destruct (classic P) as [Hp | Hnp].
-    + apply or_intror.
-      apply H.
-      apply Hp.
-    + apply or_introl.
-      exact Hnp.
-    - intros H.
-      destruct H.
-      + intros HP.
-        apply H in HP.
-        destruct HP.
-      + intro Hp.
-        apply H.
-Qed.
-
-Theorem diamond_exists {atom : Set} {Worlds : Type} (M : @Model atom Worlds) (w0 : Worlds) (P : @formula atom) : satisfies M w0 $diamond P$ -> exists w, ((R Worlds M w0 w) /\ (satisfies M w P)).
-Proof.
-  intro H.
-  simpl in H.
-  apply not_all_ex_not in H.
-  destruct H as [w H].
-  rewrite implication_as_disjunction in H.
-  Admitted.
 
 (* 5.4.3.1 стр. 87 *)
 Theorem boxP_P {atom : Set} {Worlds : Type} (M : @Model atom Worlds) (w0 : Worlds) (P : @formula atom) : reflexive (R Worlds M) -> satisfies M w0 $box P -> P$.
@@ -832,13 +826,11 @@ Proof.
   simpl.
   intro H.
   intros w Hw0_R_w.
-  intro Hcontra.
-  specialize (Hsym w0 w).
-  apply Hsym in Hw0_R_w as Hw_R_w0.
-  specialize (Hcontra w0).
-  specialize (Hcontra Hw_R_w0).
-  specialize (Hcontra H).
-  exact Hcontra.
+  specialize (Hsym w0 w Hw0_R_w) as HwRw0.
+  exists w0.
+  split.
+  - exact HwRw0.
+  - exact H.
 Qed.
 
 Theorem E5_4_3_3 {atom : Set} {Worlds : Type} (M : @Model atom Worlds) (w0 : Worlds) (P : @formula atom) : symmetric (R Worlds M) -> transitive (R Worlds M) -> satisfies M w0 $diamond P -> box diamond P$.
@@ -849,10 +841,31 @@ Proof.
   simpl.
   intro Hdiamond.
   intros w Hw0_R_w.
-  intro Hcontra.
-  apply not_all_ex_not in Hdiamond.
   destruct Hdiamond as [w1 Hdiamond].
+  destruct Hdiamond as [Hw0_R_w1 Hw1_P].
+  specialize (Hsym w0 w Hw0_R_w) as Hw_R_w0.
+  specialize (Htrans w w0 w1 Hw_R_w0 Hw0_R_w1) as Hw_R_w1.
+  exists w1.
+  split.
+  - exact Hw_R_w1.
+  - exact Hw1_P.
+Qed.
 
+Theorem E5_4_3_4 {atom : Set} {Worlds : Type} (M : @Model atom Worlds) (w0 : Worlds) (P : @formula atom) : euclidian (R Worlds M) -> satisfies M w0 $diamond P -> box diamond P$.
+Proof.
+  intro Heuc.
+  unfold euclidian in Heuc.
+  simpl.
+  intro Hexists.
+  destruct Hexists as [w [Hw0_R_w HwP]].
+  intros w1 Hw0_R_w1.
+  specialize (Heuc w0 w1 w).
+  specialize (Heuc Hw0_R_w1 Hw0_R_w) as Hw1_R_w.
+  exists w.
+  split.
+  - exact Hw1_R_w.
+  - exact HwP.
+Qed.
 (* Worlds - тип для миров *)
 (* Record Model {atom : Set} (Worlds : Type) := *)
 (* { *)

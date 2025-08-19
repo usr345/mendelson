@@ -50,10 +50,13 @@ Definition reflexive {U: Type} (R: relation U) :=
   forall x : U, R x x.
 
 Definition symmetric {U : Type} (R: relation U) :=
- forall x y : U, R x y -> R y x.
+  forall x y : U, R x y -> R y x.
 
 Definition transitive {U : Type} (R: relation U) :=
- forall x y z : U, R x y -> R y z -> R x z.
+  forall x y z : U, R x y -> R y z -> R x z.
+
+Definition serial {U: Type} (R: relation U) :=
+  forall x : U, exists y : U, R x y.
 
 (* Two things equal to the third are equal to each other *)
 Definition euclidian {U : Type} (R: relation U) :=
