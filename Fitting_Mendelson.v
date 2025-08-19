@@ -807,8 +807,27 @@ Fixpoint satisfies {atom : Set} {Worlds : Type} (M : Model Worlds) (w0 : Worlds)
 
 Import Relation.
 
+(* Example 5.3.7 стр. 83 *)
+Example Ex5_3_7 {atom : Set} {Worlds : Type} (M : @Model atom Worlds) (w0 : Worlds) (P : @formula atom) : transitive (R Worlds M) -> satisfies M w0 $box P -> box box P$.
+Proof.
+  intro Htrans.
+  unfold transitive in Htrans.
+  simpl.
+  intros Hbox w Hw0_R_w w1 Hw_R_w1.
+  specialize (Htrans w0 w w1).
+  specialize (Htrans Hw0_R_w Hw_R_w1) as Hw0_R_w1.
+  specialize (Hbox w1 Hw0_R_w1).
+  exact Hbox.
+Qed.
+
+Proposition E5_3_4 {atom : Set} {Worlds : Type} (M : @Model atom Worlds) (w0 : Worlds) (P Q : @formula atom) : satisfies M w0 $box (P /\ Q) -> box P /\ box Q$.
+Proof.
+  simpl.
+  intros Hbox_conj Hw0.
+
+
 (* 5.4.3.1 стр. 87 *)
-Theorem boxP_P {atom : Set} {Worlds : Type} (M : @Model atom Worlds) (w0 : Worlds) (P : @formula atom) : reflexive (R Worlds M) -> satisfies M w0 $box P -> P$.
+Proposition boxP_P {atom : Set} {Worlds : Type} (M : @Model atom Worlds) (w0 : Worlds) (P : @formula atom) : reflexive (R Worlds M) -> satisfies M w0 $box P -> P$.
 Proof.
   intros Hrefl.
   unfold reflexive in Hrefl.
@@ -819,6 +838,7 @@ Proof.
   exact Hbox.
 Qed.
 
+(* 5.4.3.2 стр. 87 *)
 Theorem E5_4_3_2 {atom : Set} {Worlds : Type} (M : @Model atom Worlds) (w0 : Worlds) (P : @formula atom) : symmetric (R Worlds M) -> satisfies M w0 $P -> box diamond P$.
 Proof.
   intro Hsym.
@@ -866,6 +886,8 @@ Proof.
   - exact Hw1_R_w.
   - exact HwP.
 Qed.
+
+
 (* Worlds - тип для миров *)
 (* Record Model {atom : Set} (Worlds : Type) := *)
 (* { *)
