@@ -5,9 +5,6 @@ From Mendelson Require Import EqDec.
 Require Import Lists.List.
 Require Import Coq.Arith.PeanoNat.
 Import ListNotations.
-Require Import Coq.Logic.ClassicalFacts.
-Require Import Coq.Logic.Classical_Prop.
-Require Import Coq.Logic.Classical_Pred_Type.
 
 Module Formula1 <: TFormula.
   (* Синтаксис модальной формулы *)
