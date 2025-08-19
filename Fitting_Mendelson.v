@@ -881,6 +881,11 @@ Section Example_5_3_1.
     valuation := V3
   |}.
 
+  Definition f (a: atom) : @formula atom :=
+    f_atom a.
+
+  Coercion f: atom >-> formula.
+
   Proposition Delta_P_or_Q : satisfies M1 Δ (disjunction (f_atom P) (f_atom Q)).
   Proof.
     simpl.
@@ -897,7 +902,8 @@ Section Example_5_3_1.
 
   Proposition Omega_box_P_or_Q : satisfies M1 Γ (f_box (disjunction (f_atom P) (f_atom Q))).
   Proof.
-    unfold satisfies.
+    unfold disjunction.
+    unfold satisfies at 1.
     intros w H.
     destruct w ; simpl in H.
     - destruct H.
