@@ -22,8 +22,8 @@ Module Formula1 <: TFormula.
 
   Definition t {atom : Type} := @formula atom.
   Definition negation {atom : Type} := @f_not atom.
-  Definition conjunction {atom : Type} := @f_imp atom.
-  Definition disjunction {atom : Type} := @f_imp atom.
+  Definition conjunction {atom : Type} := @f_conj atom.
+  Definition disjunction {atom : Type} := @f_disj atom.
   Definition implication {atom : Type} := @f_imp atom.
   Definition equivalence {atom : Type} (A B: @formula atom) : formula := conjunction (implication A B) (implication B A).
 
@@ -823,8 +823,17 @@ Qed.
 Proposition E5_3_4 {atom : Set} {Worlds : Type} (M : @Model atom Worlds) (w0 : Worlds) (P Q : @formula atom) : satisfies M w0 $box (P /\ Q) -> box P /\ box Q$.
 Proof.
   simpl.
-  intros Hbox_conj Hw0.
-
+  intros Hbox_conj.
+  split.
+  - intros w Hw0_R_w.
+    specialize (Hbox_conj w Hw0_R_w).
+    destruct Hbox_conj as [Hp _].
+    exact Hp.
+  - intros w Hw0_R_w.
+    specialize (Hbox_conj w Hw0_R_w).
+    destruct Hbox_conj as [_ Hq].
+    exact Hq.
+Qed.
 
 (* 5.4.3.1 стр. 87 *)
 Proposition boxP_P {atom : Set} {Worlds : Type} (M : @Model atom Worlds) (w0 : Worlds) (P : @formula atom) : reflexive (R Worlds M) -> satisfies M w0 $box P -> P$.
