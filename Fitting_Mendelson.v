@@ -820,7 +820,8 @@ Proof.
   exact Hbox.
 Qed.
 
-Proposition E5_3_4 {atom : Set} {Worlds : Type} (M : @Model atom Worlds) (w0 : Worlds) (P Q : @formula atom) : satisfies M w0 $box (P /\ Q) -> box P /\ box Q$.
+(* 5.3.4.1 стр. 84 *)
+Proposition E5_3_4_1 {atom : Set} {Worlds : Type} (M : @Model atom Worlds) (w0 : Worlds) (P Q : @formula atom) : satisfies M w0 $box (P /\ Q) -> box P /\ box Q$.
 Proof.
   simpl.
   intros Hbox_conj.
@@ -833,6 +834,18 @@ Proof.
     specialize (Hbox_conj w Hw0_R_w).
     destruct Hbox_conj as [_ Hq].
     exact Hq.
+Qed.
+
+(* 5.3.4.2 стр. 84 *)
+Proposition E5_3_4_2 {atom : Set} {Worlds : Type} (M : @Model atom Worlds) (w0 : Worlds) (P Q : @formula atom) : satisfies M w0 $box (P -> Q) -> box P -> box Q$.
+Proof.
+  simpl.
+simpl.
+  intros Hbox_impl Hbox_P.
+  intros w Hw0_R_w.
+  specialize (Hbox_P w Hw0_R_w) as Hp.
+  specialize (Hbox_impl w Hw0_R_w Hp) as Hq.
+  exact Hq.
 Qed.
 
 (* 5.4.3.1 стр. 87 *)
