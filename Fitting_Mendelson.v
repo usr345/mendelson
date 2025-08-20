@@ -783,28 +783,28 @@ Module Kripke.
 
 Import Formula.
 
-Record Model {atom : Type} :=
+Class Model {atom : Type} :=
 {
   worlds : Type; (* Множество возможных миров *)
   accessible : worlds -> worlds -> Prop;
   valuation : worlds -> atom -> Prop;
 }.
 
-Fixpoint satisfies {atom : Set} (M : @Model atom) (w0 : worlds M) (f : @formula atom) : Prop :=
+Fixpoint valid {atom : Set} `(M : @Model atom) (w0 : @worlds atom M) (f : @formula atom) : Prop :=
   match f with
-  | f_atom p => valuation M w0 p
-  | f_not f' => ~(satisfies M w0 f')
-  | f_conj f1 f2 => (satisfies M w0 f1) /\ (satisfies M w0 f2)
-  | f_disj f1 f2 => (satisfies M w0 f1) \/ (satisfies M w0 f2)
-  | f_imp f1 f2 => (satisfies M w0 f1) -> (satisfies M w0 f2)
-  | f_box f' => forall w, (accessible M w0 w) -> (satisfies M w f')
-  | f_diamond f' => exists w, (accessible M w0 w) /\ (satisfies M w f')
+  | f_atom p => valuation w0 p
+  | f_not f' => ~(valid M w0 f')
+  | f_conj f1 f2 => (valid M w0 f1) /\ (valid M w0 f2)
+  | f_disj f1 f2 => (valid M w0 f1) \/ (valid M w0 f2)
+  | f_imp f1 f2 => (valid M w0 f1) -> (valid M w0 f2)
+  | f_box f' => forall w, (accessible w0 w) -> (valid M w f')
+  | f_diamond f' => exists w, (accessible w0 w) /\ (valid M w f')
   end.
 
 Import Relation.
 
 (* Exercize 5.2.1 стр. 81 *)
-Proposition Ex5_2_1 {atom : Set} (M : @Model atom) (Γ : worlds M) (X Y : @formula atom) : satisfies M Γ $X <-> Y$ <-> ((satisfies M Γ X) <-> (satisfies M Γ Y)).
+Proposition Ex5_2_1 {atom : Set} `(M : @Model atom) (Γ : @worlds atom M) (X Y : @formula atom) : valid M Γ $X <-> Y$ <-> ((valid M Γ X) <-> (valid M Γ Y)).
 Proof.
   split ; intro H.
   - simpl in H.
@@ -827,7 +827,7 @@ Proof.
 Qed.
 
 (* Exercize 5.2.3.1 стр. 81 *)
-Proposition Ex5_2_3_1 {atom : Set} (M : @Model atom) (Γ : worlds M) (P : @formula atom) : ~ (exists w, accessible M Γ w) -> satisfies M Γ $box P$.
+Proposition Ex5_2_3_1 {atom : Set} `(M : @Model atom) (Γ : @worlds atom M) (P : @formula atom) : ~ (exists w, accessible Γ w) -> valid M Γ $box P$.
 Proof.
   intro H.
   simpl.
@@ -838,7 +838,7 @@ Proof.
 Qed.
 
 (* Exercize 5.2.3.2 стр. 81 *)
-Proposition Ex5_2_3_2 {atom : Set} (M : @Model atom) (Γ : worlds M) (P : @formula atom) : ~ (exists w, accessible M Γ w) -> ~ (satisfies M Γ $diamond P$).
+Proposition Ex5_2_3_2 {atom : Set} (M : @Model atom) (Γ : @worlds atom M) (P : @formula atom) : ~ (exists w, accessible Γ w) -> ~ (valid M Γ $diamond P$).
 Proof.
   intro H.
   simpl.
@@ -886,24 +886,24 @@ Section Example_5_3_1.
 
   Coercion f: atom >-> formula.
 
-  Proposition Delta_P_or_Q : satisfies M1 Δ (disjunction (f_atom P) (f_atom Q)).
+  Proposition Delta_P_or_Q : valid M1 Δ (disjunction (f_atom P) (f_atom Q)).
   Proof.
     simpl.
     left.
     apply I.
   Qed.
 
-  Proposition Omega_P_or_Q : satisfies M1 Ω (disjunction (f_atom P) (f_atom Q)).
+  Proposition Omega_P_or_Q : valid M1 Ω (disjunction (f_atom P) (f_atom Q)).
   Proof.
     simpl.
     right.
     apply I.
   Qed.
 
-  Proposition Omega_box_P_or_Q : satisfies M1 Γ (f_box (disjunction (f_atom P) (f_atom Q))).
+  Proposition Omega_box_P_or_Q : valid M1 Γ (f_box (disjunction (f_atom P) (f_atom Q))).
   Proof.
     unfold disjunction.
-    unfold satisfies at 1.
+    unfold valid at 1.
     intros w H.
     destruct w ; simpl in H.
     - destruct H.
@@ -913,7 +913,7 @@ Section Example_5_3_1.
 End Example_5_3_1.
 
 (* Example 5.3.7 стр. 83 *)
-Example Ex5_3_7 {atom : Set} (M : Model) (w0 : worlds M) (P : @formula atom) : transitive (accessible M) -> satisfies M w0 $box P -> box box P$.
+Example Ex5_3_7 {atom : Set} `(M : @Model atom) (w0 : @worlds atom M) (P : @formula atom) : (transitive accessible) -> valid M w0 $box P -> box box P$.
 Proof.
   intro Htrans.
   unfold transitive in Htrans.
@@ -926,7 +926,7 @@ Proof.
 Qed.
 
 (* 5.3.4.1 стр. 84 *)
-Proposition E5_3_4_1 {atom : Set} (M : Model) (w0 : worlds M) (P Q : @formula atom) : satisfies M w0 $box (P /\ Q) -> box P /\ box Q$.
+Proposition E5_3_4_1 {atom : Set} `(M : @Model atom) (w0 : @worlds atom M) (P Q : @formula atom) : valid M w0 $box (P /\ Q) -> box P /\ box Q$.
 Proof.
   simpl.
   intros Hbox_conj.
@@ -942,7 +942,7 @@ Proof.
 Qed.
 
 (* 5.3.4.2 стр. 84 *)
-Proposition E5_3_4_2 {atom : Set} (M : Model) (w0 : worlds M) (P Q : @formula atom) : satisfies M w0 $box (P -> Q) -> box P -> box Q$.
+Proposition E5_3_4_2 {atom : Set} `(M : @Model atom) (w0 : @worlds atom M) (P Q : @formula atom) : valid M w0 $box (P -> Q) -> box P -> box Q$.
 Proof.
   simpl.
   intros Hbox_impl Hbox_P.
@@ -953,7 +953,7 @@ Proof.
 Qed.
 
 (* 5.4.3.1 стр. 87 *)
-Proposition boxP_P {atom : Set} (M : Model) (w0 : worlds M) (P : @formula atom) : reflexive (accessible M) -> satisfies M w0 $box P -> P$.
+Proposition boxP_P {atom : Set} `(M : @Model atom) (w0 : @worlds atom M) (P : @formula atom) : (reflexive accessible) -> valid M w0 $box P -> P$.
 Proof.
   intros Hrefl.
   unfold reflexive in Hrefl.
@@ -965,7 +965,7 @@ Proof.
 Qed.
 
 (* 5.4.3.2 стр. 87 *)
-Theorem E5_4_3_2 {atom : Set} (M : Model) (w0 : worlds M) (P : @formula atom) : symmetric (accessible M) -> satisfies M w0 $P -> box diamond P$.
+Theorem E5_4_3_2 {atom : Set} `(M : @Model atom) (w0 : @worlds atom M) (P : @formula atom) : (symmetric accessible) -> valid M w0 $P -> box diamond P$.
 Proof.
   intro Hsym.
   unfold symmetric in Hsym.
@@ -979,7 +979,7 @@ Proof.
   - exact H.
 Qed.
 
-Theorem E5_4_3_3 {atom : Set} (M : Model) (w0 : worlds M) (P : @formula atom) : symmetric (accessible M) -> transitive (accessible M) -> satisfies M w0 $diamond P -> box diamond P$.
+Theorem E5_4_3_3 {atom : Set} `(M : @Model atom) (w0 : @worlds atom M) (P : @formula atom) : (symmetric accessible) -> (transitive accessible) -> valid M w0 $diamond P -> box diamond P$.
 Proof.
   intros Hsym Htrans.
   unfold symmetric in Hsym.
@@ -997,7 +997,7 @@ Proof.
   - exact Hw1_P.
 Qed.
 
-Theorem E5_4_3_4 {atom : Set} (M : Model) (w0 : worlds M) (P : @formula atom) : euclidian (accessible M) -> satisfies M w0 $diamond P -> box diamond P$.
+Theorem E5_4_3_4 {atom : Set} `(M : @Model atom) (w0 : @worlds atom M) (P : @formula atom) : (euclidian accessible) -> valid M w0 $diamond P -> box diamond P$.
 Proof.
   intro Heuc.
   unfold euclidian in Heuc.
@@ -1013,6 +1013,26 @@ Proof.
   - exact HwP.
 Qed.
 
+Record ModelK {atom : Type} :=
+{
+  worldsK : Type;
+  accessibleK : worldsK -> worldsK -> Prop;
+  valuationK : worldsK -> atom -> Prop;
+}.
+
+Instance ModelK_Model {A : Type} (M: @ModelK A) : @Model A :=
+{
+  worlds := worldsK M;
+  accessible := accessibleK M;
+  valuation := valuationK M;
+}.
+
+Record ModelK {atom : Type} :=
+{
+  worldsK : Type;
+  accessibleD : worldsD -> worldsD -> Prop;
+  valuationD : worldsD -> atom -> Prop;
+}.
 
 (* Worlds - тип для миров *)
 (* Record Model {atom : Set} (Worlds : Type) := *)
