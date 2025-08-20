@@ -1027,11 +1027,48 @@ Instance ModelK_Model {A : Type} (M: @ModelK A) : @Model A :=
   valuation := valuationK M;
 }.
 
-Record ModelK {atom : Type} :=
+Record ModelD {atom : Type} :=
 {
-  worldsK : Type;
+  worldsD : Type;
   accessibleD : worldsD -> worldsD -> Prop;
   valuationD : worldsD -> atom -> Prop;
+  Hserial : serial accessibleD;
+}.
+
+Record ModelT {atom : Type} :=
+{
+  worldsT : Type;
+  accessibleT : worldsT -> worldsT -> Prop;
+  valuationT : worldsT -> atom -> Prop;
+  reflexiveT : reflexive accessibleT;
+}.
+
+Record ModelB {atom : Type} :=
+{
+  worldsB : Type;
+  accessibleB : worldsB -> worldsB -> Prop;
+  valuationB : worldsB -> atom -> Prop;
+  reflexiveB : reflexive accessibleB;
+  symmetricB : symmetric accessibleB;
+}.
+
+Record ModelS4 {atom : Type} :=
+{
+  worldsS4 : Type;
+  accessibleS4 : worldsS4 -> worldsS4 -> Prop;
+  valuationS4 : worldsS4 -> atom -> Prop;
+  reflexiveS4 : reflexive accessibleS4;
+  transitiveS4 : transitive accessibleS4;
+}.
+
+Record ModelS5 {atom : Type} :=
+{
+  worldsS5 : Type;
+  accessibleS5 : worldsS5 -> worldsS5 -> Prop;
+  valuationS5 : worldsS5 -> atom -> Prop;
+  reflexiveS5 : reflexive accessibleS5;
+  symmetricS5 : symmetric accessibleS5;
+  transitiveS5 : transitive accessibleS5;
 }.
 
 (* Worlds - тип для миров *)
