@@ -4,6 +4,7 @@ From Mendelson Require Import FSignature.
 From Mendelson Require Import EqDec.
 Require Import Lists.List.
 Require Import Coq.Arith.PeanoNat.
+Require Import Coq.Init.Logic.
 Import ListNotations.
 
 Module Formula1 <: TFormula.
@@ -801,6 +802,12 @@ Fixpoint valid {atom : Set} `(M : @Model atom) (w0 : @worlds atom M) (f : @formu
   | f_diamond f' => exists w, (accessible w0 w) /\ (valid M w f')
   end.
 
+Definition valid_in_frame {atom : Set} (M : @Model atom) (f : @formula atom) : Prop :=
+  forall (V : worlds -> atom -> Prop),
+    forall w, valid {| worlds := @worlds atom M;
+                  accessible := @accessible atom M;
+                  valuation := V |} w f.
+
 Import Relation.
 
 (* Exercize 5.2.1 стр. 81 *)
@@ -1016,12 +1023,25 @@ Proof.
   - exact HwP.
 Qed.
 
-Theorem E5_4_3_5 {atom : Set} `(M : @Model atom) (P : @formula atom) : (transitive accessible) <-> forall w : @worlds atom M, valid M w $box P -> box box P$.
+Theorem E5_4_3_5 {atom : Set} (p : atom) `(M : @Model atom) :
+  (forall φ : @formula atom, valid_in_frame M (f_imp (f_box φ) (f_box (f_box φ)))) -> transitive (@accessible atom M).
+Proof.
+  intro H.
+  unfold transitive.
+  intros w u v Hw_R_u Hu_R_v.
+  set (V := fun (x : worlds) (_ : atom) => accessible w x).
+  clearbody V.
+  pose (V' : worlds -> atom -> Prop :=
+          fun x q => if (Classical_Prop.classic (q = p))
+                  then accessible F w x
+                  else False).
+
+Theorem E5_4_3_5 {atom : Set} (P : atom) `(M : @Model atom) : (transitive accessible) <-> forall (w : @worlds atom M) (P : @formula atom), valid M w $box P -> box box P$.
 Proof.
   split.
   - intro Htrans.
     unfold transitive in Htrans.
-    intro w.
+    intros w F.
     simpl.
     intro Hbox.
     intros w1 Hw_R_w1 w2 Hw1_R_w2.
@@ -1030,9 +1050,13 @@ Proof.
     specialize (Hbox w2 Hw_R_w2) as Hw_p.
     exact Hw_p.
   - intro H.
-    simpl in H.
     unfold transitive.
-    intros w1 w2 w3 Hw1_R_w2 Hw2_R_w3.
+    intros w u v Hw_R_u Hu_R_v.
+    (* Take P := λx. R w x *)
+    set (valuation := fun (x : worlds) (_ : atom) => accessible w x).
+    assert (Hboxw : valid M w (f_atom P)).
+    {
+
     specialize (H w1) as H1.
 
 Record ModelK {atom : Type} :=
