@@ -886,24 +886,27 @@ Section Example_5_3_1.
 
   Coercion f: atom >-> formula.
 
-  Proposition Delta_P_or_Q : valid M1 Δ (disjunction (f_atom P) (f_atom Q)).
+  Proposition Delta_P_or_Q : valid M1 Δ $P \/ Q$.
   Proof.
     simpl.
     left.
     apply I.
   Qed.
 
-  Proposition Omega_P_or_Q : valid M1 Ω (disjunction (f_atom P) (f_atom Q)).
+  Proposition Omega_P_or_Q : valid M1 Ω $P \/ Q$.
   Proof.
     simpl.
     right.
     apply I.
   Qed.
 
-  Proposition Omega_box_P_or_Q : valid M1 Γ (f_box (disjunction (f_atom P) (f_atom Q))).
+  Proposition Omega_box_P_or_Q : valid M1 Γ $box (P \/ Q)$.
   Proof.
-    unfold disjunction.
-    unfold valid at 1.
+    cbv delta [valid].
+    cbv fix.
+    cbv beta.
+    cbv match.
+    fold @valid.
     intros w H.
     destruct w ; simpl in H.
     - destruct H.
@@ -1071,6 +1074,40 @@ Record ModelS5 {atom : Type} :=
   transitiveS5 : transitive accessibleS5;
 }.
 
+Record ModelS4_3 {atom : Type} :=
+{
+  worldsS4_3 : Type;
+  accessibleS4_3 : worldsS4_3 -> worldsS4_3 -> Prop;
+  valuationS4_3 : worldsS4_3 -> atom -> Prop;
+  reflexiveS4_3 : reflexive accessibleS4_3;
+  transitiveS4_3 : transitive accessibleS4_3;
+  linearS4_3 : linear accessibleS4_3;
+}.
+
+Instance ModelS4_3_Model {A : Type} (M: @ModelS4_3 A) : @Model A :=
+{
+  worlds := worldsS4_3 M;
+  accessible := accessibleS4_3 M;
+  valuation := valuationS4_3 M;
+}.
+
+Theorem E5_4_7_1 {atom : Set} (M : @ModelS4_3 atom) (w0 : @worldsS4_3 atom M) (P Q : @formula atom) : valid (ModelS4_3_Model M) w0 $box (box P -> box Q) \/ box(box Q -> box P)$.
+Proof.
+  simpl.
+  destruct M.
+  simpl in w0.
+  unfold linear in linearS4_4.
+  unfold reflexive in reflexiveS4_4.
+  unfold transitive in transitiveS4_4.
+Admitted.
+
+Theorem E5_4_7_2 {atom : Set} (M : @ModelS4_3 atom) (w0 : @worldsS4_3 atom M) (P : @formula atom) : ~(valid (ModelS4_3_Model M) w0 $P -> box diamond P$).
+Proof.
+Admitted.
+
+Theorem E5_4_7_3 {atom : Set} (M : @ModelS4_3 atom) (w0 : @worldsS4_3 atom M) (P Q : @formula atom) : valid (ModelS4_3_Model M) w0 $diamond box (P -> Q) -> (diamond box P -> diamond box Q)$.
+Proof.
+Admitted.
 (* Worlds - тип для миров *)
 (* Record Model {atom : Set} (Worlds : Type) := *)
 (* { *)

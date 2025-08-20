@@ -62,6 +62,9 @@ Definition serial {U: Type} (R: relation U) :=
 Definition euclidian {U : Type} (R: relation U) :=
  forall x y z : U, R x y -> R x z -> R y z.
 
+Definition linear {U : Type} (R: relation U) :=
+ forall x y z : U, R x y -> R x z -> ((R y z) \/ (R z y)).
+
 Lemma relf_eucl_symmetric {U : Type} (R: relation U) :
 reflexive R -> euclidian R -> symmetric R.
 Proof.

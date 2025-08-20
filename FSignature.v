@@ -1,7 +1,7 @@
 Declare Scope formula_scope.
 Declare Custom Entry formula_view.
 Open Scope formula_scope.
-Notation "x" := x (x ident, in custom formula_view at level 0).
+Notation "x" := x (x global, in custom formula_view at level 0).
 Notation "( p )" := p (p custom formula_view at level 5, in custom formula_view at level 0).
 Notation "'$' p '$'" := p (format "'$' p '$'", p custom formula_view at level 5).
 
