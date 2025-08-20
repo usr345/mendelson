@@ -1016,6 +1016,25 @@ Proof.
   - exact HwP.
 Qed.
 
+Theorem E5_4_3_5 {atom : Set} `(M : @Model atom) (P : @formula atom) : (transitive accessible) <-> forall w : @worlds atom M, valid M w $box P -> box box P$.
+Proof.
+  split.
+  - intro Htrans.
+    unfold transitive in Htrans.
+    intro w.
+    simpl.
+    intro Hbox.
+    intros w1 Hw_R_w1 w2 Hw1_R_w2.
+    specialize (Htrans w w1 w2).
+    specialize (Htrans Hw_R_w1 Hw1_R_w2) as Hw_R_w2.
+    specialize (Hbox w2 Hw_R_w2) as Hw_p.
+    exact Hw_p.
+  - intro H.
+    simpl in H.
+    unfold transitive.
+    intros w1 w2 w3 Hw1_R_w2 Hw2_R_w3.
+    specialize (H w1) as H1.
+
 Record ModelK {atom : Type} :=
 {
   worldsK : Type;
@@ -1103,6 +1122,8 @@ Admitted.
 
 Theorem E5_4_7_2 {atom : Set} (M : @ModelS4_3 atom) (w0 : @worldsS4_3 atom M) (P : @formula atom) : ~(valid (ModelS4_3_Model M) w0 $P -> box diamond P$).
 Proof.
+  simpl.
+  intro H.
 Admitted.
 
 (* Excersize 5.4.7.3 стр. 87, 88 *)
