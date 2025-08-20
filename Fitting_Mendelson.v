@@ -1105,9 +1105,44 @@ Theorem E5_4_7_2 {atom : Set} (M : @ModelS4_3 atom) (w0 : @worldsS4_3 atom M) (P
 Proof.
 Admitted.
 
-Theorem E5_4_7_3 {atom : Set} (M : @ModelS4_3 atom) (w0 : @worldsS4_3 atom M) (P Q : @formula atom) : valid (ModelS4_3_Model M) w0 $diamond box (P -> Q) -> (diamond box P -> diamond box Q)$.
+(* Excersize 5.4.7.3 стр. 87, 88 *)
+Proposition E5_4_7_3 {atom : Set} (M : @ModelS4_3 atom) (w0 : @worldsS4_3 atom M) (P Q : @formula atom) : valid (ModelS4_3_Model M) w0 $diamond box (P -> Q) -> (diamond box P -> diamond box Q)$.
 Proof.
-Admitted.
+  simpl.
+  intros H1 H2.
+  destruct H1 as [w1 [Hw0_R_w1 H_w1_pq]].
+  destruct H2 as [w2 [Hw0_R_w2 H_w2_p]].
+  specialize (linearS4_3 M) as Hlinear.
+  unfold linear in Hlinear.
+  specialize (Hlinear w0 w1 w2) as H.
+  specialize (H Hw0_R_w1 Hw0_R_w2).
+  destruct H as [Hw1_R_w2 | Hw2_R_w1].
+  - exists w2.
+    split.
+    + exact Hw0_R_w2.
+    + intros w3 Hw2_R_w3.
+      specialize (transitiveS4_3 M) as Htrans.
+      unfold transitive in Htrans.
+      specialize (Htrans w1 w2 w3).
+      specialize (Htrans Hw1_R_w2 Hw2_R_w3) as Hw1_R_w3.
+      specialize (H_w1_pq w3 Hw1_R_w3).
+      specialize (H_w2_p w3 Hw2_R_w3).
+      specialize (H_w1_pq H_w2_p).
+      exact H_w1_pq.
+  - exists w1.
+    split.
+    + exact Hw0_R_w1.
+    + intros w3 Hw1_R_w3.
+      specialize (transitiveS4_3 M) as Htrans.
+      unfold transitive in Htrans.
+      specialize (Htrans w2 w1 w3).
+      specialize (Htrans Hw2_R_w1 Hw1_R_w3) as Hw2_R_w3.
+      specialize (H_w1_pq w3 Hw1_R_w3).
+      specialize (H_w2_p w3 Hw2_R_w3).
+      specialize (H_w1_pq H_w2_p).
+      exact H_w1_pq.
+Qed.
+
 (* Worlds - тип для миров *)
 (* Record Model {atom : Set} (Worlds : Type) := *)
 (* { *)
