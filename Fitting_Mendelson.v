@@ -784,14 +784,19 @@ Module Kripke.
 
 Import Formula.
 
+Class Frame :=
+{
+  worlds : Type;
+  accessible : worlds -> worlds -> Prop;
+}.
+
 Class Model {atom : Type} :=
 {
-  worlds : Type; (* Множество возможных миров *)
-  accessible : worlds -> worlds -> Prop;
+  frame :> Frame;
   valuation : worlds -> atom -> Prop;
 }.
 
-Fixpoint valid {atom : Set} `(M : @Model atom) (w0 : @worlds atom M) (f : @formula atom) : Prop :=
+Fixpoint valid {atom : Set} `(M : @Model atom) (w0 : worlds) (f : @formula atom) : Prop :=
   match f with
   | f_atom p => valuation w0 p
   | f_not f' => ~(valid M w0 f')
@@ -802,16 +807,15 @@ Fixpoint valid {atom : Set} `(M : @Model atom) (w0 : @worlds atom M) (f : @formu
   | f_diamond f' => exists w, (accessible w0 w) /\ (valid M w f')
   end.
 
-Definition valid_in_frame {atom : Set} (M : @Model atom) (f : @formula atom) : Prop :=
+Definition valid_in_frame {atom : Set} `(Fr : Frame) (f : @formula atom) : Prop :=
   forall (V : worlds -> atom -> Prop),
-    forall w, valid {| worlds := @worlds atom M;
-                  accessible := @accessible atom M;
+    forall w, valid {| frame := Fr;
                   valuation := V |} w f.
 
 Import Relation.
 
 (* Exercize 5.2.1 стр. 81 *)
-Proposition Ex5_2_1 {atom : Set} `(M : @Model atom) (Γ : @worlds atom M) (X Y : @formula atom) : valid M Γ $X <-> Y$ <-> ((valid M Γ X) <-> (valid M Γ Y)).
+Proposition Ex5_2_1 {atom : Set} `(M : @Model atom) (Γ : worlds) (X Y : @formula atom) : valid M Γ $X <-> Y$ <-> ((valid M Γ X) <-> (valid M Γ Y)).
 Proof.
   split ; intro H.
   - simpl in H.
@@ -834,7 +838,7 @@ Proof.
 Qed.
 
 (* Exercize 5.2.3.1 стр. 81 *)
-Proposition Ex5_2_3_1 {atom : Set} `(M : @Model atom) (Γ : @worlds atom M) (P : @formula atom) : ~ (exists w, accessible Γ w) -> valid M Γ $box P$.
+Proposition Ex5_2_3_1 {atom : Set} `(M : @Model atom) (Γ : worlds) (P : @formula atom) : ~ (exists w, accessible Γ w) -> valid M Γ $box P$.
 Proof.
   intro H.
   simpl.
@@ -845,7 +849,7 @@ Proof.
 Qed.
 
 (* Exercize 5.2.3.2 стр. 81 *)
-Proposition Ex5_2_3_2 {atom : Set} (M : @Model atom) (Γ : @worlds atom M) (P : @formula atom) : ~ (exists w, accessible Γ w) -> ~ (valid M Γ $diamond P$).
+Proposition Ex5_2_3_2 {atom : Set} (M : @Model atom) (Γ : worlds) (P : @formula atom) : ~ (exists w, accessible Γ w) -> ~ (valid M Γ $diamond P$).
 Proof.
   intro H.
   simpl.
@@ -881,10 +885,16 @@ Section Example_5_3_1.
     | _, _ => False
     end.
 
-  Definition M1 : Model :=
+  Definition F1 : Frame :=
   {|
     worlds := worlds3;
     accessible := R3;
+  |}.
+
+
+  Definition M1 : Model :=
+  {|
+    frame := F1;
     valuation := V3
   |}.
 
@@ -923,7 +933,7 @@ Section Example_5_3_1.
 End Example_5_3_1.
 
 (* Example 5.3.7 стр. 83 *)
-Example Ex5_3_7 {atom : Set} `(M : @Model atom) (w0 : @worlds atom M) (P : @formula atom) : (transitive accessible) -> valid M w0 $box P -> box box P$.
+Example Ex5_3_7 {atom : Set} `(M : @Model atom) (w0 : worlds) (P : @formula atom) : (transitive (@accessible frame)) -> valid M w0 $box P -> box box P$.
 Proof.
   intro Htrans.
   unfold transitive in Htrans.
@@ -936,7 +946,7 @@ Proof.
 Qed.
 
 (* 5.3.4.1 стр. 84 *)
-Proposition E5_3_4_1 {atom : Set} `(M : @Model atom) (w0 : @worlds atom M) (P Q : @formula atom) : valid M w0 $box (P /\ Q) -> box P /\ box Q$.
+Proposition E5_3_4_1 {atom : Set} `(M : @Model atom) (w0 : worlds) (P Q : @formula atom) : valid M w0 $box (P /\ Q) -> box P /\ box Q$.
 Proof.
   simpl.
   intros Hbox_conj.
@@ -952,7 +962,7 @@ Proof.
 Qed.
 
 (* 5.3.4.2 стр. 84 *)
-Proposition E5_3_4_2 {atom : Set} `(M : @Model atom) (w0 : @worlds atom M) (P Q : @formula atom) : valid M w0 $box (P -> Q) -> box P -> box Q$.
+Proposition E5_3_4_2 {atom : Set} `(M : @Model atom) (w0 : worlds) (P Q : @formula atom) : valid M w0 $box (P -> Q) -> box P -> box Q$.
 Proof.
   simpl.
   intros Hbox_impl Hbox_P.
@@ -963,7 +973,7 @@ Proof.
 Qed.
 
 (* 5.4.3.1 стр. 87 *)
-Proposition boxP_P {atom : Set} `(M : @Model atom) (w0 : @worlds atom M) (P : @formula atom) : (reflexive accessible) -> valid M w0 $box P -> P$.
+Proposition boxP_P {atom : Set} `(M : @Model atom) (w0 : worlds) (P : @formula atom) : (reflexive (@accessible frame)) -> valid M w0 $box P -> P$.
 Proof.
   intros Hrefl.
   unfold reflexive in Hrefl.
@@ -975,7 +985,7 @@ Proof.
 Qed.
 
 (* 5.4.3.2 стр. 87 *)
-Theorem E5_4_3_2 {atom : Set} `(M : @Model atom) (w0 : @worlds atom M) (P : @formula atom) : (symmetric accessible) -> valid M w0 $P -> box diamond P$.
+Theorem E5_4_3_2 {atom : Set} `(M : @Model atom) (w0 : worlds) (P : @formula atom) : (symmetric (@accessible frame)) -> valid M w0 $P -> box diamond P$.
 Proof.
   intro Hsym.
   unfold symmetric in Hsym.
@@ -989,7 +999,7 @@ Proof.
   - exact H.
 Qed.
 
-Theorem E5_4_3_3 {atom : Set} `(M : @Model atom) (w0 : @worlds atom M) (P : @formula atom) : (symmetric accessible) -> (transitive accessible) -> valid M w0 $diamond P -> box diamond P$.
+Theorem E5_4_3_3 {atom : Set} `(M : @Model atom) (w0 : worlds) (P : @formula atom) : (symmetric (@accessible frame)) -> (transitive (@accessible frame)) -> valid M w0 $diamond P -> box diamond P$.
 Proof.
   intros Hsym Htrans.
   unfold symmetric in Hsym.
@@ -1007,7 +1017,7 @@ Proof.
   - exact Hw1_P.
 Qed.
 
-Theorem E5_4_3_4 {atom : Set} `(M : @Model atom) (w0 : @worlds atom M) (P : @formula atom) : (euclidian accessible) -> valid M w0 $diamond P -> box diamond P$.
+Theorem E5_4_3_4 {atom : Set} `(M : @Model atom) (w0 : worlds) (P : @formula atom) : (euclidian (@accessible frame)) -> valid M w0 $diamond P -> box diamond P$.
 Proof.
   intro Heuc.
   unfold euclidian in Heuc.
@@ -1023,60 +1033,82 @@ Proof.
   - exact HwP.
 Qed.
 
-Theorem E5_4_3_5 {atom : Set} (p : atom) `(M : @Model atom) :
-  (forall φ : @formula atom, valid_in_frame M (f_imp (f_box φ) (f_box (f_box φ)))) -> transitive (@accessible atom M).
+Theorem E5_4_5_trans_valid {atom : Set} `(F : Frame) : (transitive (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $box φ -> box box φ$).
+Proof.
+  intro Htrans.
+  unfold transitive in Htrans.
+  unfold valid_in_frame.
+  intros φ val w1 Hbox.
+  simpl.
+  intros w2 w1_R_w2 w3 w2_R_w3.
+  specialize (Htrans w1 w2 w3).
+  specialize (Htrans w1_R_w2 w2_R_w3) as w1_R_w3.
+  simpl in Hbox.
+  specialize (Hbox w3 w1_R_w3) as Hw3_p.
+  exact Hw3_p.
+Qed.
+
+Theorem E5_4_5_valid_trans {atom : Set} (Hinh : inhabited atom) `(F : Frame) :
+  (forall φ : @formula atom, valid_in_frame F $box φ -> box box φ$) -> transitive (@accessible F).
 Proof.
   intro H.
+  unfold valid_in_frame in H.
   unfold transitive.
-  intros w u v Hw_R_u Hu_R_v.
+  intros w v u w_R_v v_R_u.
   set (V := fun (x : worlds) (_ : atom) => accessible w x).
-  clearbody V.
-  pose (V' : worlds -> atom -> Prop :=
-          fun x q => if (Classical_Prop.classic (q = p))
-                  then accessible F w x
-                  else False).
+  destruct Hinh as [P].
+  specialize (H (f_atom P) V w).
+  simpl in H.
+  assert (Hbox : forall x : worlds, accessible w x -> V x P).
+  {
+    intros x w_R_x.
+    unfold V.
+    exact w_R_x.
+  }
 
-Theorem E5_4_3_5 {atom : Set} (P : atom) `(M : @Model atom) : (transitive accessible) <-> forall (w : @worlds atom M) (P : @formula atom), valid M w $box P -> box box P$.
+  specialize (H Hbox).
+  specialize (H v).
+  specialize (H w_R_v).
+  specialize (H u).
+  specialize (H v_R_u).
+  unfold V in H.
+  exact H.
+Qed.
+
+Theorem E5_4_5 {atom : Set} (Hinh : inhabited atom) `(F : Frame) : (transitive accessible) <-> (forall φ : @formula atom, valid_in_frame F $box φ -> box box φ$).
 Proof.
   split.
-  - intro Htrans.
-    unfold transitive in Htrans.
-    intros w F.
-    simpl.
-    intro Hbox.
-    intros w1 Hw_R_w1 w2 Hw1_R_w2.
-    specialize (Htrans w w1 w2).
-    specialize (Htrans Hw_R_w1 Hw1_R_w2) as Hw_R_w2.
-    specialize (Hbox w2 Hw_R_w2) as Hw_p.
-    exact Hw_p.
-  - intro H.
-    unfold transitive.
-    intros w u v Hw_R_u Hu_R_v.
-    (* Take P := λx. R w x *)
-    set (valuation := fun (x : worlds) (_ : atom) => accessible w x).
-    assert (Hboxw : valid M w (f_atom P)).
-    {
+  - apply E5_4_5_trans_valid.
+  - apply (E5_4_5_valid_trans Hinh).
+Qed.
 
-    specialize (H w1) as H1.
-
-Record ModelK {atom : Type} :=
+Record FrameK :=
 {
   worldsK : Type;
   accessibleK : worldsK -> worldsK -> Prop;
-  valuationK : worldsK -> atom -> Prop;
 }.
 
-Instance ModelK_Model {A : Type} (M: @ModelK A) : @Model A :=
+Instance FrameK_Frame (F: FrameK) : Frame :=
 {
-  worlds := worldsK M;
-  accessible := accessibleK M;
+  worlds := worldsK F;
+  accessible := accessibleK F;
+}.
+
+Record ModelK {atom : Type} :=
+{
+  frameK : FrameK;
+  valuationK : (worldsK frameK) -> atom -> Prop;
+}.
+
+Instance ModelK_Model {atom : Type} (M: @ModelK atom) : @Model atom :=
+{
+  frame := FrameK_Frame (frameK M);
   valuation := valuationK M;
 }.
 
 Record ModelD {atom : Type} :=
 {
-  worldsD : Type;
-  accessibleD : worldsD -> worldsD -> Prop;
+  frameK : FrameK;
   valuationD : worldsD -> atom -> Prop;
   Hserial : serial accessibleD;
 }.
