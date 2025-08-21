@@ -972,6 +972,22 @@ Proof.
   exact Hq.
 Qed.
 
+(* Excersize 5.4.1 стр. 87 *)
+Proposition E5_4_1 {atom : Set} `(M : @Model atom) (w0 : worlds) (P : @formula atom) : (serial (@accessible frame)) -> valid M w0 $box P -> diamond P$.
+Proof.
+  intro Hserial.
+  unfold serial in Hserial.
+  simpl.
+  intro Hbox.
+  specialize (Hserial w0).
+  destruct Hserial as [w1 w0_R_w1].
+  exists w1.
+  split.
+  - exact w0_R_w1.
+  - specialize (Hbox w1 w0_R_w1) as Hw1_p.
+    exact Hw1_p.
+Qed.
+
 (* 5.4.3.1 стр. 87 *)
 Proposition boxP_P {atom : Set} `(M : @Model atom) (w0 : worlds) (P : @formula atom) : (reflexive (@accessible frame)) -> valid M w0 $box P -> P$.
 Proof.
