@@ -77,6 +77,7 @@ Proof.
   exact H2.
 Qed.
 
+(* Excersize 5.4.6 стр. 87*)
 Lemma sym_trans_eq_euclidian {U : Type} (R: relation U) (Hrefl: reflexive R) : (symmetric R /\ transitive R) <-> (euclidian R).
 Proof.
   split.

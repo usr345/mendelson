@@ -988,6 +988,14 @@ Proof.
     exact Hw1_p.
 Qed.
 
+(* Excersize 5.4.2 стр. 87 *)
+(* Proposition E5_4_2 {atom : Set} `(M : @Model atom) (w0 : worlds) (P : @formula atom) : valid M w0 P <-> valid M w0 $box P$. *)
+(* Proof. *)
+(*   split. *)
+(*   - intro H. *)
+(*     simpl. *)
+(*     intros w1 w0_R_w1. *)
+
 (* 5.4.3.1 стр. 87 *)
 Proposition boxP_P {atom : Set} `(M : @Model atom) (w0 : worlds) (P : @formula atom) : (reflexive (@accessible frame)) -> valid M w0 $box P -> P$.
 Proof.
