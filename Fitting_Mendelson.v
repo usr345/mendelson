@@ -787,12 +787,13 @@ Import Formula.
 Class Frame :=
 {
   worlds : Type;
+  worlds_inh : inhabited worlds;
   accessible : worlds -> worlds -> Prop;
 }.
 
 Class Model {atom : Type} :=
 {
-  frame :> Frame;
+  frame :: Frame;
   valuation : worlds -> atom -> Prop;
 }.
 
@@ -885,12 +886,17 @@ Section Example_5_3_1.
     | _, _ => False
     end.
 
+  Lemma worlds3_inhabited : inhabited worlds3.
+  Proof.
+    apply (inhabits Γ).
+  Qed.
+
   Definition F1 : Frame :=
   {|
     worlds := worlds3;
+    worlds_inh := worlds3_inhabited;
     accessible := R3;
   |}.
-
 
   Definition M1 : Model :=
   {|
@@ -1106,91 +1112,39 @@ Proof.
   - apply (E5_4_5_valid_trans Hinh).
 Qed.
 
-Record FrameK :=
-{
-  worldsK : Type;
-  accessibleK : worldsK -> worldsK -> Prop;
-}.
+(* Formalization of logics *)
 
-Instance FrameK_Frame (F: FrameK) : Frame :=
-{
-  worlds := worldsK F;
-  accessible := accessibleK F;
-}.
+Class FrameSerial (F : Frame) :=
+  serial_accessible : serial (@accessible F).
 
-Record ModelK {atom : Type} :=
-{
-  frameK : FrameK;
-  valuationK : (worldsK frameK) -> atom -> Prop;
-}.
+Class FrameRefl (F : Frame) :=
+  refl_accessible : reflexive (@accessible F).
 
-Instance ModelK_Model {atom : Type} (M: @ModelK atom) : @Model atom :=
-{
-  frame := FrameK_Frame (frameK M);
-  valuation := valuationK M;
-}.
+Class FrameSym (F : Frame) :=
+  sym_accessible : symmetric (@accessible F).
 
-Record ModelD {atom : Type} :=
-{
-  frameK : FrameK;
-  valuationD : worldsD -> atom -> Prop;
-  Hserial : serial accessibleD;
-}.
+Class FrameTrans (F : Frame) :=
+  trans_accessible : transitive (@accessible F).
 
-Record ModelT {atom : Type} :=
-{
-  worldsT : Type;
-  accessibleT : worldsT -> worldsT -> Prop;
-  valuationT : worldsT -> atom -> Prop;
-  reflexiveT : reflexive accessibleT;
-}.
+Class FrameEucl (F : Frame) :=
+  eucl_accessible : euclidian (@accessible F).
 
-Record ModelB {atom : Type} :=
-{
-  worldsB : Type;
-  accessibleB : worldsB -> worldsB -> Prop;
-  valuationB : worldsB -> atom -> Prop;
-  reflexiveB : reflexive accessibleB;
-  symmetricB : symmetric accessibleB;
-}.
+Class FrameLinear (F : Frame) :=
+  linear_accessible : linear (@accessible F).
 
-Record ModelS4 {atom : Type} :=
-{
-  worldsS4 : Type;
-  accessibleS4 : worldsS4 -> worldsS4 -> Prop;
-  valuationS4 : worldsS4 -> atom -> Prop;
-  reflexiveS4 : reflexive accessibleS4;
-  transitiveS4 : transitive accessibleS4;
-}.
 
-Record ModelS5 {atom : Type} :=
-{
-  worldsS5 : Type;
-  accessibleS5 : worldsS5 -> worldsS5 -> Prop;
-  valuationS5 : worldsS5 -> atom -> Prop;
-  reflexiveS5 : reflexive accessibleS5;
-  symmetricS5 : symmetric accessibleS5;
-  transitiveS5 : transitive accessibleS5;
-}.
+(* --- Logic K --- *)
+(* No extra conditions: K is just Frame + Model *)
 
-Record ModelS4_3 {atom : Type} :=
-{
-  worldsS4_3 : Type;
-  accessibleS4_3 : worldsS4_3 -> worldsS4_3 -> Prop;
-  valuationS4_3 : worldsS4_3 -> atom -> Prop;
-  reflexiveS4_3 : reflexive accessibleS4_3;
-  transitiveS4_3 : transitive accessibleS4_3;
-  linearS4_3 : linear accessibleS4_3;
-}.
+Definition LogicD (F : Frame) := FrameSerial F.
+Definition LogicT (F : Frame) := FrameRefl F.
+Definition LogicB (F : Frame) := FrameRefl F * FrameSym F.
+Definition LogicS4 (F : Frame) := FrameRefl F * FrameTrans F.
+Definition LogicS5 (F : Frame) := FrameRefl F * FrameSym F * FrameTrans F.
+Definition LogicS5' (F : Frame) := FrameRefl F * FrameEucl F.
+Definition LogicS43 (F : Frame) := FrameRefl F * FrameTrans F * FrameLinear F.
 
-Instance ModelS4_3_Model {A : Type} (M: @ModelS4_3 A) : @Model A :=
-{
-  worlds := worldsS4_3 M;
-  accessible := accessibleS4_3 M;
-  valuation := valuationS4_3 M;
-}.
-
-Theorem E5_4_7_1 {atom : Set} (M : @ModelS4_3 atom) (w0 : @worldsS4_3 atom M) (P Q : @formula atom) : valid (ModelS4_3_Model M) w0 $box (box P -> box Q) \/ box(box Q -> box P)$.
+Theorem E5_4_7_1 {atom : Set} `(F : Frame) (S43 : LogicS43) (w0 : @worldsS4_3 atom M) (P Q : @formula atom) : valid (ModelS4_3_Model M) w0 $box (box P -> box Q) \/ box(box Q -> box P)$.
 Proof.
   simpl.
   destruct M.
