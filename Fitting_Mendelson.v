@@ -1144,56 +1144,68 @@ Definition LogicS5 (F : Frame) := FrameRefl F * FrameSym F * FrameTrans F.
 Definition LogicS5' (F : Frame) := FrameRefl F * FrameEucl F.
 Definition LogicS43 (F : Frame) := FrameRefl F * FrameTrans F * FrameLinear F.
 
-Theorem E5_4_7_1 {atom : Set} `(M : @Model atom) (S43 : LogicS43 (@frame atom M)) (w0 : worlds) (P Q : @formula atom) : valid M w0 $box (box P -> box Q) \/ box(box Q -> box P)$.
+Theorem E5_4_7_1 {atom : Set} `(F : Frame) (S43 : LogicS43 F) (P Q : @formula atom) :
+  valid_in_frame F $box (box P -> box Q) \/ box(box Q -> box P)$.
 Proof.
   simpl.
-  destruct M.
-  simpl in w0.
-  unfold linear in linearS4_4.
-  unfold reflexive in reflexiveS4_4.
-  unfold transitive in transitiveS4_4.
+  destruct S43 as [S43 Hlinear].
+  destruct S43 as [Hrefl Htrans].
+  unfold FrameLinear in Hlinear.
+  unfold linear in Hlinear.
+  unfold FrameRefl in Hrefl.
+  unfold reflexive in Hrefl.
+  unfold FrameTrans in Htrans.
+  unfold transitive in Htrans.
+
+  unfold valid_in_frame.
+  intros V w.
+
 Admitted.
 
-Theorem E5_4_7_2 {atom : Set} (M : @ModelS4_3 atom) (w0 : @worldsS4_3 atom M) (P : @formula atom) : ~(valid (ModelS4_3_Model M) w0 $P -> box diamond P$).
+Theorem E5_4_7_2 {atom : Set} (M : @Model atom) (S43 : LogicS43 (@frame atom M)) (w0 : worlds) (P : @formula atom) : ~(valid M w0 $P -> box diamond P$).
 Proof.
   simpl.
   intro H.
 Admitted.
 
 (* Excersize 5.4.7.3 стр. 87, 88 *)
-Proposition E5_4_7_3 {atom : Set} (M : @ModelS4_3 atom) (w0 : @worldsS4_3 atom M) (P Q : @formula atom) : valid (ModelS4_3_Model M) w0 $diamond box (P -> Q) -> (diamond box P -> diamond box Q)$.
+Proposition E5_4_7_3 {atom : Set} (M : @Model atom) (S43 : LogicS43 (@frame atom M)) (w0 : worlds) (P Q : @formula atom) : valid M w0 $diamond box (P -> Q) -> (diamond box P -> diamond box Q)$.
 Proof.
   simpl.
   intros H1 H2.
-  destruct H1 as [w1 [Hw0_R_w1 H_w1_pq]].
-  destruct H2 as [w2 [Hw0_R_w2 H_w2_p]].
-  specialize (linearS4_3 M) as Hlinear.
+  destruct H1 as [w1 [w0_R_w1 H_w1_pq]].
+  destruct H2 as [w2 [w0_R_w2 H_w2_p]].
+  destruct S43 as [S43 Hlinear].
+  destruct S43 as [Hrefl Htrans].
+  (* Раскрыли все свойства отношений *)
+  unfold FrameLinear in Hlinear.
   unfold linear in Hlinear.
+  unfold FrameRefl in Hrefl.
+  unfold reflexive in Hrefl.
+  unfold FrameTrans in Htrans.
+  unfold transitive in Htrans.
+
   specialize (Hlinear w0 w1 w2) as H.
-  specialize (H Hw0_R_w1 Hw0_R_w2).
-  destruct H as [Hw1_R_w2 | Hw2_R_w1].
+  specialize (H w0_R_w1 w0_R_w2).
+  destruct H as [w1_R_w2 | w2_R_w1].
   - exists w2.
     split.
-    + exact Hw0_R_w2.
-    + intros w3 Hw2_R_w3.
-      specialize (transitiveS4_3 M) as Htrans.
-      unfold transitive in Htrans.
+    + exact w0_R_w2.
+    + intros w3 w2_R_w3.
       specialize (Htrans w1 w2 w3).
-      specialize (Htrans Hw1_R_w2 Hw2_R_w3) as Hw1_R_w3.
-      specialize (H_w1_pq w3 Hw1_R_w3).
-      specialize (H_w2_p w3 Hw2_R_w3).
+      specialize (Htrans w1_R_w2 w2_R_w3) as w1_R_w3.
+      specialize (H_w1_pq w3 w1_R_w3).
+      specialize (H_w2_p w3 w2_R_w3).
       specialize (H_w1_pq H_w2_p).
       exact H_w1_pq.
   - exists w1.
     split.
-    + exact Hw0_R_w1.
-    + intros w3 Hw1_R_w3.
-      specialize (transitiveS4_3 M) as Htrans.
-      unfold transitive in Htrans.
+    + exact w0_R_w1.
+    + intros w3 w1_R_w3.
       specialize (Htrans w2 w1 w3).
-      specialize (Htrans Hw2_R_w1 Hw1_R_w3) as Hw2_R_w3.
-      specialize (H_w1_pq w3 Hw1_R_w3).
-      specialize (H_w2_p w3 Hw2_R_w3).
+      specialize (Htrans w2_R_w1 w1_R_w3) as w2_R_w3.
+      specialize (H_w1_pq w3 w1_R_w3).
+      specialize (H_w2_p w3 w2_R_w3).
       specialize (H_w1_pq H_w2_p).
       exact H_w1_pq.
 Qed.
