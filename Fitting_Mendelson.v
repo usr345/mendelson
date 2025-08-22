@@ -1144,7 +1144,7 @@ Definition LogicS5 (F : Frame) := FrameRefl F * FrameSym F * FrameTrans F.
 Definition LogicS5' (F : Frame) := FrameRefl F * FrameEucl F.
 Definition LogicS43 (F : Frame) := FrameRefl F * FrameTrans F * FrameLinear F.
 
-Theorem E5_4_7_1 {atom : Set} `(F : Frame) (S43 : LogicS43) (w0 : @worldsS4_3 atom M) (P Q : @formula atom) : valid (ModelS4_3_Model M) w0 $box (box P -> box Q) \/ box(box Q -> box P)$.
+Theorem E5_4_7_1 {atom : Set} `(M : @Model atom) (S43 : LogicS43 (@frame atom M)) (w0 : worlds) (P Q : @formula atom) : valid M w0 $box (box P -> box Q) \/ box(box Q -> box P)$.
 Proof.
   simpl.
   destruct M.
