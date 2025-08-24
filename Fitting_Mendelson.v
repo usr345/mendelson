@@ -797,15 +797,15 @@ Class Model {atom : Type} :=
   valuation : worlds -> atom -> Prop;
 }.
 
-Fixpoint valid {atom : Set} `(M : @Model atom) (w0 : worlds) (f : @formula atom) : Prop :=
+Fixpoint valid {atom : Set} `(M : @Model atom) (Γ : worlds) (f : @formula atom) : Prop :=
   match f with
-  | f_atom p => valuation w0 p
-  | f_not f' => ~(valid M w0 f')
-  | f_conj f1 f2 => (valid M w0 f1) /\ (valid M w0 f2)
-  | f_disj f1 f2 => (valid M w0 f1) \/ (valid M w0 f2)
-  | f_imp f1 f2 => (valid M w0 f1) -> (valid M w0 f2)
-  | f_box f' => forall w, (accessible w0 w) -> (valid M w f')
-  | f_diamond f' => exists w, (accessible w0 w) /\ (valid M w f')
+  | f_atom p => valuation Γ p
+  | f_not f' => ~(valid M Γ f')
+  | f_conj f1 f2 => (valid M Γ f1) /\ (valid M Γ f2)
+  | f_disj f1 f2 => (valid M Γ f1) \/ (valid M Γ f2)
+  | f_imp f1 f2 => (valid M Γ f1) -> (valid M Γ f2)
+  | f_box f' => forall w, (accessible Γ w) -> (valid M w f')
+  | f_diamond f' => exists w, (accessible Γ w) /\ (valid M w f')
   end.
 
 Definition valid_in_frame {atom : Set} `(Fr : Frame) (f : @formula atom) : Prop :=
@@ -923,7 +923,7 @@ Section Example_5_3_1.
     apply I.
   Qed.
 
-  Proposition Omega_box_P_or_Q : valid M1 Γ $box (P \/ Q)$.
+  Proposition Gamma_box_P_or_Q : valid M1 Γ $box (P \/ Q)$.
   Proof.
     cbv delta [valid].
     cbv fix.
@@ -935,6 +935,92 @@ Section Example_5_3_1.
     - destruct H.
     - apply Delta_P_or_Q.
     - apply Omega_P_or_Q.
+  Qed.
+
+  Proposition Gamma_box_P_invalid : ~ (valid M1 Γ $box P$).
+  Proof.
+    unfold not.
+    intro H.
+    simpl in H.
+    specialize (H Ω).
+    simpl in H.
+    specialize (H I).
+    apply H.
+  Qed.
+
+  Proposition Gamma_box_Q_invalid : ~ (valid M1 Γ $box Q$).
+  Proof.
+    unfold not.
+    intro H.
+    simpl in H.
+    specialize (H Δ).
+    simpl in H.
+    specialize (H I).
+    apply H.
+  Qed.
+
+  Proposition Gamma_box_P_or_box_Q_invalid : ~ (valid M1 Γ $box P \/box Q$).
+  Proof.
+    intro H.
+    simpl in H.
+    destruct H.
+    - apply Gamma_box_P_invalid in H.
+      exact H.
+    - apply Gamma_box_Q_invalid in H.
+      exact H.
+  Qed.
+
+  Proposition Gamma_impl_invalid : ~ (valid M1 Γ $box (P \/ Q) -> (box P \/box Q)$).
+  Proof.
+    unfold not.
+    cbv delta [valid].
+    cbv fix.
+    cbv beta.
+    cbv match.
+    fold @valid.
+    intro H.
+    specialize (H Gamma_box_P_or_Q).
+    cbv beta in H.
+    cbv match in H.
+    destruct H.
+    - apply Gamma_box_P_invalid in H.
+      exact H.
+    - apply Gamma_box_Q_invalid in H.
+      exact H.
+  Qed.
+
+  Proposition Gamma_d_P_and_d_Q : valid M1 Γ $diamond P /\ diamond Q$.
+  Proof.
+    simpl.
+    split.
+    - exists Δ.
+      split.
+      + apply I.
+      + simpl.
+        apply I.
+    - exists Ω.
+      split.
+      + apply I.
+      + simpl.
+        apply I.
+  Qed.
+
+  Proposition Gamma_diamond_invalid : ~ (valid M1 Γ $(diamond P /\ diamond Q) -> diamond(P /\ Q)$).
+  Proof.
+    unfold not.
+    simpl.
+    intro H.
+    specialize (H Gamma_d_P_and_d_Q).
+    destruct H as [w H].
+    destruct w.
+    - destruct H as [H _].
+      exact H.
+    - simpl in H.
+      destruct H as [_ [_ H]].
+      exact H.
+    - simpl in H.
+      destruct H as [_ [H _]].
+      exact H.
   Qed.
 End Example_5_3_1.
 
@@ -951,18 +1037,18 @@ Proof.
   exact Hbox.
 Qed.
 
-(* 5.3.4.1 стр. 84 *)
-Proposition E5_3_4_1 {atom : Set} `(M : @Model atom) (w0 : worlds) (P Q : @formula atom) : valid M w0 $box (P /\ Q) -> box P /\ box Q$.
+(* Excersize 5.3.4.1 стр. 84 *)
+Proposition E5_3_4_1_right {atom : Set} `(M : @Model atom) (w0 : worlds) (P Q : @formula atom) : valid M w0 $box (P /\ Q) -> box P /\ box Q$.
 Proof.
   simpl.
   intros Hbox_conj.
   split.
-  - intros w Hw0_R_w.
-    specialize (Hbox_conj w Hw0_R_w).
+  - intros w w0_R_w.
+    specialize (Hbox_conj w w0_R_w).
     destruct Hbox_conj as [Hp _].
     exact Hp.
-  - intros w Hw0_R_w.
-    specialize (Hbox_conj w Hw0_R_w).
+  - intros w w0_R_w.
+    specialize (Hbox_conj w w0_R_w).
     destruct Hbox_conj as [_ Hq].
     exact Hq.
 Qed.
@@ -1021,11 +1107,11 @@ Proof.
   unfold symmetric in Hsym.
   simpl.
   intro H.
-  intros w Hw0_R_w.
-  specialize (Hsym w0 w Hw0_R_w) as HwRw0.
+  intros w w0_R_w.
+  specialize (Hsym w0 w w0_R_w) as w_R_w0.
   exists w0.
   split.
-  - exact HwRw0.
+  - exact w_R_w0.
   - exact H.
 Qed.
 
@@ -1036,14 +1122,14 @@ Proof.
   unfold transitive in Htrans.
   simpl.
   intro Hdiamond.
-  intros w Hw0_R_w.
+  intros w w0_R_w.
   destruct Hdiamond as [w1 Hdiamond].
-  destruct Hdiamond as [Hw0_R_w1 Hw1_P].
-  specialize (Hsym w0 w Hw0_R_w) as Hw_R_w0.
-  specialize (Htrans w w0 w1 Hw_R_w0 Hw0_R_w1) as Hw_R_w1.
+  destruct Hdiamond as [w0_R_w1 Hw1_P].
+  specialize (Hsym w0 w w0_R_w) as w_R_w0.
+  specialize (Htrans w w0 w1 w_R_w0 w0_R_w1) as w_R_w1.
   exists w1.
   split.
-  - exact Hw_R_w1.
+  - exact w_R_w1.
   - exact Hw1_P.
 Qed.
 
@@ -1053,13 +1139,13 @@ Proof.
   unfold euclidian in Heuc.
   simpl.
   intro Hexists.
-  destruct Hexists as [w [Hw0_R_w HwP]].
-  intros w1 Hw0_R_w1.
+  destruct Hexists as [w [w0_R_w HwP]].
+  intros w1 w0_R_w1.
   specialize (Heuc w0 w1 w).
-  specialize (Heuc Hw0_R_w1 Hw0_R_w) as Hw1_R_w.
+  specialize (Heuc w0_R_w1 w0_R_w) as w1_R_w.
   exists w.
   split.
-  - exact Hw1_R_w.
+  - exact w1_R_w.
   - exact HwP.
 Qed.
 
@@ -1174,7 +1260,7 @@ Proof.
   simpl.
   intros H1 H2.
   destruct H1 as [w1 [w0_R_w1 H_w1_pq]].
-  destruct H2 as [w2 [w0_R_w2 H_w2_p]].
+  destruct H2 as [w2 [w0_R_w2 H_w2_box_P]].
   destruct S43 as [S43 Hlinear].
   destruct S43 as [Hrefl Htrans].
   (* Раскрыли все свойства отношений *)
@@ -1195,8 +1281,8 @@ Proof.
       specialize (Htrans w1 w2 w3).
       specialize (Htrans w1_R_w2 w2_R_w3) as w1_R_w3.
       specialize (H_w1_pq w3 w1_R_w3).
-      specialize (H_w2_p w3 w2_R_w3).
-      specialize (H_w1_pq H_w2_p).
+      specialize (H_w2_box_P w3 w2_R_w3) as H_w3_p.
+      specialize (H_w1_pq H_w3_p).
       exact H_w1_pq.
   - exists w1.
     split.
@@ -1205,8 +1291,8 @@ Proof.
       specialize (Htrans w2 w1 w3).
       specialize (Htrans w2_R_w1 w1_R_w3) as w2_R_w3.
       specialize (H_w1_pq w3 w1_R_w3).
-      specialize (H_w2_p w3 w2_R_w3).
-      specialize (H_w1_pq H_w2_p).
+      specialize (H_w2_box_P w3 w2_R_w3) as H_w3_p.
+      specialize (H_w1_pq H_w3_p).
       exact H_w1_pq.
 Qed.
 
