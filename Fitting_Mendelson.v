@@ -866,7 +866,7 @@ Proof.
   exact Hex.
 Qed.
 
-Section Example_5_3_1.
+Module Example_5_3_1.
 
   Inductive atom : Type :=
   | P : atom
@@ -1018,6 +1018,94 @@ Section Example_5_3_1.
       exact H.
   Qed.
 End Example_5_3_1.
+
+Module Example_5_3_2.
+
+  Inductive atom : Set :=
+  | P : atom.
+
+  Inductive worlds3 : Type :=
+  | Γ : worlds3
+  | Δ : worlds3
+  | Ω : worlds3.
+
+  Definition R3 (w1 w2 : worlds3) : Prop :=
+  match w1, w2 with
+  | Γ, Δ  => True
+  | Δ, Ω => True
+  | _, _ => False
+  end.
+
+  Definition V3 (w : worlds3) (a : atom) : Prop :=
+    match w, a with
+    | Δ, P => True
+    | _, _ => False
+    end.
+
+  Lemma worlds3_inhabited : inhabited worlds3.
+  Proof.
+    apply (inhabits Γ).
+  Qed.
+
+  Definition F1 : Frame :=
+  {|
+    worlds := worlds3;
+    worlds_inh := worlds3_inhabited;
+    accessible := R3;
+  |}.
+
+  Definition M1 : Model :=
+  {|
+    frame := F1;
+    valuation := V3
+  |}.
+
+  Definition f (a: atom) : @formula atom :=
+    f_atom a.
+
+  Coercion f: atom >-> formula.
+
+  Proposition Gamma_box_P : valid M1 Γ $box P$.
+  Proof.
+    cbn head.
+    intros w H.
+    destruct w ; simpl in H.
+    - destruct H.
+    - simpl.
+      exact I.
+    - destruct H.
+  Qed.
+
+  Proposition Ex_5_3_2 : ~(valid M1 Γ $box P -> box box P$).
+  Proof.
+    intro H.
+    cbn head in H.
+    specialize (H Gamma_box_P).
+    cbn head in H.
+    specialize (H Δ).
+    assert (H1 : @accessible (@frame atom M1) Γ Δ).
+    {
+      simpl.
+      exact I.
+    }
+
+    specialize (H H1).
+    cbn head in H.
+    specialize (H Ω).
+    clear H1.
+    assert (H1 : @accessible (@frame atom M1) Δ Ω).
+    {
+      simpl.
+      exact I.
+    }
+
+    specialize (H H1).
+    simpl in H.
+    exact H.
+  Qed.
+
+End Example_5_3_2.
+
 
 (* Example 5.3.7 стр. 83 *)
 Example Ex5_3_7 {atom : Set} `(M : @Model atom) (w0 : worlds) (P : @formula atom) : (transitive (@accessible frame)) -> valid M w0 $box P -> box box P$.
