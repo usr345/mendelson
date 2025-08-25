@@ -930,11 +930,7 @@ Section Example_5_3_1.
 
   Proposition Gamma_box_P_or_Q : valid M1 Γ $box (P \/ Q)$.
   Proof.
-    cbv delta [valid].
-    cbv fix.
-    cbv beta.
-    cbv iota.
-    fold @valid.
+    cbn head.
     intros w H.
     destruct w ; simpl in H.
     - destruct H.
@@ -979,13 +975,7 @@ Section Example_5_3_1.
   Proof.
     unfold not.
     intro H.
-    cbv delta [valid] in H.
-    cbv delta [implication] in H.
-    cbv beta in H.
-    cbv fix in H.
-    cbv beta in H.
-    cbv match in H.
-    fold @valid in H.
+    cbn head in H.
     specialize (H Gamma_box_P_or_Q).
     destruct H.
     - apply Gamma_box_P_invalid in H.
@@ -1014,13 +1004,7 @@ Section Example_5_3_1.
   Proof.
     unfold not.
     intro H.
-    cbv delta [valid] in H.
-    cbv delta [implication] in H.
-    cbv beta in H.
-    cbv fix in H.
-    cbv beta in H.
-    cbv match in H.
-    fold @valid in H.
+    cbn head in H.
     specialize (H Gamma_d_P_and_d_Q).
     destruct H as [w H].
     destruct w.
