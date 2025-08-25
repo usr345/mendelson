@@ -7,6 +7,11 @@ Require Import Coq.Arith.PeanoNat.
 Require Import Coq.Init.Logic.
 Import ListNotations.
 
+(* Definition f := fun x : nat => x + 1. *)
+(* Definition example := f (2 + 3). *)
+(* Eval hnf in example. *)
+(* Eval cbv delta in example. *)
+
 Module Formula1 <: TFormula.
   (* Синтаксис модальной формулы *)
   Inductive formula {atom : Type} : Type :=
@@ -928,7 +933,7 @@ Section Example_5_3_1.
     cbv delta [valid].
     cbv fix.
     cbv beta.
-    cbv match.
+    cbv iota.
     fold @valid.
     intros w H.
     destruct w ; simpl in H.
@@ -973,15 +978,15 @@ Section Example_5_3_1.
   Proposition Gamma_impl_invalid : ~ (valid M1 Γ $box (P \/ Q) -> (box P \/box Q)$).
   Proof.
     unfold not.
-    cbv delta [valid].
-    cbv fix.
-    cbv beta.
-    cbv match.
-    fold @valid.
     intro H.
-    specialize (H Gamma_box_P_or_Q).
+    cbv delta [valid] in H.
+    cbv delta [implication] in H.
+    cbv beta in H.
+    cbv fix in H.
     cbv beta in H.
     cbv match in H.
+    fold @valid in H.
+    specialize (H Gamma_box_P_or_Q).
     destruct H.
     - apply Gamma_box_P_invalid in H.
       exact H.
@@ -1008,8 +1013,14 @@ Section Example_5_3_1.
   Proposition Gamma_diamond_invalid : ~ (valid M1 Γ $(diamond P /\ diamond Q) -> diamond(P /\ Q)$).
   Proof.
     unfold not.
-    simpl.
     intro H.
+    cbv delta [valid] in H.
+    cbv delta [implication] in H.
+    cbv beta in H.
+    cbv fix in H.
+    cbv beta in H.
+    cbv match in H.
+    fold @valid in H.
     specialize (H Gamma_d_P_and_d_Q).
     destruct H as [w H].
     destruct w.
