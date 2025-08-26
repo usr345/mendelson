@@ -1136,6 +1136,21 @@ Proof.
     exact Hq.
 Qed.
 
+(* Excersize 5.3.4.1 стр. 84 *)
+Proposition E5_3_4_1_left {atom : Set} `(M : @Model atom) (w0 : worlds) (P Q : @formula atom) : valid M w0 $box P /\ box Q -> box (P /\ Q)$.
+Proof.
+  cbn head.
+  intros H.
+  simpl.
+  intros w w0_R_w.
+  simpl in H.
+  destruct H as [H1 H2].
+  specialize (H1 w w0_R_w).
+  specialize (H2 w w0_R_w).
+  specialize (conj H1 H2) as H3.
+  exact H3.
+Qed.
+
 (* 5.3.4.2 стр. 84 *)
 Proposition E5_3_4_2 {atom : Set} `(M : @Model atom) (w0 : worlds) (P Q : @formula atom) : valid M w0 $box (P -> Q) -> box P -> box Q$.
 Proof.
