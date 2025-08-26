@@ -1171,8 +1171,8 @@ Module Example_5_3_3.
     exact Δ_R_w.
   Qed.
 
-  (* Example 5.3.2 стр. 82 *)
-  Proposition Ex_5_3_2 : ~(valid M1 Γ $diamond P -> box diamond P$).
+  (* Example 5.3.3 стр. 82 *)
+  Proposition Ex_5_3_3 : ~(valid M1 Γ $diamond P -> box diamond P$).
   Proof.
     unfold not.
     intro H.
@@ -1192,6 +1192,141 @@ Module Example_5_3_3.
 Qed.
 End Example_5_3_3.
 
+Module Example_5_3_4.
+  Inductive atom : Set :=
+  | P : atom
+  | Q : atom.
+
+  Inductive worlds5 : Type :=
+  | Γ : worlds5
+  | Δ : worlds5
+  | Ε : worlds5
+  | Ζ : worlds5
+  | Η : worlds5.
+
+  Definition R5 (w1 w2 : worlds5) : Prop :=
+  match w1, w2 with
+  | Γ, Δ  => True
+  | Γ, Ε  => True
+  | Δ, Ζ => True
+  | Ε, Η => True
+  | _, _ => False
+  end.
+
+  Definition V5 (w : worlds5) (a : atom) : Prop :=
+    match w, a with
+    | Ζ, P => True
+    | Η, Q => True
+    | _, _ => False
+    end.
+
+  Lemma worlds5_inhabited : inhabited worlds5.
+  Proof.
+    apply (inhabits Γ).
+  Qed.
+
+  Definition F1 : Frame :=
+  {|
+    worlds := worlds5;
+    worlds_inh := worlds5_inhabited;
+    accessible := R5;
+  |}.
+
+  Definition M1 : Model :=
+  {|
+    frame := F1;
+    valuation := V5
+  |}.
+
+  Definition f (a: atom) : @formula atom :=
+    f_atom a.
+
+  Coercion f: atom >-> formula.
+
+  Proposition diamond_box_Gamma : valid M1 Γ $diamond box P /\ diamond box Q$.
+  Proof.
+    cbn head.
+    split.
+    - cbn head.
+      exists Δ.
+      split.
+      + simpl.
+        exact I.
+      + cbn head.
+        intros w Δ_R_w.
+        destruct w ; simpl in Δ_R_w ; destruct Δ_R_w.
+        simpl.
+        exact I.
+    - cbn head.
+      exists Ε.
+      split.
+      + simpl.
+        exact I.
+      + cbn head.
+        intros w Δ_R_w.
+        destruct w ; simpl in Δ_R_w ; destruct Δ_R_w.
+        simpl.
+        exact I.
+  Qed.
+
+  Proposition conj_invalid_Δ : ~ (valid M1 Δ $box (P /\ Q)$).
+  Proof.
+    unfold not.
+    intro H.
+    cbn head in H.
+    specialize (H Ζ).
+    assert (Δ_R_Ζ : @accessible (@frame atom M1) Δ Ζ).
+    {
+      simpl.
+      exact I.
+    }
+
+    specialize (H Δ_R_Ζ).
+    cbn head in H.
+    destruct H as [H1 H2].
+    simpl in H2.
+    destruct H2.
+  Qed.
+
+  Proposition conj_invalid_Ε : ~ (valid M1 Ε $box (P /\ Q)$).
+  Proof.
+    unfold not.
+    intro H.
+    cbn head in H.
+    specialize (H Η).
+    assert (Ε_R_Η : @accessible (@frame atom M1) Ε Η).
+    {
+      simpl.
+      exact I.
+    }
+
+    specialize (H Ε_R_Η).
+    cbn head in H.
+    destruct H as [H1 H2].
+    simpl in H1.
+    destruct H1.
+  Qed.
+
+  (* Example 5.3.4 стр. 82 *)
+  Proposition Ex_5_3_4 : ~(valid M1 Γ $(diamond box P /\ diamond box Q) -> diamond box (P /\ Q)$).
+  Proof.
+    unfold not.
+    intro H.
+    cbn head in H.
+    specialize (H diamond_box_Gamma).
+    cbn head in H.
+    destruct H as [w [Γ_R_w Hvalid]].
+    destruct w ; simpl in Γ_R_w.
+    - destruct Γ_R_w.
+    - specialize (conj_invalid_Δ Hvalid) as Hcontra.
+      destruct Hcontra.
+    - specialize (conj_invalid_Ε Hvalid) as Hcontra.
+      destruct Hcontra.
+    - destruct Γ_R_w.
+    - destruct Γ_R_w.
+  Qed.
+
+End Example_5_3_4.
 
 (* Example 5.3.7 стр. 83 *)
 Example Ex5_3_7 {atom : Set} `(M : @Model atom) (w0 : worlds) (P : @formula atom) : (transitive (@accessible frame)) -> valid M w0 $box P -> box box P$.
