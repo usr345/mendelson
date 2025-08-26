@@ -1,0 +1,38 @@
+* [0/6] Глава 5 "Propositional Modal Logic"
+** TODO 5.1 What Are the Formulas?
+** TODO [2/3] 5.2 What Are the Models?
+*** DONE [[./Fitting_Mendelson.v::"Proposition Ex5_2_1"][Excersize 5.2.1 стр. 81]]
+*** TODO Excersize 5.2.2
+*** DONE [2/2] Excersize 5.2.3
+**** DONE [[./Fitting_Mendelson.v::"Proposition Ex5_2_3_1"][Excersize 5.2.3.1 стр. 81]]
+**** DONE [[./Fitting_Mendelson.v::"Proposition Ex5_2_3_2"][Excersize 5.2.3.2 стр. 81]]
+** IN-PROGRESS [1/9] 5.3 Examples
+*** DONE Example 5.3.1
+*** IN-PROGRESS Example 5.3.2
+*** IN-PROGRESS Example 5.3.3
+*** IN-PROGRESS Example 5.3.4
+*** IN-PROGRESS [0/3] Example 5.3.5
+**** IN-PROGRESS Example 5.3.5.1
+**** IN-PROGRESS Example 5.3.5.2
+**** IN-PROGRESS Example 5.3.5.3
+*** IN-PROGRESS [[./Fitting_Mendelson.v::"Exercize 5.3.1"][Excersize 5.3.1 стр. 83]]
+*** IN-PROGRESS Excersize 5.3.2 стр. 83
+*** IN-PROGRESS Excersize 5.3.3 стр. 83
+*** IN-PROGRESS Excersize 5.3.4 стр. 83, 84
+**** TODO [[./Fitting_Mendelson.v::E5_3_4_1_left][Excersize 5.3.4.1 left]]
+**** TODO [[./Fitting_Mendelson.v::E5_3_4_1_right][Excersize 5.3.4.1 right (bonus)]]
+**** TODO Excersize 5.3.4.2
+
+** TODO 5.4 Modal Logics, Semantically Defined
+*** TODO Excersize 5.4.1
+*** TODO Excersize 5.4.2
+*** TODO [/] Excersize 5.4.3 стр. 87
+**** TODO [[./Fitting_Mendelson.v::Proposition boxP_P][Excersize 5.4.3.1]]
+**** TODO [[./Fitting_Mendelson.v::Theorem E5_4_3_2][Excersize 5.4.3.2]]
+**** TODO [[./Fitting_Mendelson.v::][Excersize 5.4.3.3]
+**** TODO [[./Fitting_Mendelson.v::][Excersize 5.4.3.4]
+*** Excersize 5.4.
+*** Excersize 5.4.
+** TODO 5.5 The Modal Cube
+** TODO 5.6 Semantic Consequence
+* [/] Глава 6 "Propositional Modal Axiom Systems"

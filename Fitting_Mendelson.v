@@ -1000,6 +1000,7 @@ Module Example_5_3_1.
         apply I.
   Qed.
 
+  (* Exercize 5.3.1 *)
   Proposition Gamma_diamond_invalid : ~ (valid M1 Γ $(diamond P /\ diamond Q) -> diamond(P /\ Q)$).
   Proof.
     unfold not.
@@ -1328,6 +1329,106 @@ Module Example_5_3_4.
 
 End Example_5_3_4.
 
+Module Example_5_3_5.
+  Inductive atom : Set :=
+  | P : atom.
+
+  Inductive worlds2 : Type :=
+  | Γ : worlds2
+  | Δ : worlds2.
+
+  Definition R2 (w1 w2 : worlds2) : Prop :=
+  match w1, w2 with
+  | Γ, Δ  => True
+  | Δ, Δ  => True
+  | _, _ => False
+  end.
+
+  Definition V2 (w : worlds2) (a : atom) : Prop :=
+    match w, a with
+    | Δ, P => True
+    | _, _ => False
+    end.
+
+  Lemma worlds2_inhabited : inhabited worlds2.
+  Proof.
+    apply (inhabits Γ).
+  Qed.
+
+  Definition F1 : Frame :=
+  {|
+    worlds := worlds2;
+    worlds_inh := worlds2_inhabited;
+    accessible := R2;
+  |}.
+
+  Definition M1 : Model :=
+  {|
+    frame := F1;
+    valuation := V2
+  |}.
+
+  Definition f (a: atom) : @formula atom :=
+    f_atom a.
+
+  Coercion f: atom >-> formula.
+
+  Fixpoint n_box {atom : Set} (f : @formula atom) (n : nat) :=
+    match n with
+    | 0 => f
+    | S n' => f_box (n_box f n')
+    end.
+
+  (* Example 5.3.5.1 стр. 82 *)
+  Proposition Ex_5_3_5_1 : forall n : nat, valid M1 Δ (n_box P n).
+  Proof.
+    intro n.
+    induction n as [|n' IH].
+    - unfold n_box.
+      simpl.
+      exact I.
+    - cbn head.
+      intros w Δ_R_w.
+      destruct w.
+      + simpl in Δ_R_w.
+        destruct Δ_R_w.
+      + apply IH.
+  Qed.
+
+  Proposition Ex_5_3_5_2 : forall n : nat, valid M1 Γ (n_box P (S n)).
+  Proof.
+    intro n.
+    destruct n as [|n'].
+    - unfold n_box.
+      cbn head.
+      intros w Γ_R_w.
+      simpl.
+      destruct w.
+      + simpl in Γ_R_w.
+        destruct Γ_R_w.
+      + simpl.
+        exact I.
+    - cbn head.
+      intros w Γ_R_w.
+      destruct w.
+      + simpl in Γ_R_w.
+        destruct Γ_R_w.
+      + apply Ex_5_3_5_1.
+  Qed.
+
+  Proposition Ex_5_3_5_3 : forall n : nat, ~(valid M1 Γ (f_imp (n_box P (S n)) P)).
+  Proof.
+    unfold not.
+    intros n H.
+    cbn head in H.
+    specialize (Ex_5_3_5_2 n) as H1.
+    specialize (H H1).
+    simpl in H.
+    exact H.
+  Qed.
+
+End Example_5_3_5.
+
 (* Example 5.3.7 стр. 83 *)
 Example Ex5_3_7 {atom : Set} `(M : @Model atom) (w0 : worlds) (P : @formula atom) : (transitive (@accessible frame)) -> valid M w0 $box P -> box box P$.
 Proof.
@@ -1341,7 +1442,22 @@ Proof.
   exact Hbox.
 Qed.
 
-(* Excersize 5.3.4.1 стр. 84 *)
+(* Excersize 5.3.4.1 left стр. 84 *)
+Proposition E5_3_4_1_left {atom : Set} `(M : @Model atom) (w0 : worlds) (P Q : @formula atom) : valid M w0 $box P /\ box Q -> box (P /\ Q)$.
+Proof.
+  cbn head.
+  intros H.
+  simpl.
+  intros w w0_R_w.
+  simpl in H.
+  destruct H as [H1 H2].
+  specialize (H1 w w0_R_w).
+  specialize (H2 w w0_R_w).
+  specialize (conj H1 H2) as H3.
+  exact H3.
+Qed.
+
+(* Excersize 5.3.4.1 right *)
 Proposition E5_3_4_1_right {atom : Set} `(M : @Model atom) (w0 : worlds) (P Q : @formula atom) : valid M w0 $box (P /\ Q) -> box P /\ box Q$.
 Proof.
   simpl.
@@ -1355,21 +1471,6 @@ Proof.
     specialize (Hbox_conj w w0_R_w).
     destruct Hbox_conj as [_ Hq].
     exact Hq.
-Qed.
-
-(* Excersize 5.3.4.1 стр. 84 *)
-Proposition E5_3_4_1_left {atom : Set} `(M : @Model atom) (w0 : worlds) (P Q : @formula atom) : valid M w0 $box P /\ box Q -> box (P /\ Q)$.
-Proof.
-  cbn head.
-  intros H.
-  simpl.
-  intros w w0_R_w.
-  simpl in H.
-  destruct H as [H1 H2].
-  specialize (H1 w w0_R_w).
-  specialize (H2 w w0_R_w).
-  specialize (conj H1 H2) as H3.
-  exact H3.
 Qed.
 
 (* 5.3.4.2 стр. 84 *)
