@@ -1106,6 +1106,92 @@ Module Example_5_3_2.
 
 End Example_5_3_2.
 
+Module Example_5_3_3.
+
+  Inductive atom : Set :=
+  | P : atom.
+
+  Inductive worlds3 : Type :=
+  | Γ : worlds3
+  | Δ : worlds3.
+
+  Definition R3 (w1 w2 : worlds3) : Prop :=
+  match w1, w2 with
+  | Γ, Δ  => True
+  | _, _ => False
+  end.
+
+  Definition V3 (w : worlds3) (a : atom) : Prop :=
+    match w, a with
+    | Δ, P => True
+    | _, _ => False
+    end.
+
+  Lemma worlds3_inhabited : inhabited worlds3.
+  Proof.
+    apply (inhabits Γ).
+  Qed.
+
+  Definition F1 : Frame :=
+  {|
+    worlds := worlds3;
+    worlds_inh := worlds3_inhabited;
+    accessible := R3;
+  |}.
+
+  Definition M1 : Model :=
+  {|
+    frame := F1;
+    valuation := V3
+  |}.
+
+  Definition f (a: atom) : @formula atom :=
+    f_atom a.
+
+  Coercion f: atom >-> formula.
+
+  Proposition Gamma_diamond_P : valid M1 Γ $diamond P$.
+  Proof.
+    cbn head.
+    exists Δ.
+    split.
+    - simpl.
+      exact I.
+    - simpl.
+      exact I.
+  Qed.
+
+  Proposition Delta_not_diamond_P : ~ valid M1 Δ $diamond P$.
+  Proof.
+    apply Ex5_2_3_2.
+    unfold not.
+    intro H.
+    destruct H as [w Δ_R_w].
+    simpl in Δ_R_w.
+    exact Δ_R_w.
+  Qed.
+
+  (* Example 5.3.2 стр. 82 *)
+  Proposition Ex_5_3_2 : ~(valid M1 Γ $diamond P -> box diamond P$).
+  Proof.
+    unfold not.
+    intro H.
+    cbn head in H.
+    specialize (H Gamma_diamond_P).
+    cbn head in H.
+    specialize (H Δ).
+    assert (Γ_R_Δ : @accessible (@frame atom M1) Γ Δ).
+    {
+      simpl.
+      exact I.
+    }
+
+    specialize (H Γ_R_Δ).
+    apply Delta_not_diamond_P in H.
+    exact H.
+Qed.
+End Example_5_3_3.
+
 
 (* Example 5.3.7 стр. 83 *)
 Example Ex5_3_7 {atom : Set} `(M : @Model atom) (w0 : worlds) (P : @formula atom) : (transitive (@accessible frame)) -> valid M w0 $box P -> box box P$.
