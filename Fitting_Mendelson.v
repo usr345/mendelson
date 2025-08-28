@@ -5,12 +5,8 @@ From Mendelson Require Import EqDec.
 Require Import Lists.List.
 Require Import Coq.Arith.PeanoNat.
 Require Import Coq.Init.Logic.
+From Coq Require Import List.
 Import ListNotations.
-
-(* Definition f := fun x : nat => x + 1. *)
-(* Definition example := f (2 + 3). *)
-(* Eval hnf in example. *)
-(* Eval cbv delta in example. *)
 
 Module Formula1 <: TFormula.
   (* Синтаксис модальной формулы *)
@@ -1737,3 +1733,56 @@ Qed.
 (*   | _ => true *)
 (*   end. *)
 End Kripke.
+
+Module Tableaus.
+  Record node {atom : Set} := { world : nat; f : @formula atom; sign : bool }.
+  (* I - modal indices (agents) *)
+  Record edge {I : Type} := { iE : I; src : nat; dst : nat }.
+  Record branch {atom : Set} {I : Type} := { nodes : list (@node atom); edges : list (@edge I) }.
+
+  Definition mem_node {atom : Set} {I : Type} (x : @node atom) (Γ : @branch atom I) := In x Γ.(nodes).
+
+  Inductive step {atom : Set} {I : Type} : (@branch atom I) -> list (@branch atom I) -> Prop :=
+  | conj_T Γ w φ ψ :
+    mem_node {|world := w; f := $φ /\ ψ$; sign := true|} Γ ->
+    step Γ [ {| nodes := {|world := w; f := φ; sign := true|} ::
+                         {|world := w; f := ψ; sign := true|} :: Γ.(nodes);
+                edges := Γ.(edges) |} ].
+
+| r_and_F Γ ℓ φ ψ :
+    mem_lit {|lbl:=ℓ; sf:=And φ ψ; sg:=F|} Γ ->
+    step Γ [ {| Gf := {|lbl:=ℓ; sf:=φ; sg:=F|} :: Γ.(Gf); Gr := Γ.(Gr) |};
+              {| Gf := {|lbl:=ℓ; sf:=ψ; sg:=F|} :: Γ.(Gf); Gr := Γ.(Gr) |} ]
+
+| r_imp_T Γ ℓ φ ψ :
+    mem_lit {|lbl:=ℓ; sf:=Imp φ ψ; sg:=T|} Γ ->
+    step Γ [ {| Gf := {|lbl:=ℓ; sf:=φ; sg:=F|} ::
+                        {|lbl:=ℓ; sf:=ψ; sg:=T|} :: Γ.(Gf);
+               Gr := Γ.(Gr) |} ]
+
+| r_imp_F Γ ℓ φ ψ :
+    mem_lit {|lbl:=ℓ; sf:=Imp φ ψ; sg:=F|} Γ ->
+    step Γ [ {| Gf := {|lbl:=ℓ; sf:=φ; sg:=T|} :: Γ.(Gf); Gr := Γ.(Gr) |};
+              {| Gf := {|lbl:=ℓ; sf:=ψ; sg:=F|} :: Γ.(Gf); Gr := Γ.(Gr) |} ]
+
+| r_box_T_gen Γ ℓ i φ k :
+    mem_lit {|lbl:=ℓ; sf:=Box i φ; sg:=T|} Γ ->
+    (* add fresh world k *)
+    step Γ [ {| Gf := {|lbl:=k; sf:=φ; sg:=T|} :: Γ.(Gf);
+               Gr := {|iE:=i; src:=ℓ; dst:=k|} :: Γ.(Gr) |} ]
+
+| r_dia_F_gen Γ ℓ i φ k :
+    mem_lit {|lbl:=ℓ; sf:=Dia i φ; sg:=F|} Γ ->
+    step Γ [ {| Gf := {|lbl:=k; sf:=φ; sg:=F|} :: Γ.(Gf);
+               Gr := {|iE:=i; src:=ℓ; dst:=k|} :: Γ.(Gr) |} ]
+
+| r_box_F_use Γ ℓ i φ ℓ' :
+    mem_lit {|lbl:=ℓ; sf:=Box i φ; sg:=F|} Γ ->
+    mem_edge {|iE:=i; src:=ℓ; dst:=ℓ'|} Γ ->
+    step Γ [ {| Gf := {|lbl:=ℓ'; sf:=φ; sg:=F|} :: Γ.(Gf); Gr := Γ.(Gr) |} ]
+
+| r_dia_T_use Γ ℓ i φ ℓ' :
+    mem_lit {|lbl:=ℓ; sf:=Dia i φ; sg:=T|} Γ ->
+    mem_edge {|iE:=i; src:=ℓ; dst:=ℓ'|} Γ ->
+    step Γ [ {| Gf := {|lbl:=ℓ'; sf:=φ; sg:=T|} :: Γ.(Gf); Gr := Γ.(Gr) |} ].
+End Tableaus.
