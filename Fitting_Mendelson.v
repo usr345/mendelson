@@ -1836,9 +1836,9 @@ Module Tableaus.
 
   Lemma closed_example : closed_tree Γ0.
   Proof.
+    unfold Γ0.
     eapply ct_step.
-    - unfold Γ0.
-      apply (impl_F Γ0 0 $P /\ Q$ P).
+    - apply (impl_F Γ0 0 $P /\ Q$ P).
       unfold mem_node.
       simpl.
       left.
@@ -1846,27 +1846,22 @@ Module Tableaus.
     - intros Δ HΔ.
       simpl in HΔ.
       destruct HΔ as [HΔ | []].
-      + subst Δ.
-        eapply ct_step.
-        * eapply conj_T.
-          unfold mem_node.
-          simpl.
-          auto.
-        * intros Δ' HΔ'.
-          simpl in HΔ'.
-          destruct HΔ'.
-          ** subst Δ'.
-             apply ct_closed.
-             unfold closed.
-             exists 0.
-             exists P.
-             split.
-             *** unfold mem_node.
-                 simpl.
-                 auto.
-             *** unfold mem_node.
-                 simpl.
-                 auto.
-          ** destruct H.
+      subst Δ.
+      eapply ct_step.
+      + apply (conj_T _ 0 P Q).
+        unfold mem_node.
+        simpl.
+        auto.
+      + intros Δ HΔ.
+        simpl in HΔ.
+        destruct HΔ as [HΔ | []].
+        subst Δ.
+        apply ct_closed.
+        unfold closed.
+        exists 0.
+        exists P.
+        split ; unfold mem_node ; simpl.
+        * auto.
+        * auto.
   Qed.
 End Tableaus.
