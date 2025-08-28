@@ -1741,48 +1741,132 @@ Module Tableaus.
   Record branch {atom : Set} {I : Type} := { nodes : list (@node atom); edges : list (@edge I) }.
 
   Definition mem_node {atom : Set} {I : Type} (x : @node atom) (Γ : @branch atom I) := In x Γ.(nodes).
+  Definition mem_edge {atom : Set} {I : Type} (e : @edge I) (Γ : @branch atom I) := In e Γ.(edges).
 
   Inductive step {atom : Set} {I : Type} : (@branch atom I) -> list (@branch atom I) -> Prop :=
   | conj_T Γ w φ ψ :
     mem_node {|world := w; f := $φ /\ ψ$; sign := true|} Γ ->
     step Γ [ {| nodes := {|world := w; f := φ; sign := true|} ::
                          {|world := w; f := ψ; sign := true|} :: Γ.(nodes);
-                edges := Γ.(edges) |} ].
+               edges := Γ.(edges) |} ]
+  | conj_F Γ w φ ψ :
+    mem_node {|world := w; f := $φ /\ ψ$; sign := false|} Γ ->
+    step Γ [ {| nodes := {|world := w; f := φ; sign := false|} :: Γ.(nodes);
+                edges := Γ.(edges) |};
+             {| nodes := {|world := w; f := ψ; sign := false|} :: Γ.(nodes);
+                edges := Γ.(edges) |}
+           ]
+  | disj_T Γ w φ ψ :
+    mem_node {|world := w; f := $φ \/ ψ$; sign := true|} Γ ->
+    step Γ [ {| nodes := {|world := w; f := φ; sign := true|} :: Γ.(nodes);
+                edges := Γ.(edges) |};
+             {| nodes := {|world := w; f := ψ; sign := true|} :: Γ.(nodes);
+                edges := Γ.(edges) |}
+           ]
+  | disj_F Γ w φ ψ :
+    mem_node {|world := w; f := $φ \/ ψ$; sign := false|} Γ ->
+    step Γ [ {| nodes := {|world := w; f := φ; sign := false|} ::
+                         {|world := w; f := ψ; sign := false|} :: Γ.(nodes);
+               edges := Γ.(edges) |} ]
+  | impl_T Γ w φ ψ :
+    mem_node {|world := w; f := $φ -> ψ$; sign := true|} Γ ->
+    step Γ [ {| nodes := {|world := w; f := φ; sign := false|} :: Γ.(nodes);
+                edges := Γ.(edges) |};
+             {| nodes := {|world := w; f := ψ; sign := true|} :: Γ.(nodes);
+                edges := Γ.(edges) |}
+           ]
+  | impl_F Γ w φ ψ :
+    mem_node {|world := w; f := $φ -> ψ$; sign := false|} Γ ->
+    step Γ [ {| nodes := {|world := w; f := φ; sign := true|} ::
+                         {|world := w; f := ψ; sign := false|} :: Γ.(nodes);
+               edges := Γ.(edges) |} ]
+  | double_neg Γ w φ :
+    mem_node {|world := w; f := $~ ~φ$; sign := true|} Γ ->
+    step Γ [ {| nodes := {|world := w; f := φ; sign := true|} :: Γ.(nodes);
+               edges := Γ.(edges) |} ]
+  | diamond_T Γ w (i : I) φ (w' : nat) :
+    mem_node {|world := w; f := $diamond φ$; sign := true|} Γ ->
+        (* add fresh world w' *)
+    step Γ [ {| nodes := {|world := w'; f := φ; sign := true|} :: Γ.(nodes);
+               edges := {|iE:=i; src := w; dst := w'|} :: Γ.(edges) |} ]
+  | box_F Γ w (i : I) φ (w' : nat) :
+    mem_node {|world := w; f := $box φ$; sign := false|} Γ ->
+        (* add fresh world w' *)
+    step Γ [ {| nodes := {|world := w'; f := φ; sign := false|} :: Γ.(nodes);
+               edges := {|iE:=i; src := w; dst := w'|} :: Γ.(edges) |} ]
+  | box_T Γ w (i : I) φ (w' : nat) :
+    mem_node {|world := w; f := $box φ$; sign := true|} Γ ->
+    mem_edge {|iE :=i; src := w; dst := w'|} Γ ->
+    step Γ [ {| nodes := {|world := w'; f := φ; sign := true|} :: Γ.(nodes);
+               edges := Γ.(edges) |} ]
+  | diamond_F Γ w (i : I) φ (w' : nat) :
+    mem_node {|world := w; f := $diamond φ$; sign := false|} Γ ->
+    mem_edge {|iE :=i; src := w; dst := w'|} Γ ->
+    step Γ [ {| nodes := {|world := w'; f := φ; sign := false|} :: Γ.(nodes);
+               edges := Γ.(edges) |} ].
 
-| r_and_F Γ ℓ φ ψ :
-    mem_lit {|lbl:=ℓ; sf:=And φ ψ; sg:=F|} Γ ->
-    step Γ [ {| Gf := {|lbl:=ℓ; sf:=φ; sg:=F|} :: Γ.(Gf); Gr := Γ.(Gr) |};
-              {| Gf := {|lbl:=ℓ; sf:=ψ; sg:=F|} :: Γ.(Gf); Gr := Γ.(Gr) |} ]
 
-| r_imp_T Γ ℓ φ ψ :
-    mem_lit {|lbl:=ℓ; sf:=Imp φ ψ; sg:=T|} Γ ->
-    step Γ [ {| Gf := {|lbl:=ℓ; sf:=φ; sg:=F|} ::
-                        {|lbl:=ℓ; sf:=ψ; sg:=T|} :: Γ.(Gf);
-               Gr := Γ.(Gr) |} ]
+  (* Branch closes if it has w F and w ~F together *)
+  Definition closed {atom : Set} {I : Type} (Γ : @branch atom I) : Prop :=
+  exists w (F : @formula atom),
+    mem_node {|world:= w; f := F; sign := true|} Γ /\
+    mem_node {|world := w; f:= F; sign := false|} Γ.
 
-| r_imp_F Γ ℓ φ ψ :
-    mem_lit {|lbl:=ℓ; sf:=Imp φ ψ; sg:=F|} Γ ->
-    step Γ [ {| Gf := {|lbl:=ℓ; sf:=φ; sg:=T|} :: Γ.(Gf); Gr := Γ.(Gr) |};
-              {| Gf := {|lbl:=ℓ; sf:=ψ; sg:=F|} :: Γ.(Gf); Gr := Γ.(Gr) |} ]
+  Inductive closed_tree {atom : Set} {I : Type} : @branch atom I -> Prop :=
+  | ct_closed Γ :
+    closed Γ -> closed_tree Γ
+  | ct_step Γ Δs :
+    step Γ Δs ->
+    (forall Δ, In Δ Δs -> closed_tree Δ) ->
+    closed_tree Γ.
 
-| r_box_T_gen Γ ℓ i φ k :
-    mem_lit {|lbl:=ℓ; sf:=Box i φ; sg:=T|} Γ ->
-    (* add fresh world k *)
-    step Γ [ {| Gf := {|lbl:=k; sf:=φ; sg:=T|} :: Γ.(Gf);
-               Gr := {|iE:=i; src:=ℓ; dst:=k|} :: Γ.(Gr) |} ]
+  Inductive atom2 : Type :=
+  | P : atom2
+  | Q : atom2.
 
-| r_dia_F_gen Γ ℓ i φ k :
-    mem_lit {|lbl:=ℓ; sf:=Dia i φ; sg:=F|} Γ ->
-    step Γ [ {| Gf := {|lbl:=k; sf:=φ; sg:=F|} :: Γ.(Gf);
-               Gr := {|iE:=i; src:=ℓ; dst:=k|} :: Γ.(Gr) |} ]
+  Definition conv (a: atom2) : @formula atom2 :=
+    f_atom a.
 
-| r_box_F_use Γ ℓ i φ ℓ' :
-    mem_lit {|lbl:=ℓ; sf:=Box i φ; sg:=F|} Γ ->
-    mem_edge {|iE:=i; src:=ℓ; dst:=ℓ'|} Γ ->
-    step Γ [ {| Gf := {|lbl:=ℓ'; sf:=φ; sg:=F|} :: Γ.(Gf); Gr := Γ.(Gr) |} ]
+  Coercion conv: atom2 >-> formula.
 
-| r_dia_T_use Γ ℓ i φ ℓ' :
-    mem_lit {|lbl:=ℓ; sf:=Dia i φ; sg:=T|} Γ ->
-    mem_edge {|iE:=i; src:=ℓ; dst:=ℓ'|} Γ ->
-    step Γ [ {| Gf := {|lbl:=ℓ'; sf:=φ; sg:=T|} :: Γ.(Gf); Gr := Γ.(Gr) |} ].
+  (* (p ∧ q) -> p  *)
+  Definition Γ0 : @branch atom2 nat :=
+  {| nodes := [{| world := 0; f := $P /\ Q -> P$; sign := false |}];
+    edges := [] |}.
+
+  Lemma closed_example : closed_tree Γ0.
+  Proof.
+    eapply ct_step.
+    - unfold Γ0.
+      apply (impl_F Γ0 0 $P /\ Q$ P).
+      unfold mem_node.
+      simpl.
+      left.
+      reflexivity.
+    - intros Δ HΔ.
+      simpl in HΔ.
+      destruct HΔ as [HΔ | []].
+      + subst Δ.
+        eapply ct_step.
+        * eapply conj_T.
+          unfold mem_node.
+          simpl.
+          auto.
+        * intros Δ' HΔ'.
+          simpl in HΔ'.
+          destruct HΔ'.
+          ** subst Δ'.
+             apply ct_closed.
+             unfold closed.
+             exists 0.
+             exists P.
+             split.
+             *** unfold mem_node.
+                 simpl.
+                 auto.
+             *** unfold mem_node.
+                 simpl.
+                 auto.
+          ** destruct H.
+  Qed.
 End Tableaus.
