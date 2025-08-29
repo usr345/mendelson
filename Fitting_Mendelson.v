@@ -7,6 +7,8 @@ Require Import Coq.Arith.PeanoNat.
 Require Import Coq.Init.Logic.
 From Coq Require Import List.
 Import ListNotations.
+Require Import Logic.Classical_Prop.
+Require Import Logic.Classical_Pred_Type.
 
 Module Formula1 <: TFormula.
   (* Синтаксис модальной формулы *)
@@ -839,6 +841,38 @@ Proof.
       exact HΓy.
 Qed.
 
+(* Exercize 5.2.2 стр. 81 *)
+Proposition Ex5_2_2 {atom : Set} `(M : @Model atom) (X : @formula atom) : forall Γ : worlds, valid M Γ $box X <-> ~ diamond ~ X$.
+Proof.
+  cbn head.
+  split ; cbn head.
+  - intro H.
+    cbn head in H.
+    cbn head.
+    unfold not.
+    intro H1.
+    cbn head in H1.
+    destruct H1 as [Δ [Γ_R_Δ H1]].
+    specialize (H Δ Γ_R_Δ).
+    cbn head in H1.
+    apply H1 in H.
+    exact H.
+  - intro H.
+    cbn head in H.
+    cbn head.
+    intros Δ Γ_R_Δ.
+    simpl in H.
+    specialize (not_ex_all_not _ _ H) as H1.
+    specialize (H1 Δ).
+    simpl in H1.
+    apply not_and_or in H1.
+    destruct H1 as [H1 | H1].
+    + apply H1 in Γ_R_Δ.
+      destruct Γ_R_Δ.
+    + apply NNPP in H1.
+      exact H1.
+Qed.
+
 (* Exercize 5.2.3.1 стр. 81 *)
 Proposition Ex5_2_3_1 {atom : Set} `(M : @Model atom) (Γ : worlds) (P : @formula atom) : ~ (exists w, accessible Γ w) -> valid M Γ $box P$.
 Proof.
@@ -1646,7 +1680,7 @@ Definition LogicS5 (F : Frame) := FrameRefl F * FrameSym F * FrameTrans F.
 Definition LogicS5' (F : Frame) := FrameRefl F * FrameEucl F.
 Definition LogicS43 (F : Frame) := FrameRefl F * FrameTrans F * FrameLinear F.
 
-Theorem E5_4_7_1 {atom : Set} `(F : Frame) (S43 : LogicS43 F) (P Q : @formula atom) :
+Proposition E5_4_7_1 {atom : Set} `(F : Frame) (S43 : LogicS43 F) (P Q : @formula atom) :
   valid_in_frame F $box (box P -> box Q) \/ box(box Q -> box P)$.
 Proof.
   simpl.
@@ -1661,10 +1695,30 @@ Proof.
 
   unfold valid_in_frame.
   intros V w.
+  specialize (classic ((valid {| frame := F; valuation := V |} w $box (box P -> box Q)$) \/ (valid {| frame := F; valuation := V |} w $box (box Q -> box P)$))) as H.
+  destruct H.
+  - exact H.
+  - apply not_or_and in H.
+    destruct H as [H1 H2].
+    simpl in H1.
+    apply not_all_ex_not in H1.
+    destruct H1 as [w1 H1].
+    apply imply_to_and in H1.
+    destruct H1 as [w_R_w1 H1].
+    simpl in H2.
+    apply not_all_ex_not in H2.
+    destruct H2 as [w2 H2].
+    apply imply_to_and in H2.
+    destruct H2 as [w_R_w2 H2].
+    specialize (Hlinear w w1 w2 w_R_w1 w_R_w2) as H3.
+    destruct H3 as [H3 | H3].
+    + cbn head.
 
+    apply not_all_ex_not in H1.
+    destruct H1 as [H3 H4].
 Admitted.
 
-Theorem E5_4_7_2 {atom : Set} (M : @Model atom) (S43 : LogicS43 (@frame atom M)) (w0 : worlds) (P : @formula atom) : ~(valid M w0 $P -> box diamond P$).
+Proposition E5_4_7_2 {atom : Set} (M : @Model atom) (S43 : LogicS43 (@frame atom M)) (w0 : worlds) (P : @formula atom) : ~(valid M w0 $P -> box diamond P$).
 Proof.
   simpl.
   intro H.
