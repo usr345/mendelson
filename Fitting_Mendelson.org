@@ -24,7 +24,7 @@
 **** TODO [[./Fitting_Mendelson.v::E5_3_4_1_right][Excersize 5.3.4.1 right (bonus)]]
 **** TODO Excersize 5.3.4.2
 
-** IN-PROGRESS [3/7] 5.4 Modal Logics, Semantically Defined
+** IN-PROGRESS [4/7] 5.4 Modal Logics, Semantically Defined
 *** DONE [[./Fitting_Mendelson.v::Proposition E5_4_1][Excersize 5.4.1]]
 *** TODO Excersize 5.4.2
 *** DONE [4/4] Excersize 5.4.3 стр. 87
@@ -34,12 +34,28 @@
 **** DONE [[./Fitting_Mendelson.v::Theorem E5_4_3_4][Excersize 5.4.3.4]]
 *** TODO Excersize 5.4.4
 *** DONE [[./Fitting_Mendelson.v::Theorem E5_4_5][Excersize 5.4.5]]
-*** TODO Excersize 5.4.6
+*** DONE [[./Sets.v::"Lemma sym_trans_eq_euclidian"][Excersize 5.4.6]]
 *** TODO [1/3] Excersize 5.4.7
 **** TODO [[./Fitting_Mendelson.v::Proposition E5_4_7_1][Excersize 5.4.7.1]]
 **** IN-PROGRESS [[./Fitting_Mendelson.v::Proposition E5_4_7_2][Excersize 5.4.7.2]]
 **** DONE [[./Fitting_Mendelson.v::Proposition E5_4_7_3][Excersize 5.4.7.3]]
 
-** TODO 5.5 The Modal Cube
+** IN-PROGRESS [1/4] 5.5 The Modal Cube
+*** DONE [6/6] Define the relation properties:
+**** DONE [[./Sets.v::"Definition serial"][serial]]
+**** DONE [[./Sets.v::"Definition reflexive"][reflexive]]
+**** DONE [[./Sets.v::"Definition symmetric"][symmetric]]
+**** DONE [[./Sets.v::"Definition transitive"][transitive]]
+**** DONE [[./Sets.v::"Definition euclidian"][euclidian]]
+**** DONE [[./Sets.v::"Definition linear"][linear]]
+*** TODO Define all the logics from the modal cube
+*** TODO Excersize 5.5.1
+*** TODO Excersize 5.5.2
 ** TODO 5.6 Semantic Consequence
+*** TODO [/] Excersize 5.6.1
+**** TODO Excersize 5.6.1.1
+**** TODO Excersize 5.6.1.2
+*** TODO Excersize 5.6.2
+*** TODO Excersize 5.6.3
 * [/] Глава 6 "Propositional Modal Axiom Systems"
+* [/] Глава 7 "Propositional Modal Tableaus"
