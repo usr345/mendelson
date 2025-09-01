@@ -7,6 +7,8 @@ Require Import Coq.Arith.PeanoNat.
 Require Import Coq.Init.Logic.
 From Coq Require Import List.
 Import ListNotations.
+Require Import Logic.Classical_Prop.
+Require Import Logic.Classical_Pred_Type.
 
 Module Formula1 <: TFormula.
   (* Синтаксис модальной формулы *)
@@ -839,6 +841,32 @@ Proof.
       exact HΓy.
 Qed.
 
+(* Exercize 5.2.2 стр. 81 *)
+Proposition Ex5_2_2 {atom : Set} `(M : @Model atom) (X : @formula atom) : forall Γ : worlds, valid M Γ $box X <-> ~ diamond ~ X$.
+Proof.
+  hnf.
+  split.
+  - intro H.
+    unfold not.
+    intro H1.
+    destruct H1 as [Δ [Γ_R_Δ H1]].
+    specialize (H Δ Γ_R_Δ).
+    apply H1 in H.
+    exact H.
+  - intro H.
+    intros Δ Γ_R_Δ.
+    simpl in H.
+    specialize (not_ex_all_not _ _ H) as H1.
+    simpl in H1.
+    specialize (H1 Δ).
+    apply not_and_or in H1.
+    destruct H1 as [H1 | H1].
+    + apply H1 in Γ_R_Δ.
+      destruct Γ_R_Δ.
+    + apply NNPP in H1.
+      exact H1.
+Qed.
+
 (* Exercize 5.2.3.1 стр. 81 *)
 Proposition Ex5_2_3_1 {atom : Set} `(M : @Model atom) (Γ : worlds) (P : @formula atom) : ~ (exists w, accessible Γ w) -> valid M Γ $box P$.
 Proof.
@@ -926,7 +954,7 @@ Module Example_5_3_1.
 
   Proposition Gamma_box_P_or_Q : valid M1 Γ $box (P \/ Q)$.
   Proof.
-    cbn head.
+    hnf.
     intros w H.
     destruct w ; simpl in H.
     - destruct H.
@@ -971,7 +999,7 @@ Module Example_5_3_1.
   Proof.
     unfold not.
     intro H.
-    cbn head in H.
+    hnf in H.
     specialize (H Gamma_box_P_or_Q).
     destruct H.
     - apply Gamma_box_P_invalid in H.
@@ -1001,7 +1029,7 @@ Module Example_5_3_1.
   Proof.
     unfold not.
     intro H.
-    cbn head in H.
+    hnf in H.
     specialize (H Gamma_d_P_and_d_Q).
     destruct H as [w H].
     destruct w.
@@ -1064,7 +1092,7 @@ Module Example_5_3_2.
 
   Proposition Gamma_box_P : valid M1 Γ $box P$.
   Proof.
-    cbn head.
+    hnf.
     intros w H.
     destruct w ; simpl in H.
     - destruct H.
@@ -1076,9 +1104,9 @@ Module Example_5_3_2.
   Proposition Ex_5_3_2 : ~(valid M1 Γ $box P -> box box P$).
   Proof.
     intro H.
-    cbn head in H.
+    hnf in H.
     specialize (H Gamma_box_P).
-    cbn head in H.
+    hnf in H.
     specialize (H Δ).
     assert (H1 : @accessible (@frame atom M1) Γ Δ).
     {
@@ -1087,7 +1115,7 @@ Module Example_5_3_2.
     }
 
     specialize (H H1).
-    cbn head in H.
+    hnf in H.
     specialize (H Ω).
     clear H1.
     assert (H1 : @accessible (@frame atom M1) Δ Ω).
@@ -1108,38 +1136,38 @@ Module Example_5_3_3.
   Inductive atom : Set :=
   | P : atom.
 
-  Inductive worlds3 : Type :=
-  | Γ : worlds3
-  | Δ : worlds3.
+  Inductive worlds2 : Type :=
+  | Γ : worlds2
+  | Δ : worlds2.
 
-  Definition R3 (w1 w2 : worlds3) : Prop :=
+  Definition R2 (w1 w2 : worlds2) : Prop :=
   match w1, w2 with
   | Γ, Δ  => True
   | _, _ => False
   end.
 
-  Definition V3 (w : worlds3) (a : atom) : Prop :=
+  Definition V2 (w : worlds2) (a : atom) : Prop :=
     match w, a with
     | Δ, P => True
     | _, _ => False
     end.
 
-  Lemma worlds3_inhabited : inhabited worlds3.
+  Lemma worlds2_inhabited : inhabited worlds2.
   Proof.
     apply (inhabits Γ).
   Qed.
 
   Definition F1 : Frame :=
   {|
-    worlds := worlds3;
-    worlds_inh := worlds3_inhabited;
-    accessible := R3;
+    worlds := worlds2;
+    worlds_inh := worlds2_inhabited;
+    accessible := R2;
   |}.
 
   Definition M1 : Model :=
   {|
     frame := F1;
-    valuation := V3
+    valuation := V2
   |}.
 
   Definition f (a: atom) : @formula atom :=
@@ -1149,7 +1177,7 @@ Module Example_5_3_3.
 
   Proposition Gamma_diamond_P : valid M1 Γ $diamond P$.
   Proof.
-    cbn head.
+    hnf.
     exists Δ.
     split.
     - simpl.
@@ -1173,9 +1201,9 @@ Module Example_5_3_3.
   Proof.
     unfold not.
     intro H.
-    cbn head in H.
+    hnf in H.
     specialize (H Gamma_diamond_P).
-    cbn head in H.
+    hnf in H.
     specialize (H Δ).
     assert (Γ_R_Δ : @accessible (@frame atom M1) Γ Δ).
     {
@@ -1242,24 +1270,24 @@ Module Example_5_3_4.
 
   Proposition diamond_box_Gamma : valid M1 Γ $diamond box P /\ diamond box Q$.
   Proof.
-    cbn head.
+    hnf.
     split.
-    - cbn head.
+    - hnf.
       exists Δ.
       split.
       + simpl.
         exact I.
-      + cbn head.
+      + hnf.
         intros w Δ_R_w.
         destruct w ; simpl in Δ_R_w ; destruct Δ_R_w.
         simpl.
         exact I.
-    - cbn head.
+    - hnf.
       exists Ε.
       split.
       + simpl.
         exact I.
-      + cbn head.
+      + hnf.
         intros w Δ_R_w.
         destruct w ; simpl in Δ_R_w ; destruct Δ_R_w.
         simpl.
@@ -1270,7 +1298,7 @@ Module Example_5_3_4.
   Proof.
     unfold not.
     intro H.
-    cbn head in H.
+    hnf in H.
     specialize (H Ζ).
     assert (Δ_R_Ζ : @accessible (@frame atom M1) Δ Ζ).
     {
@@ -1279,17 +1307,17 @@ Module Example_5_3_4.
     }
 
     specialize (H Δ_R_Ζ).
-    cbn head in H.
+    hnf in H.
     destruct H as [H1 H2].
     simpl in H2.
-    destruct H2.
+    exact H2.
   Qed.
 
   Proposition conj_invalid_Ε : ~ (valid M1 Ε $box (P /\ Q)$).
   Proof.
     unfold not.
     intro H.
-    cbn head in H.
+    hnf in H.
     specialize (H Η).
     assert (Ε_R_Η : @accessible (@frame atom M1) Ε Η).
     {
@@ -1298,7 +1326,7 @@ Module Example_5_3_4.
     }
 
     specialize (H Ε_R_Η).
-    cbn head in H.
+    hnf in H.
     destruct H as [H1 H2].
     simpl in H1.
     destruct H1.
@@ -1309,18 +1337,15 @@ Module Example_5_3_4.
   Proof.
     unfold not.
     intro H.
-    cbn head in H.
+    hnf in H.
     specialize (H diamond_box_Gamma).
-    cbn head in H.
+    hnf in H.
     destruct H as [w [Γ_R_w Hvalid]].
-    destruct w ; simpl in Γ_R_w.
-    - destruct Γ_R_w.
+    destruct w ; simpl in Γ_R_w ; destruct Γ_R_w.
     - specialize (conj_invalid_Δ Hvalid) as Hcontra.
-      destruct Hcontra.
+      exact Hcontra.
     - specialize (conj_invalid_Ε Hvalid) as Hcontra.
-      destruct Hcontra.
-    - destruct Γ_R_w.
-    - destruct Γ_R_w.
+      exact Hcontra.
   Qed.
 
 End Example_5_3_4.
@@ -1383,7 +1408,7 @@ Module Example_5_3_5.
     - unfold n_box.
       simpl.
       exact I.
-    - cbn head.
+    - hnf.
       intros w Δ_R_w.
       destruct w.
       + simpl in Δ_R_w.
@@ -1396,7 +1421,7 @@ Module Example_5_3_5.
     intro n.
     destruct n as [|n'].
     - unfold n_box.
-      cbn head.
+      hnf.
       intros w Γ_R_w.
       simpl.
       destruct w.
@@ -1404,7 +1429,7 @@ Module Example_5_3_5.
         destruct Γ_R_w.
       + simpl.
         exact I.
-    - cbn head.
+    - hnf.
       intros w Γ_R_w.
       destruct w.
       + simpl in Γ_R_w.
@@ -1416,7 +1441,7 @@ Module Example_5_3_5.
   Proof.
     unfold not.
     intros n H.
-    cbn head in H.
+    hnf in H.
     specialize (Ex_5_3_5_2 n) as H1.
     specialize (H H1).
     simpl in H.
@@ -1430,18 +1455,23 @@ Example Ex5_3_7 {atom : Set} `(M : @Model atom) (w0 : worlds) (P : @formula atom
 Proof.
   intro Htrans.
   unfold transitive in Htrans.
-  simpl.
-  intros Hbox w Hw0_R_w w1 Hw_R_w1.
-  specialize (Htrans w0 w w1).
-  specialize (Htrans Hw0_R_w Hw_R_w1) as Hw0_R_w1.
-  specialize (Hbox w1 Hw0_R_w1).
+  hnf.
+  intros Hbox.
+  hnf.
+  intros w1 Hw0_R_w1.
+  hnf.
+  intros w2 Hw1_R_w2.
+  specialize (Htrans w0 w1 w2).
+  specialize (Htrans Hw0_R_w1 Hw1_R_w2) as Hw0_R_w2.
+  hnf in Hbox.
+  specialize (Hbox w2 Hw0_R_w2).
   exact Hbox.
 Qed.
 
 (* Excersize 5.3.4.1 left стр. 84 *)
 Proposition E5_3_4_1_left {atom : Set} `(M : @Model atom) (w0 : worlds) (P Q : @formula atom) : valid M w0 $box P /\ box Q -> box (P /\ Q)$.
 Proof.
-  cbn head.
+  hnf.
   intros H.
   simpl.
   intros w w0_R_w.
@@ -1646,7 +1676,7 @@ Definition LogicS5 (F : Frame) := FrameRefl F * FrameSym F * FrameTrans F.
 Definition LogicS5' (F : Frame) := FrameRefl F * FrameEucl F.
 Definition LogicS43 (F : Frame) := FrameRefl F * FrameTrans F * FrameLinear F.
 
-Theorem E5_4_7_1 {atom : Set} `(F : Frame) (S43 : LogicS43 F) (P Q : @formula atom) :
+Proposition E5_4_7_1 {atom : Set} `(F : Frame) (S43 : LogicS43 F) (P Q : @formula atom) :
   valid_in_frame F $box (box P -> box Q) \/ box(box Q -> box P)$.
 Proof.
   simpl.
@@ -1661,10 +1691,30 @@ Proof.
 
   unfold valid_in_frame.
   intros V w.
+  specialize (classic ((valid {| frame := F; valuation := V |} w $box (box P -> box Q)$) \/ (valid {| frame := F; valuation := V |} w $box (box Q -> box P)$))) as H.
+  destruct H.
+  - exact H.
+  - apply not_or_and in H.
+    destruct H as [H1 H2].
+    simpl in H1.
+    apply not_all_ex_not in H1.
+    destruct H1 as [w1 H1].
+    apply imply_to_and in H1.
+    destruct H1 as [w_R_w1 H1].
+    simpl in H2.
+    apply not_all_ex_not in H2.
+    destruct H2 as [w2 H2].
+    apply imply_to_and in H2.
+    destruct H2 as [w_R_w2 H2].
+    specialize (Hlinear w w1 w2 w_R_w1 w_R_w2) as H3.
+    destruct H3 as [H3 | H3].
+    + hnf.
 
+    apply not_all_ex_not in H1.
+    destruct H1 as [H3 H4].
 Admitted.
 
-Theorem E5_4_7_2 {atom : Set} (M : @Model atom) (S43 : LogicS43 (@frame atom M)) (w0 : worlds) (P : @formula atom) : ~(valid M w0 $P -> box diamond P$).
+Proposition E5_4_7_2 {atom : Set} (M : @Model atom) (S43 : LogicS43 (@frame atom M)) (w0 : worlds) (P : @formula atom) : ~(valid M w0 $P -> box diamond P$).
 Proof.
   simpl.
   intro H.
@@ -1784,11 +1834,13 @@ Module Tableaus.
     mem_node {|world := w; f := $~ ~φ$; sign := true|} Γ ->
     step Γ [ {| nodes := {|world := w; f := φ; sign := true|} :: Γ.(nodes);
                edges := Γ.(edges) |} ]
+  (* узел с одним отрицанием *)
+  (* или убрать пометки? *)
   | diamond_T Γ w (i : I) φ (w' : nat) :
     mem_node {|world := w; f := $diamond φ$; sign := true|} Γ ->
         (* add fresh world w' *)
     step Γ [ {| nodes := {|world := w'; f := φ; sign := true|} :: Γ.(nodes);
-               edges := {|iE:=i; src := w; dst := w'|} :: Γ.(edges) |} ]
+                edges := {|iE:=i; src := w; dst := w'|} :: Γ.(edges) |} ]
   | box_F Γ w (i : I) φ (w' : nat) :
     mem_node {|world := w; f := $box φ$; sign := false|} Γ ->
         (* add fresh world w' *)
@@ -1805,7 +1857,9 @@ Module Tableaus.
     step Γ [ {| nodes := {|world := w'; f := φ; sign := false|} :: Γ.(nodes);
                edges := Γ.(edges) |} ].
 
-
+  (* Можно доказать, что atomically closed, а потом по индукции доказать,
+    что из атомарной замкнутости следует замкнутость для любых формул
+  *)
   (* Branch closes if it has w F and w ~F together *)
   Definition closed {atom : Set} {I : Type} (Γ : @branch atom I) : Prop :=
   exists w (F : @formula atom),
@@ -1813,7 +1867,7 @@ Module Tableaus.
     mem_node {|world := w; f:= F; sign := false|} Γ.
 
   Inductive closed_tree {atom : Set} {I : Type} : @branch atom I -> Prop :=
-  | ct_closed Γ :
+  | ct_closed (Γ : @branch atom I) :
     closed Γ -> closed_tree Γ
   | ct_step Γ Δs :
     step Γ Δs ->
@@ -1865,3 +1919,7 @@ Module Tableaus.
         * auto.
   Qed.
 End Tableaus.
+
+Module Goldblatt.
+Proposition Ex_1_11_1 {atom : Set} `(F : Frame) : (euclidian (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $box φ -> box box φ$).
+End Goldblatt.
