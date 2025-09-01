@@ -1920,5 +1920,78 @@ Module Tableaus.
 End Tableaus.
 
 Module Goldblatt.
-Proposition Ex_1_11_1 {atom : Set} `(F : Frame) : (euclidian (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $box φ -> box box φ$).
+Import Kripke.
+
+(* Стр. 12 Задача № 5 *)
+Proposition Ex_R_5 {atom : Set} `(F : Frame) : (euclidian (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $diamond φ -> box diamond φ$).
+  intro Heucl.
+  unfold euclidian in Heucl.
+  intros φ.
+  hnf.
+  intros V Γ Hdiamond.
+  simpl in Hdiamond.
+  destruct Hdiamond as [Δ [Γ_R_Δ Δ_φ]].
+  hnf.
+  intros Ω Γ_R_Ω.
+  hnf.
+  specialize (Heucl Γ Ω Δ).
+  specialize (Heucl Γ_R_Ω Γ_R_Δ) as Ω_R_Δ.
+  exists Δ.
+  split.
+  - exact Ω_R_Δ.
+  - exact Δ_φ.
+Qed.
+
+(* Стр. 12 Задача № 6 *)
+Proposition Ex_R_6 {atom : Set} `(F : Frame) : (partially_functional (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $diamond φ -> box φ$).
+Proof.
+  intro H_par_fun.
+  unfold partially_functional in H_par_fun.
+  intros φ.
+  hnf.
+  intros V Γ Hdiamond.
+  destruct Hdiamond as [Δ [Γ_R_Δ Δ_φ]].
+  hnf.
+  intros Ω Γ_R_Ω.
+  specialize (H_par_fun Γ Ω Δ).
+  specialize (H_par_fun Γ_R_Ω Γ_R_Δ) as Heq.
+  rewrite Heq.
+  exact Δ_φ.
+Qed.
+
+(* Стр. 12 Задача № 7 *)
+Proposition Ex_R_7 {atom : Set} `(F : Frame) : (functional (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $diamond φ <-> box φ$).
+Proof.
+  intro Hfun.
+  unfold functional in Hfun.
+  intros φ.
+  hnf.
+  intros V Γ.
+  hnf.
+  split.
+  - hnf.
+    intro Hdiamond.
+    simpl in Hdiamond.
+    destruct Hdiamond as [Δ [Γ_R_Δ Δ_φ]].
+    hnf.
+    intros Ω Γ_R_Ω.
+    specialize (Hfun Γ).
+    destruct Hfun as [w [Γ_R_w Hfun]].
+    specialize (Hfun Δ Γ_R_Δ) as Heq1.
+    specialize (Hfun Ω Γ_R_Ω) as Heq2.
+    rewrite <-Heq1 in Heq2.
+    rewrite Heq2.
+    exact Δ_φ.
+  - hnf.
+    intro Hbox.
+    simpl in Hbox.
+    simpl.
+    specialize (Hfun Γ).
+    destruct Hfun as [Δ [Γ_R_Δ Hfun]].
+    exists Δ.
+    split.
+    + exact Γ_R_Δ.
+    + specialize (Hbox Δ Γ_R_Δ) as Δ_φ.
+      exact Δ_φ.
+Qed.
 End Goldblatt.
