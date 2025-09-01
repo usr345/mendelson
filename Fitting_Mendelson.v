@@ -1709,9 +1709,8 @@ Proof.
     specialize (Hlinear w w1 w2 w_R_w1 w_R_w2) as H3.
     destruct H3 as [H3 | H3].
     + hnf.
-
     apply not_all_ex_not in H1.
-    destruct H1 as [H3 H4].
+    destruct H1 as [H5 H6].
 Admitted.
 
 Proposition E5_4_7_2 {atom : Set} (M : @Model atom) (S43 : LogicS43 (@frame atom M)) (w0 : worlds) (P : @formula atom) : ~(valid M w0 $P -> box diamond P$).
