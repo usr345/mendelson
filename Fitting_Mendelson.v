@@ -2017,10 +2017,12 @@ Proof.
 Qed.
 
 (* Стр. 12 Задача № 9 *)
-Proposition Ex_R_10 {atom : Set} `(F : Frame) : (weakly_directed (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $diamond box φ -> box diamond φ$).
+Proposition Ex_R_9 {atom : Set} `(F : Frame) : (weakly_connected (@accessible F)) -> (forall φ ψ : @formula atom, valid_in_frame F $box((φ /\ box φ) -> ψ) \/ box((ψ /\ box ψ) -> φ)$).
 Proof.
+  intro Hw_connected.
+  unfold weakly_connected in Hw_connected.
+  intros φ ψ.
 
-weakly_connected
 
 (* Стр. 12 Задача № 10 *)
 Proposition Ex_R_10 {atom : Set} `(F : Frame) : (weakly_directed (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $diamond box φ -> box diamond φ$).
