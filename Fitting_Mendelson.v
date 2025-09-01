@@ -1964,7 +1964,7 @@ Proposition Ex_R_7 {atom : Set} `(F : Frame) : (functional (@accessible F)) -> (
 Proof.
   intro Hfun.
   unfold functional in Hfun.
-  intros φ.
+  intro φ.
   hnf.
   intros V Γ.
   hnf.
@@ -1993,5 +1993,58 @@ Proof.
     + exact Γ_R_Δ.
     + specialize (Hbox Δ Γ_R_Δ) as Δ_φ.
       exact Δ_φ.
+Qed.
+
+(* Стр. 12 Задача № 8 *)
+Proposition Ex_R_8 {atom : Set} `(F : Frame) : (weakly_dense (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $box box φ -> box φ$).
+Proof.
+  intro Hw_dense.
+  unfold weakly_dense in Hw_dense.
+  intro φ.
+  hnf.
+  intros V Γ.
+  hnf.
+  intro H2box.
+  hnf.
+  intros Δ Γ_R_Δ.
+  specialize (Hw_dense Γ Δ Γ_R_Δ).
+  destruct Hw_dense as [Ω [Γ_R_Ω Ω_R_Δ]].
+  hnf in H2box.
+  specialize (H2box Ω Γ_R_Ω).
+  hnf in H2box.
+  specialize (H2box Δ Ω_R_Δ) as HΔ_φ.
+  exact HΔ_φ.
+Qed.
+
+(* Стр. 12 Задача № 9 *)
+Proposition Ex_R_10 {atom : Set} `(F : Frame) : (weakly_directed (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $diamond box φ -> box diamond φ$).
+Proof.
+
+weakly_connected
+
+(* Стр. 12 Задача № 10 *)
+Proposition Ex_R_10 {atom : Set} `(F : Frame) : (weakly_directed (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $diamond box φ -> box diamond φ$).
+Proof.
+  intro Hw_directed.
+  unfold weakly_directed in Hw_directed.
+  intro φ.
+  hnf.
+  intros V Γ.
+  hnf.
+  intro Hd_box.
+  hnf in Hd_box.
+  destruct Hd_box as [Δ [Γ_R_Δ Hbox]].
+  hnf in Hbox.
+  hnf.
+  intros Ω Γ_R_Ω.
+  hnf.
+  specialize (Hw_directed Γ Ω Δ).
+  specialize (Hw_directed Γ_R_Ω Γ_R_Δ).
+  destruct Hw_directed as [Ε [Ω_R_Ε Δ_R_Ε]].
+  exists Ε.
+  split.
+  - exact Ω_R_Ε.
+  - specialize (Hbox Ε Δ_R_Ε) as HΕ_φ.
+    exact HΕ_φ.
 Qed.
 End Goldblatt.

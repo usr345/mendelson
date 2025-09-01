@@ -71,6 +71,16 @@ Definition partially_functional {U : Type} (R: relation U) :=
 Definition functional {U : Type} (R: relation U) :=
   forall x : U, exists y : U, (R x y /\ forall z : U, R x z -> z = y).
 
+Definition weakly_dense {U : Type} (R: relation U) :=
+  forall x y : U, R x y -> exists z : U, R x z /\ R z y.
+
+Definition weakly_connected {U : Type} (R: relation U) :=
+  forall x y z: U, R x y -> R x z -> (R y z \/ y = z \/ R z y).
+
+Definition weakly_directed {U : Type} (R: relation U) :=
+  forall x y z: U, R x y -> R x z -> exists v : U, (R y v /\ R z v).
+
+
 Lemma relf_eucl_symmetric {U : Type} (R: relation U) :
 reflexive R -> euclidian R -> symmetric R.
 Proof.
