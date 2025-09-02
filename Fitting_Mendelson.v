@@ -1625,7 +1625,7 @@ Proof.
   - exact HwP.
 Qed.
 
-Theorem E5_4_5_trans_valid {atom : Set} `(F : Frame) : (transitive (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $box φ -> box box φ$).
+Theorem E5_4_5_trans_valid {atom : Set} (F : Frame) : (transitive (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $box φ -> box box φ$).
 Proof.
   intro Htrans.
   unfold transitive in Htrans.
@@ -1640,7 +1640,7 @@ Proof.
   exact Hw3_p.
 Qed.
 
-Theorem E5_4_5_valid_trans {atom : Set} (Hinh : inhabited atom) `(F : Frame) :
+Theorem E5_4_5_valid_trans {atom : Set} (Hinh : inhabited atom) (F : Frame) :
   (forall φ : @formula atom, valid_in_frame F $box φ -> box box φ$) -> transitive (@accessible F).
 Proof.
   intro H.
@@ -1667,7 +1667,7 @@ Proof.
   exact H.
 Qed.
 
-Theorem E5_4_5 {atom : Set} (Hinh : inhabited atom) `(F : Frame) : (transitive accessible) <-> (forall φ : @formula atom, valid_in_frame F $box φ -> box box φ$).
+Theorem E5_4_5 {atom : Set} (Hinh : inhabited atom) (F : Frame) : (transitive accessible) <-> (forall φ : @formula atom, valid_in_frame F $box φ -> box box φ$).
 Proof.
   split.
   - apply E5_4_5_trans_valid.
@@ -1952,7 +1952,7 @@ End Tableaus.
 Module Goldblatt.
 Import Kripke.
 
-(* Стр. 12 Задача № 5 *)
+(* Стр. 12 Задача № 5 -> *)
 Proposition Ex_R_5 {atom : Set} `(F : Frame) : (euclidian (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $diamond φ -> box diamond φ$).
   intro Heucl.
   unfold euclidian in Heucl.
@@ -1970,6 +1970,52 @@ Proposition Ex_R_5 {atom : Set} `(F : Frame) : (euclidian (@accessible F)) -> (f
   split.
   - exact Ω_R_Δ.
   - exact Δ_φ.
+Qed.
+
+(* Стр. 12 Задача № 5 <- *)
+Theorem E5_4_5_valid_eucl {atom : Set} (Hinh : inhabited atom) (F : Frame) `{Heq_dec: EqDec F.(worlds)} :
+  (forall φ : @formula atom, valid_in_frame F $diamond φ -> box diamond φ$) -> euclidian (@accessible F).
+Proof.
+  intro H.
+  unfold valid_in_frame in H.
+  unfold euclidian.
+  intros w v u w_R_v w_R_u.
+  set (V := fun (x : worlds) (_ : atom) =>
+              if eqb x u then True else False
+      ).
+
+  destruct Hinh as [P].
+  assert (Hu_P : valid {| frame := F; valuation := V |} u (f_atom P)).
+  {
+    simpl.
+    unfold V.
+    rewrite eqb_reflexive.
+    exact I.
+  }
+
+  specialize (H (f_atom P) V w) as H1.
+  unfold implication in H1.
+  hnf in H1.
+  assert (Hdiamond : valid {| frame := F; valuation := V |} w (f_diamond (f_atom P))).
+  {
+    hnf.
+    exists u.
+    split.
+    - exact w_R_u.
+    - exact Hu_P.
+  }
+
+  specialize (H1 Hdiamond).
+  hnf in H1.
+  specialize (H1 v w_R_v).
+  simpl in H1.
+  destruct H1 as [w1 [w_R_w1 Hw1_P]].
+  unfold V in Hw1_P.
+  destruct (eqb w1 u) eqn:Heq.
+  - rewrite eqb_eq in Heq.
+    rewrite Heq in w_R_w1.
+    exact w_R_w1.
+  - destruct Hw1_P.
 Qed.
 
 (* Стр. 12 Задача № 6 *)
