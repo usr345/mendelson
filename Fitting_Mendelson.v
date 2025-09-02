@@ -1973,7 +1973,7 @@ Proposition Ex_R_5 {atom : Set} `(F : Frame) : (euclidian (@accessible F)) -> (f
 Qed.
 
 (* Стр. 12 Задача № 5 <- *)
-Theorem E5_4_5_valid_eucl {atom : Set} (Hinh : inhabited atom) (F : Frame) `{Heq_dec: EqDec F.(worlds)} :
+Theorem Ex_R_5_eucl {atom : Set} (Hinh : inhabited atom) (F : Frame) `{Heq_dec: EqDec F.(worlds)} :
   (forall φ : @formula atom, valid_in_frame F $diamond φ -> box diamond φ$) -> euclidian (@accessible F).
 Proof.
   intro H.
@@ -2018,7 +2018,7 @@ Proof.
   - destruct Hw1_P.
 Qed.
 
-(* Стр. 12 Задача № 6 *)
+(* Стр. 12 Задача № 6 -> *)
 Proposition Ex_R_6 {atom : Set} `(F : Frame) : (partially_functional (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $diamond φ -> box φ$).
 Proof.
   intro H_par_fun.
@@ -2033,6 +2033,52 @@ Proof.
   specialize (H_par_fun Γ_R_Ω Γ_R_Δ) as Heq.
   rewrite Heq.
   exact Δ_φ.
+Qed.
+
+(* Стр. 12 Задача № 6 <- *)
+Theorem Ex_R_6_par_fun {atom : Set} (Hinh : inhabited atom) (F : Frame) `{Heq_dec: EqDec F.(worlds)} :
+  (forall φ : @formula atom, valid_in_frame F $diamond φ -> box φ$) -> partially_functional (@accessible F).
+Proof.
+  intro H.
+  unfold valid_in_frame in H.
+  unfold partially_functional.
+  intros w v u w_R_v w_R_u.
+  set (V := fun (x : worlds) (_ : atom) =>
+              if eqb x v then True else False
+      ).
+
+  destruct Hinh as [P].
+  specialize (H (f_atom P) V).
+  unfold implication in H.
+  assert (Hv_P : valid {| frame := F; valuation := V |} v (f_atom P)).
+  {
+    simpl.
+    unfold V.
+    rewrite eqb_reflexive.
+    exact I.
+  }
+
+  specialize (H w).
+  hnf in H.
+  assert (Hdiamond: valid {| frame := F; valuation := V |} w (f_diamond (f_atom P))).
+  {
+    hnf.
+    exists v.
+    split.
+    - exact w_R_v.
+    - exact Hv_P.
+  }
+
+  specialize (H Hdiamond).
+  hnf in H.
+  specialize (H u w_R_u).
+  simpl in H.
+  unfold V in H.
+  destruct (eqb u v) eqn:Heq.
+  - rewrite eqb_eq in Heq.
+    symmetry in Heq.
+    exact Heq.
+  - destruct H.
 Qed.
 
 (* Стр. 12 Задача № 7 *)
@@ -2070,6 +2116,21 @@ Proof.
     + specialize (Hbox Δ Γ_R_Δ) as Δ_φ.
       exact Δ_φ.
 Qed.
+
+(* Стр. 12 Задача № 7 <- *)
+Theorem Ex_R_7_functional {atom : Set} (Hinh : inhabited atom) (F : Frame) `{Heq_dec: EqDec F.(worlds)} :
+  (forall φ : @formula atom, valid_in_frame F $diamond φ <-> box φ$) -> functional (@accessible F).
+Proof.
+  intro H.
+  unfold functional.
+  intro w.
+  destruct Hinh as [P].
+  specialize (H (f_atom P)).
+  hnf in H.
+  unfold equivalence in H.
+  unfold conjunction in H.
+  unfold implication in H.
+  Abort.
 
 (* Стр. 12 Задача № 8 *)
 Proposition Ex_R_8 {atom : Set} `(F : Frame) : (weakly_dense (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $box box φ -> box φ$).
