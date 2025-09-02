@@ -867,6 +867,36 @@ Proof.
       exact H1.
 Qed.
 
+Proposition meta_Ex5_2_2 {atom : Set} `(M : @Model atom) (X : @formula atom) : forall Γ : worlds, valid M Γ $box X$ <-> valid M Γ $~ diamond ~ X$.
+Proof.
+  intro Γ.
+  split.
+  - intro Hbox.
+    hnf in Hbox.
+    hnf.
+    intro Hnd.
+    hnf in Hnd.
+    destruct Hnd as [Δ [Γ_R_Δ Hnd]].
+    hnf in Hnd.
+    specialize (Hbox Δ Γ_R_Δ).
+    apply Hnd in Hbox.
+    exact Hbox.
+  - intro Hnd.
+    hnf in Hnd.
+    hnf.
+    intros Δ Γ_R_Δ.
+    simpl in Hnd.
+    specialize (not_ex_all_not _ _ Hnd) as H1.
+    simpl in H1.
+    specialize (H1 Δ).
+    apply not_and_or in H1.
+    destruct H1.
+    + apply H in Γ_R_Δ.
+      destruct Γ_R_Δ.
+    + apply NNPP in H.
+      exact H.
+Qed.
+
 (* Exercize 5.2.3.1 стр. 81 *)
 Proposition Ex5_2_3_1 {atom : Set} `(M : @Model atom) (Γ : worlds) (P : @formula atom) : ~ (exists w, accessible Γ w) -> valid M Γ $box P$.
 Proof.
@@ -2022,7 +2052,40 @@ Proof.
   intro Hw_connected.
   unfold weakly_connected in Hw_connected.
   intros φ ψ.
-
+  hnf.
+  intros V Γ.
+  hnf.
+  apply NNPP.
+  unfold not.
+  intro H.
+  apply not_or_and in H.
+  destruct H as [H1 H2].
+  unfold not in H1, H2.
+  rewrite meta_Ex5_2_2 in H1, H2.
+  cbn in H1, H2.
+  apply NNPP in H1, H2.
+  destruct H1 as [Δ [Γ_R_Δ HΔ]].
+  destruct H2 as [Ω [Γ_R_Ω HΩ]].
+  specialize (not_imply_elim _ _ HΔ) as H1.
+  specialize (not_imply_elim2 _ _ HΔ) as Δ_n_ψ.
+  specialize (not_imply_elim _ _ HΩ) as H3.
+  specialize (not_imply_elim2 _ _ HΩ) as Ω_n_φ.
+  clear HΔ HΩ.
+  specialize (Hw_connected Γ Δ Ω).
+  specialize (Hw_connected Γ_R_Δ Γ_R_Ω).
+  destruct H1 as [Δ_φ Δ_box_φ].
+  destruct H3 as [Ω_ψ Ω_box_ψ].
+  destruct Hw_connected as [Δ_R_Ω | [Heq | Ω_R_Δ]].
+  - specialize (Δ_box_φ Ω Δ_R_Ω) as Ω_φ.
+    apply Ω_n_φ in Ω_φ.
+    exact Ω_φ.
+  - rewrite Heq in Δ_φ.
+    apply Ω_n_φ in Δ_φ.
+    exact Δ_φ.
+  - specialize (Ω_box_ψ Δ Ω_R_Δ) as Δ_ψ.
+    apply Δ_n_ψ in Δ_ψ.
+    exact Δ_ψ.
+Qed.
 
 (* Стр. 12 Задача № 10 *)
 Proposition Ex_R_10 {atom : Set} `(F : Frame) : (weakly_directed (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $diamond box φ -> box diamond φ$).
