@@ -2194,7 +2194,7 @@ Proof.
     exact Δ_ψ.
 Qed.
 
-(* Стр. 12 Задача № 10 *)
+(* Стр. 12 Задача № 10 -> *)
 Proposition Ex_R_10 {atom : Set} `(F : Frame) : (weakly_directed (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $diamond box φ -> box diamond φ$).
 Proof.
   intro Hw_directed.
@@ -2219,4 +2219,51 @@ Proof.
   - specialize (Hbox Ε Δ_R_Ε) as HΕ_φ.
     exact HΕ_φ.
 Qed.
+
+(* Стр. 12 Задача № 10 <- *)
+Theorem Ex_R_10_weakly_directed {atom : Set} (Hinh : inhabited atom) (F : Frame) :
+  (forall φ : @formula atom, valid_in_frame F $diamond box φ -> box diamond φ$) -> weakly_directed (@accessible F).
+Proof.
+  intro H.
+  unfold weakly_directed.
+  intros Γ Δ Ω Γ_R_Δ Γ_R_Ω.
+  set (V := fun (x : worlds) (_ : atom) => accessible Ω x).
+
+  destruct Hinh as [P].
+  specialize (H (f_atom P) V).
+  unfold implication in H.
+  assert (Hbox_Ω : valid {| frame := F; valuation := V |} Ω
+                     (f_box (f_atom P))).
+  {
+    simpl.
+    intros Ε Ω_R_Ε.
+    unfold V.
+    exact Ω_R_Ε.
+  }
+
+  assert (Hbox_dia_Γ : valid {| frame := F; valuation := V |} Γ
+                         (f_diamond (f_box (f_atom P)))).
+  {
+    hnf.
+    exists Ω.
+    split.
+    - exact Γ_R_Ω.
+    - exact Hbox_Ω.
+  }
+
+  specialize (H Γ) as H1.
+  hnf in H1.
+  specialize (H1 Hbox_dia_Γ) as Hdia_box_Γ.
+  hnf in Hdia_box_Γ.
+  specialize (Hdia_box_Γ Δ Γ_R_Δ) as H_Δ.
+  hnf in H_Δ.
+  destruct H_Δ as [Ε [Δ_R_Ε Ε_P]].
+  simpl in Ε_P.
+  unfold V in Ε_P.
+  exists Ε.
+  split.
+  - exact Δ_R_Ε.
+  - exact Ε_P.
+Qed.
+
 End Goldblatt.
