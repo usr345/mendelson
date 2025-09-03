@@ -220,6 +220,30 @@ Module Formula.
       eqb_eq := formula_beq_eq;
     }.
 
+  Theorem meta_contraposition : forall P Q: Prop, (P -> Q) -> (~Q -> ~P).
+  Proof.
+    intros P Q H HnQ.
+    unfold not.
+    intro Hp.
+    unfold not in HnQ.
+    apply HnQ.
+    specialize (H Hp).
+    exact H.
+  Qed.
+
+  Lemma meta_contraposition_rev :  forall (P Q : Prop), (~Q -> ~P) -> (P -> Q) .
+    unfold not.
+    intros P Q.
+    intros A B.
+    destruct (classic Q) as [Q_holds|NQ_holds].
+    - apply Q_holds.
+    - unfold not in NQ_holds.
+      specialize (A NQ_holds).
+      specialize (A B).
+      destruct A.
+  Qed.
+
+
 End Formula.
 Export Formula.
 
@@ -2132,7 +2156,7 @@ Proof.
   unfold implication in H.
   Abort.
 
-(* Стр. 12 Задача № 8 *)
+(* Стр. 12 Задача № 8 -> *)
 Proposition Ex_R_8 {atom : Set} `(F : Frame) : (weakly_dense (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $box box φ -> box φ$).
 Proof.
   intro Hw_dense.
@@ -2152,6 +2176,30 @@ Proof.
   specialize (H2box Δ Ω_R_Δ) as HΔ_φ.
   exact HΔ_φ.
 Qed.
+
+(* Стр. 12 Задача № 8 <- *)
+Theorem Ex_R_8_weakly_dense {atom : Set} (Hinh : inhabited atom) (F : Frame) `{Heq_dec: EqDec F.(worlds)}:
+  (forall φ : @formula atom, valid_in_frame F $box box φ -> box φ$) -> weakly_dense (@accessible F).
+Proof.
+  apply meta_contraposition_rev.
+  intro H.
+  unfold weakly_dense in H.
+  unfold not.
+  intro H1.
+  apply not_all_ex_not in H.
+  destruct H as [Γ H].
+  apply not_all_ex_not in H.
+  destruct H as [Δ H].
+  specialize (not_imply_elim _ _ H) as Γ_R_Δ.
+  apply not_imply_elim2 in H as H.
+  destruct Hinh as [P].
+  specialize (H1(f_atom P)).
+  hnf in H1.
+  unfold implication in H1.
+  set (V := fun (x : worlds) (_ : atom) =>
+              if eqb x Δ then True else False
+      ).
+  specialize (H1 V).
 
 (* Стр. 12 Задача № 9 *)
 Proposition Ex_R_9 {atom : Set} `(F : Frame) : (weakly_connected (@accessible F)) -> (forall φ ψ : @formula atom, valid_in_frame F $box((φ /\ box φ) -> ψ) \/ box((ψ /\ box ψ) -> φ)$).
