@@ -2125,8 +2125,8 @@ Proof.
     destruct Hfun as [w [Γ_R_w Hfun]].
     specialize (Hfun Δ Γ_R_Δ) as Heq1.
     specialize (Hfun Ω Γ_R_Ω) as Heq2.
-    rewrite <-Heq1 in Heq2.
-    rewrite Heq2.
+    rewrite Heq1 in Heq2.
+    rewrite <-Heq2.
     exact Δ_φ.
   - hnf.
     intro Hbox.
@@ -2148,12 +2148,14 @@ Proof.
   intro H.
   unfold functional.
   intro w.
+  unfold unique.
   destruct Hinh as [P].
   specialize (H (f_atom P)).
   hnf in H.
   unfold equivalence in H.
   unfold conjunction in H.
   unfold implication in H.
+
   Abort.
 
 (* Стр. 12 Задача № 8 -> *)
@@ -2197,9 +2199,38 @@ Proof.
   hnf in H1.
   unfold implication in H1.
   set (V := fun (x : worlds) (_ : atom) =>
-              if eqb x Δ then True else False
+              exists w, (accessible Γ w) /\ (accessible w x)
       ).
-  specialize (H1 V).
+
+  specialize (H1 V Γ).
+  assert (H2 : valid {| frame := F; valuation := V |} Γ (f_box (f_box (f_atom P)))).
+  {
+    hnf.
+    intros Ε Γ_R_Ε.
+    hnf.
+    intros Ζ Ε_R_Ζ.
+    hnf.
+    exists Ε.
+    exact (conj Γ_R_Ε Ε_R_Ζ).
+  }
+
+  hnf in H1.
+  specialize (H1 H2).
+  assert (H3 : valid {| frame := F; valuation := V |} Γ (f_not (f_box (f_atom P)))).
+  {
+    hnf.
+    intro Hbox.
+    hnf in Hbox.
+    specialize (Hbox Δ Γ_R_Δ).
+    hnf in Hbox.
+    apply H in Hbox.
+    exact Hbox.
+  }
+
+  hnf in H3.
+  apply H3 in H1.
+  exact H1.
+Qed.
 
 (* Стр. 12 Задача № 9 *)
 Proposition Ex_R_9 {atom : Set} `(F : Frame) : (weakly_connected (@accessible F)) -> (forall φ ψ : @formula atom, valid_in_frame F $box((φ /\ box φ) -> ψ) \/ box((ψ /\ box ψ) -> φ)$).

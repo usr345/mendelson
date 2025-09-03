@@ -69,7 +69,7 @@ Definition partially_functional {U : Type} (R: relation U) :=
   forall x y z : U, R x y -> R x z -> y = z.
 
 Definition functional {U : Type} (R: relation U) :=
-  forall x : U, exists y : U, (R x y /\ forall z : U, R x z -> z = y).
+  forall x : U, exists! y : U, R x y.
 
 Definition weakly_dense {U : Type} (R: relation U) :=
   forall x y : U, R x y -> exists z : U, R x z /\ R z y.
