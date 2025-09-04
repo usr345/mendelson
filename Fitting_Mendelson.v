@@ -220,7 +220,7 @@ Module Formula.
       eqb_eq := formula_beq_eq;
     }.
 
-  Theorem meta_contraposition : forall P Q: Prop, (P -> Q) -> (~Q -> ~P).
+  Lemma meta_contraposition : forall P Q: Prop, (P -> Q) -> (~Q -> ~P).
   Proof.
     intros P Q H HnQ.
     unfold not.
@@ -2105,7 +2105,7 @@ Proof.
   - destruct H.
 Qed.
 
-(* Стр. 12 Задача № 7 *)
+(* Стр. 12 Задача № 7 -> *)
 Proposition Ex_R_7 {atom : Set} `(F : Frame) : (functional (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $diamond φ <-> box φ$).
 Proof.
   intro Hfun.
@@ -2147,7 +2147,7 @@ Theorem Ex_R_7_functional {atom : Set} (Hinh : inhabited atom) (F : Frame) `{Heq
 Proof.
   intro H.
   unfold functional.
-  intro w.
+  intro Γ.
   unfold unique.
   destruct Hinh as [P].
   specialize (H (f_atom P)).
@@ -2155,10 +2155,29 @@ Proof.
   unfold equivalence in H.
   unfold conjunction in H.
   unfold implication in H.
+  set (V := fun (x : worlds) (_ : atom) => accessible Γ x).
+  assert (Hbox : valid {| frame := F; valuation := V |} Γ (f_box (f_atom P))).
+  {
+    hnf.
+    intros Δ Γ_R_Δ.
+    simpl.
+    unfold V.
+    exact Γ_R_Δ.
+  }
 
+  specialize (H V Γ) as H1.
+  hnf in H1.
+  destruct H1 as [H1 H2].
+  hnf in H1.
+  hnf in H2.
+  specialize (H2 Hbox) as Hdiamond.
+  simpl in Hdiamond.
+
+  set (V := fun (x : worlds) (_ : atom) =>
+              exists w, (accessible Γ w) /\ (accessible w x)
+      ).
   Abort.
 
-(* Стр. 12 Задача № 8 -> *)
 Proposition Ex_R_8 {atom : Set} `(F : Frame) : (weakly_dense (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $box box φ -> box φ$).
 Proof.
   intro Hw_dense.
@@ -2179,7 +2198,6 @@ Proof.
   exact HΔ_φ.
 Qed.
 
-(* Стр. 12 Задача № 8 <- *)
 Theorem Ex_R_8_weakly_dense {atom : Set} (Hinh : inhabited atom) (F : Frame) `{Heq_dec: EqDec F.(worlds)}:
   (forall φ : @formula atom, valid_in_frame F $box box φ -> box φ$) -> weakly_dense (@accessible F).
 Proof.
@@ -2232,7 +2250,6 @@ Proof.
   exact H1.
 Qed.
 
-(* Стр. 12 Задача № 9 *)
 Proposition Ex_R_9 {atom : Set} `(F : Frame) : (weakly_connected (@accessible F)) -> (forall φ ψ : @formula atom, valid_in_frame F $box((φ /\ box φ) -> ψ) \/ box((ψ /\ box ψ) -> φ)$).
 Proof.
   intro Hw_connected.
@@ -2273,7 +2290,6 @@ Proof.
     exact Δ_ψ.
 Qed.
 
-(* Стр. 12 Задача № 10 -> *)
 Proposition Ex_R_10 {atom : Set} `(F : Frame) : (weakly_directed (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $diamond box φ -> box diamond φ$).
 Proof.
   intro Hw_directed.
@@ -2299,7 +2315,6 @@ Proof.
     exact HΕ_φ.
 Qed.
 
-(* Стр. 12 Задача № 10 <- *)
 Theorem Ex_R_10_weakly_directed {atom : Set} (Hinh : inhabited atom) (F : Frame) :
   (forall φ : @formula atom, valid_in_frame F $diamond box φ -> box diamond φ$) -> weakly_directed (@accessible F).
 Proof.
