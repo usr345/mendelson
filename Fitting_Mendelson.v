@@ -2030,9 +2030,35 @@ Proof.
     rewrite Heq in Δ_R_Ω.
     exact Δ_R_Ω.
   - destruct Ω_P.
-Qed..
+Qed.
 
-(* Стр. 12 Задача № 5 -> *)
+Proposition Ex_R_3_serial {atom : Set} (Hinh : inhabited atom) (F : Frame):
+  (forall φ : @formula atom, valid_in_frame F $box φ -> diamond φ$) -> serial (@accessible F).
+Proof.
+  intro H.
+  unfold serial.
+  intro Γ.
+  destruct Hinh as [P].
+  specialize (H (f_atom P)).
+  unfold implication in H.
+  hnf in H.
+  set (V := fun (x : worlds) (_ : atom) => True).
+  specialize (H V Γ).
+  hnf in H.
+  assert (H1: valid {| frame := F; valuation := V |} Γ (f_box (f_atom P))).
+  {
+    simpl.
+    intros Δ Γ_R_Δ.
+    unfold V.
+    exact I.
+  }
+
+  specialize (H H1).
+  simpl in H.
+  destruct H as [Δ [Γ_R_Δ _]].
+  exact (ex_intro _ Δ Γ_R_Δ).
+Qed.
+
 Proposition Ex_R_5 {atom : Set} (F : Frame) : (euclidian (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $diamond φ -> box diamond φ$).
   intro Heucl.
   unfold euclidian in Heucl.
@@ -2052,7 +2078,6 @@ Proposition Ex_R_5 {atom : Set} (F : Frame) : (euclidian (@accessible F)) -> (fo
   - exact Δ_φ.
 Qed.
 
-(* Стр. 12 Задача № 5 <- *)
 Proposition Ex_R_5_eucl {atom : Set} (Hinh : inhabited atom) (F : Frame) `{Heq_dec: EqDec F.(worlds)} :
   (forall φ : @formula atom, valid_in_frame F $diamond φ -> box diamond φ$) -> euclidian (@accessible F).
 Proof.

@@ -68,13 +68,14 @@ Example Ex5_3_7
 *** TODO Excersize 5.6.3
 * [/] Глава 6 "Propositional Modal Axiom Systems"
 * [/] Глава 7 "Propositional Modal Tableaus"
-* [5/19] Goldblatt
+* [5/21] Goldblatt
 ** IN-PROGRESS [[./Fitting_Mendelson.v::Lemma meta_contraposition_rev][Lemma meta_contraposition_rev]]
 ** DONE [[./Fitting_Mendelson.v::Proposition boxP_P][Стр. 12 Задача № 1 Reflexive -\>]]
 ** IN-PROGRESS [[./Fitting_Mendelson.v::Proposition Ex_R_1_reflexive][Стр. 12 Задача № 1 Reflexive \<-]]
 ** DONE [[./Fitting_Mendelson.v::Theorem E5_4_3_2][Стр. 12 Задача № 2 Symmetric -\>]]
-** DONE [[./Fitting_Mendelson.v::Proposition Ex_R_2_symmetric][Стр. 12 Задача № 2 Symmetric \<-]]
+** IN-PROGRESS [[./Fitting_Mendelson.v::Proposition Ex_R_2_symmetric][Стр. 12 Задача № 2 Symmetric \<-]]
 ** DONE [[./Fitting_Mendelson.v::Proposition E5_4_1][Стр. 12 Задача № 3 Serial -\>]]
+** IN-PROGRESS [[./Fitting_Mendelson.v::Proposition Ex_R_3_serial][Стр. 12 Задача № 3 Serial \<-]]
 ** DONE [[./Fitting_Mendelson.v::Theorem E5_4_5_trans_valid][Стр. 12 Задача № 4 Transitive -\>]]
 ** DONE [[./Fitting_Mendelson.v::Theorem E5_4_5_valid_trans][Стр. 12 Задача № 4 Transitive <\-]]
 ** IN-PROGRESS [[./Fitting_Mendelson.v::Proposition Ex_R_5][Стр. 12 Задача № 5 Euclidean -\>]]
