@@ -1977,7 +1977,7 @@ Module Goldblatt.
 Import Kripke.
 
 (* Стр. 12 Задача № 5 -> *)
-Proposition Ex_R_5 {atom : Set} `(F : Frame) : (euclidian (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $diamond φ -> box diamond φ$).
+Proposition Ex_R_5 {atom : Set} (F : Frame) : (euclidian (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $diamond φ -> box diamond φ$).
   intro Heucl.
   unfold euclidian in Heucl.
   intros φ.
@@ -1997,7 +1997,7 @@ Proposition Ex_R_5 {atom : Set} `(F : Frame) : (euclidian (@accessible F)) -> (f
 Qed.
 
 (* Стр. 12 Задача № 5 <- *)
-Theorem Ex_R_5_eucl {atom : Set} (Hinh : inhabited atom) (F : Frame) `{Heq_dec: EqDec F.(worlds)} :
+Proposition Ex_R_5_eucl {atom : Set} (Hinh : inhabited atom) (F : Frame) `{Heq_dec: EqDec F.(worlds)} :
   (forall φ : @formula atom, valid_in_frame F $diamond φ -> box diamond φ$) -> euclidian (@accessible F).
 Proof.
   intro H.
@@ -2043,7 +2043,7 @@ Proof.
 Qed.
 
 (* Стр. 12 Задача № 6 -> *)
-Proposition Ex_R_6 {atom : Set} `(F : Frame) : (partially_functional (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $diamond φ -> box φ$).
+Proposition Ex_R_6 {atom : Set} (F : Frame) : (partially_functional (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $diamond φ -> box φ$).
 Proof.
   intro H_par_fun.
   unfold partially_functional in H_par_fun.
@@ -2060,7 +2060,7 @@ Proof.
 Qed.
 
 (* Стр. 12 Задача № 6 <- *)
-Theorem Ex_R_6_par_fun {atom : Set} (Hinh : inhabited atom) (F : Frame) `{Heq_dec: EqDec F.(worlds)} :
+Proposition Ex_R_6_par_fun {atom : Set} (Hinh : inhabited atom) (F : Frame) `{Heq_dec: EqDec F.(worlds)} :
   (forall φ : @formula atom, valid_in_frame F $diamond φ -> box φ$) -> partially_functional (@accessible F).
 Proof.
   intro H.
@@ -2105,8 +2105,7 @@ Proof.
   - destruct H.
 Qed.
 
-(* Стр. 12 Задача № 7 -> *)
-Proposition Ex_R_7 {atom : Set} `(F : Frame) : (functional (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $diamond φ <-> box φ$).
+Proposition Ex_R_7 {atom : Set} (F : Frame) : (functional (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $diamond φ <-> box φ$).
 Proof.
   intro Hfun.
   unfold functional in Hfun.
@@ -2141,7 +2140,6 @@ Proof.
       exact Δ_φ.
 Qed.
 
-(* Стр. 12 Задача № 7 <- *)
 Proposition Ex_R_7_functional {atom : Set} (Hinh : inhabited atom) (F : Frame) `{Heq_dec: EqDec F.(worlds)}:
   (forall φ : @formula atom, valid_in_frame F $diamond φ <-> box φ$) -> functional (@accessible F).
 Proof.
@@ -2223,7 +2221,7 @@ Proof.
       destruct Hcontra.
 Qed.
 
-Proposition Ex_R_8 {atom : Set} `(F : Frame) : (weakly_dense (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $box box φ -> box φ$).
+Proposition Ex_R_8 {atom : Set} (F : Frame) : (weakly_dense (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $box box φ -> box φ$).
 Proof.
   intro Hw_dense.
   unfold weakly_dense in Hw_dense.
@@ -2243,7 +2241,7 @@ Proof.
   exact HΔ_φ.
 Qed.
 
-Theorem Ex_R_8_weakly_dense {atom : Set} (Hinh : inhabited atom) (F : Frame) `{Heq_dec: EqDec F.(worlds)}:
+Proposition Ex_R_8_weakly_dense {atom : Set} (Hinh : inhabited atom) (F : Frame) `{Heq_dec: EqDec F.(worlds)}:
   (forall φ : @formula atom, valid_in_frame F $box box φ -> box φ$) -> weakly_dense (@accessible F).
 Proof.
   apply meta_contraposition_rev.
@@ -2295,7 +2293,7 @@ Proof.
   exact H1.
 Qed.
 
-Proposition Ex_R_9 {atom : Set} `(F : Frame) : (weakly_connected (@accessible F)) -> (forall φ ψ : @formula atom, valid_in_frame F $box((φ /\ box φ) -> ψ) \/ box((ψ /\ box ψ) -> φ)$).
+Proposition Ex_R_9 {atom : Set} (F : Frame) : (weakly_connected (@accessible F)) -> (forall φ ψ : @formula atom, valid_in_frame F $box((φ /\ box φ) -> ψ) \/ box((ψ /\ box ψ) -> φ)$).
 Proof.
   intro Hw_connected.
   unfold weakly_connected in Hw_connected.
@@ -2335,7 +2333,93 @@ Proof.
     exact Δ_ψ.
 Qed.
 
-Proposition Ex_R_10 {atom : Set} `(F : Frame) : (weakly_directed (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $diamond box φ -> box diamond φ$).
+Inductive inhabited2 (T : Type) : Prop :=  inhabits (A B : T) : A <> B -> inhabited2 T.
+
+Proposition Ex_R_9_weakly_connected {atom : Set} (F : Frame) (Hinh2 : inhabited2 atom) `{Heq_dec: EqDec atom} : (forall φ ψ : @formula atom, valid_in_frame F $box((φ /\ box φ) -> ψ) \/ box((ψ /\ box ψ) -> φ)$) -> (weakly_connected (@accessible F)).
+Proof.
+  destruct Hinh2 as [P Q Hne].
+  intro H.
+  specialize (H (f_atom P) (f_atom Q)).
+  unfold disjunction in H.
+  unfold conjunction in H.
+  unfold implication in H.
+  hnf in H.
+  unfold weakly_connected.
+  intros Γ Δ Ω Γ_R_Δ Γ_R_Ω.
+  set (V := fun (x : worlds) (a : atom) =>
+              if eqb a P then
+                x = Δ \/ accessible Δ x
+              else
+                x = Ω \/ accessible Ω x
+      ).
+
+  specialize (H V Γ) as H1.
+  hnf in H1.
+  destruct H1 as [H1 | H1].
+  - hnf in H1.
+    specialize (H1 Δ Γ_R_Δ).
+    hnf in H1.
+    assert (H2 : valid {| frame := F; valuation := V |} Δ (f_conj (f_atom P) (f_box (f_atom P)))).
+    {
+      hnf.
+      split ; hnf.
+      - rewrite eqb_reflexive.
+        left.
+        reflexivity.
+      - intros w Δ_R_w.
+        hnf.
+        rewrite eqb_reflexive.
+        right.
+        exact Δ_R_w.
+    }
+
+    specialize (H1 H2).
+    simpl in H1.
+    unfold V in H1.
+    apply not_eq_sym in Hne.
+    rewrite <-eqb_false_neq in Hne.
+    rewrite Hne in H1.
+    destruct H1 as [H1 | H1].
+    + right.
+      left.
+      exact H1.
+    + right.
+      right.
+      exact H1.
+  - hnf in H1.
+    specialize (H1 Ω Γ_R_Ω).
+    hnf in H1.
+    apply not_eq_sym in Hne.
+    rewrite <-eqb_false_neq in Hne.
+
+    assert (H2 : valid {| frame := F; valuation := V |} Ω (f_conj (f_atom Q) (f_box (f_atom Q)))).
+    {
+      hnf.
+      split ; hnf.
+      - rewrite Hne.
+        left.
+        reflexivity.
+      - intros w Ω_R_w.
+        hnf.
+        rewrite Hne.
+        right.
+        exact Ω_R_w.
+    }
+
+    specialize (H1 H2).
+    simpl in H1.
+    unfold V in H1.
+    rewrite eqb_reflexive in H1.
+    destruct H1 as [H1 | H1].
+    + right.
+      left.
+      symmetry in H1.
+      exact H1.
+    + left.
+      exact H1.
+Qed.
+
+Proposition Ex_R_10 {atom : Set} (F : Frame) : (weakly_directed (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $diamond box φ -> box diamond φ$).
 Proof.
   intro Hw_directed.
   unfold weakly_directed in Hw_directed.
@@ -2360,7 +2444,7 @@ Proof.
     exact HΕ_φ.
 Qed.
 
-Theorem Ex_R_10_weakly_directed {atom : Set} (Hinh : inhabited atom) (F : Frame) :
+Proposition Ex_R_10_weakly_directed {atom : Set} (Hinh : inhabited atom) (F : Frame) :
   (forall φ : @formula atom, valid_in_frame F $diamond box φ -> box diamond φ$) -> weakly_directed (@accessible F).
 Proof.
   intro H.
