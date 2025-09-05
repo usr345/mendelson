@@ -2142,7 +2142,7 @@ Proof.
 Qed.
 
 (* Стр. 12 Задача № 7 <- *)
-Theorem Ex_R_7_functional {atom : Set} (Hinh : inhabited atom) (F : Frame) `{Heq_dec: EqDec F.(worlds)} :
+Proposition Ex_R_7_functional {atom : Set} (Hinh : inhabited atom) (F : Frame) `{Heq_dec: EqDec F.(worlds)}:
   (forall φ : @formula atom, valid_in_frame F $diamond φ <-> box φ$) -> functional (@accessible F).
 Proof.
   intro H.
@@ -2168,15 +2168,60 @@ Proof.
   specialize (H V Γ) as H1.
   hnf in H1.
   destruct H1 as [H1 H2].
-  hnf in H1.
+  clear H1.
   hnf in H2.
-  specialize (H2 Hbox) as Hdiamond.
-  simpl in Hdiamond.
+  specialize (H2 Hbox).
+  simpl in H2.
+  destruct H2 as [Δ [Γ_R_Δ _]].
 
-  set (V := fun (x : worlds) (_ : atom) =>
-              exists w, (accessible Γ w) /\ (accessible w x)
-      ).
-  Abort.
+  clear Hbox.
+  clear V.
+  exists Δ.
+  split.
+  - exact Γ_R_Δ.
+  - intros Ω Γ_R_Ω.
+
+    destruct (eqb Ω Δ) eqn:Heq.
+    + rewrite eqb_eq in Heq.
+      symmetry in Heq.
+      exact Heq.
+    + set (V := fun (x : worlds) (_ : atom) =>
+                   if eqb x Δ then True else False
+          ).
+
+      specialize (H V Γ) as H1.
+      hnf in H1.
+      destruct H1 as [H1 H2].
+      assert (Hdiamond : valid {| frame := F; valuation := V |} Γ (f_diamond (f_atom P))).
+      {
+        hnf.
+        exists Δ.
+        simpl.
+        split.
+        - exact Γ_R_Δ.
+        - unfold V.
+          rewrite eqb_reflexive.
+          exact I.
+      }
+
+      hnf in H1.
+      specialize (H1 Hdiamond).
+      assert (HΩ_nP : ~ valid {| frame := F; valuation := V |} Ω (f_atom P)).
+      {
+        unfold not.
+        intro H3.
+        simpl in H3.
+        unfold V in H3.
+        rewrite Heq in H3.
+        exact H3.
+      }
+
+      simpl in H1.
+      simpl in HΩ_nP.
+      specialize (H1 Ω Γ_R_Ω) as HΩ_P.
+      apply HΩ_nP in HΩ_P as Hcontra.
+      destruct Hcontra.
+Qed.
 
 Proposition Ex_R_8 {atom : Set} `(F : Frame) : (weakly_dense (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $box box φ -> box φ$).
 Proof.
