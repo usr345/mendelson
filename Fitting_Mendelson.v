@@ -220,17 +220,6 @@ Module Formula.
       eqb_eq := formula_beq_eq;
     }.
 
-  Lemma meta_contraposition : forall P Q: Prop, (P -> Q) -> (~Q -> ~P).
-  Proof.
-    intros P Q H HnQ.
-    unfold not.
-    intro Hp.
-    unfold not in HnQ.
-    apply HnQ.
-    specialize (H Hp).
-    exact H.
-  Qed.
-
   Lemma meta_contraposition_rev :  forall (P Q : Prop), (~Q -> ~P) -> (P -> Q) .
     unfold not.
     intros P Q.
@@ -1975,6 +1964,73 @@ End Tableaus.
 
 Module Goldblatt.
 Import Kripke.
+
+Proposition Ex_R_1_reflexive {atom : Set} (Hinh : inhabited atom) (F : Frame) :
+  (forall φ : @formula atom, valid_in_frame F $box φ -> φ$) -> reflexive (@accessible F).
+Proof.
+  intro H.
+  unfold reflexive.
+  intro Γ.
+  destruct Hinh as [P].
+  specialize (H (f_atom P)).
+  unfold implication in H.
+  hnf in H.
+  set (V := fun (x : worlds) (_ : atom) =>
+              accessible Γ x
+      ).
+
+  specialize (H V Γ).
+  hnf in H.
+  assert (Hbox : valid {| frame := F; valuation := V |} Γ (f_box (f_atom P))).
+  {
+    simpl.
+    intros Δ Γ_R_Δ.
+    unfold V.
+    exact Γ_R_Δ.
+  }
+
+  specialize (H Hbox).
+  simpl in H.
+  unfold V in H.
+  exact H.
+Qed.
+
+Proposition Ex_R_2_symmetric {atom : Set} (Hinh : inhabited atom) (F : Frame) `{Heq_dec: EqDec F.(worlds)}:
+  (forall φ : @formula atom, valid_in_frame F $φ -> box diamond φ$) -> symmetric (@accessible F).
+Proof.
+  intro H.
+  unfold symmetric.
+  intros Γ Δ Γ_R_Δ.
+  destruct Hinh as [P].
+  specialize (H (f_atom P)).
+  unfold implication in H.
+
+  set (V := fun (x : worlds) (_ : atom) =>
+              if eqb x Γ then True else False
+      ).
+
+  specialize (H V Γ).
+  hnf in H.
+  assert (H1: valid {| frame := F; valuation := V |} Γ (f_atom P)).
+  {
+    simpl.
+    unfold V.
+    rewrite eqb_reflexive.
+    exact I.
+  }
+
+  specialize (H H1).
+  hnf in H.
+  specialize (H Δ Γ_R_Δ).
+  simpl in H.
+  destruct H as [Ω [Δ_R_Ω Ω_P]].
+  unfold V in Ω_P.
+  destruct (eqb Ω Γ) eqn:Heq.
+  - rewrite eqb_eq in Heq.
+    rewrite Heq in Δ_R_Ω.
+    exact Δ_R_Ω.
+  - destruct Ω_P.
+Qed..
 
 (* Стр. 12 Задача № 5 -> *)
 Proposition Ex_R_5 {atom : Set} (F : Frame) : (euclidian (@accessible F)) -> (forall φ : @formula atom, valid_in_frame F $diamond φ -> box diamond φ$).
