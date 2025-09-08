@@ -2351,7 +2351,8 @@ Proof.
     intros Ε Γ_R_Ε.
     hnf.
     intros Ζ Ε_R_Ζ.
-    hnf.
+    simpl.
+    unfold V.
     exists Ε.
     exact (conj Γ_R_Ε Ε_R_Ζ).
   }
@@ -2364,7 +2365,8 @@ Proof.
     intro Hbox.
     hnf in Hbox.
     specialize (Hbox Δ Γ_R_Δ).
-    hnf in Hbox.
+    simpl in Hbox.
+    unfold V in Hbox.
     apply H in Hbox.
     exact Hbox.
   }
@@ -2443,12 +2445,15 @@ Proof.
     assert (H2 : valid {| frame := F; valuation := V |} Δ (f_conj (f_atom P) (f_box (f_atom P)))).
     {
       hnf.
-      split ; hnf.
-      - rewrite eqb_reflexive.
+      split.
+      - simpl.
+        unfold V.
+        rewrite eqb_reflexive.
         left.
         reflexivity.
-      - intros w Δ_R_w.
-        hnf.
+      - simpl.
+        intros w Δ_R_w.
+        unfold V.
         rewrite eqb_reflexive.
         right.
         exact Δ_R_w.
@@ -2476,12 +2481,15 @@ Proof.
     assert (H2 : valid {| frame := F; valuation := V |} Ω (f_conj (f_atom Q) (f_box (f_atom Q)))).
     {
       hnf.
-      split ; hnf.
-      - rewrite Hne.
+      split.
+      - simpl.
+        unfold V.
+        rewrite Hne.
         left.
         reflexivity.
-      - intros w Ω_R_w.
-        hnf.
+      - simpl.
+        intros w Ω_R_w.
+        unfold V.
         rewrite Hne.
         right.
         exact Ω_R_w.
@@ -2532,7 +2540,6 @@ Proof.
   unfold weakly_directed.
   intros Γ Δ Ω Γ_R_Δ Γ_R_Ω.
   set (V := fun (x : worlds) (_ : atom) => accessible Ω x).
-
   destruct Hinh as [P].
   specialize (H (f_atom P) V).
   unfold implication in H.
@@ -2545,7 +2552,7 @@ Proof.
     exact Ω_R_Ε.
   }
 
-  assert (Hbox_dia_Γ : valid {| frame := F; valuation := V |} Γ
+  assert (Hdia_box_Γ : valid {| frame := F; valuation := V |} Γ
                          (f_diamond (f_box (f_atom P)))).
   {
     hnf.
@@ -2557,9 +2564,9 @@ Proof.
 
   specialize (H Γ) as H1.
   hnf in H1.
-  specialize (H1 Hbox_dia_Γ) as Hdia_box_Γ.
-  hnf in Hdia_box_Γ.
-  specialize (Hdia_box_Γ Δ Γ_R_Δ) as H_Δ.
+  specialize (H1 Hdia_box_Γ) as Hbox_dia_Γ.
+  hnf in Hbox_dia_Γ.
+  specialize (Hbox_dia_Γ Δ Γ_R_Δ) as H_Δ.
   hnf in H_Δ.
   destruct H_Δ as [Ε [Δ_R_Ε Ε_P]].
   simpl in Ε_P.
