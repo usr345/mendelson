@@ -302,7 +302,7 @@ Arguments disj_intro2 {_} (_) _ _.
 Arguments case_analysis {_} _ _ _ _.
 Arguments ex_falso {_} (_) _ _.
 Arguments tertium_non_datur {_} (_) _.
-Arguments axiomK {_} {_} _ _.
+Arguments axiomK {_} (_) _ _.
 Arguments mp {_} {_} {_} {_} (_) (_).
 Arguments nec {_} {_} {_} (_).
 
@@ -323,6 +323,33 @@ Ltac specialize_axiom A H :=
   | (_ |- f_tertium_non_datur _) => unfold f_tertium_non_datur in H
   | (_ |- f_axiomK _ _) => unfold f_axiomK in H
   end.
+
+(* Если $\Gamma \subseteq \Delta$ и $\Gamma \vdash A$, то $\Delta \vdash A$ *)
+Theorem weaken {atom : Set} (Γ : @formula atom -> Prop) Δ A : Γ ⊆ Δ -> Γ |- A -> Δ |- A.
+Proof.
+  intros S H.
+  induction H as [A H|A B|A B C|A B|A B|A B|A B|A B|A B C|A B|A|A B|A B H1 H2 IH1 IH2|A H IH].
+  (* Пусть A ∈ Γ *)
+  - unfold subset in S.
+    specialize (S A H).
+    apply hypo.
+    exact S.
+  - apply (axiom1 _ A B).
+  - apply (axiom2 _ A B C).
+  - apply (conj_elim1 _ A B).
+  - apply (conj_elim2 _ A B).
+  - apply (conj_intro _ A B).
+  - apply (disj_intro1 _ A B).
+  - apply (disj_intro2 _ A B).
+  - apply (case_analysis _ A B C).
+  - apply (ex_falso _ A B).
+  - apply (tertium_non_datur _ A).
+  - apply (axiomK _ A B).
+  - pose proof (mp H2 IH2) as H3.
+    exact H3.
+  - pose proof (nec IH) as H1.
+    exact H1.
+Qed.
 
 Lemma meta_conj_elim1 {atom : Set} {Γ : @formula atom -> Prop} {A B : @formula atom} : Γ |- $(A /\ B)$ -> Γ |- A.
 Proof.
@@ -793,6 +820,62 @@ Admitted.
 Proposition E6_1_3_6 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $(diamond X -> box Y) -> box(X \/ Y)$.
 Proof.
 Admitted.
+
+Definition inconsistent {atom : Set} (Γ : @formula atom -> Prop) : Type :=
+  forall f : @formula atom, Γ |- f.
+
+(* A set of formulas Γ is consistent if one can not deduce any formula from it *)
+Definition consistent {atom : Set} (Γ : @formula atom -> Prop) : Prop :=
+  (forall f : @formula atom, Γ |- f) -> False.
+
+Lemma consistent_no_contradiction {atom : Set} (Γ : @formula atom -> Prop) (f : @formula atom):
+  consistent Γ -> (Γ |- $f /\ ~f$) -> False.
+Proof.
+  intro H.
+  unfold consistent in H.
+  intro H1.
+  apply H.
+  intro g.
+  specialize_axiom (conj_elim1 Γ f $~f$) H2.
+  specialize (mp H2 H1) as H3.
+  specialize_axiom (conj_elim2 Γ f $~f$) H4.
+  specialize (mp H4 H1) as H5.
+  specialize_axiom (ex_falso Γ f g) H6.
+  specialize (mp H6 H5) as H7.
+  specialize (mp H7 H3) as H8.
+  exact H8.
+Qed.
+
+Lemma meta_consistent_no_contradiction {atom : Set} (Γ : @formula atom -> Prop) (f : @formula atom):
+  consistent Γ -> Γ |- f -> Γ |- $~f$ -> False.
+Proof.
+  intros H Hf Hn_f.
+  unfold consistent in H.
+  apply H.
+  intro g.
+  specialize_axiom (ex_falso Γ f g) H1.
+  specialize (mp H1 Hn_f) as H2.
+  specialize (mp H2 Hf) as H3.
+  exact H3.
+Qed.
+
+Lemma consistent_member {atom : Set} (Γ Δ: @formula atom -> Prop):
+  consistent Γ -> subset Δ Γ -> consistent Δ.
+Proof.
+  intros HΓ Hsubset.
+  unfold consistent.
+  intro HΔ.
+  unfold consistent in HΓ.
+  apply HΓ.
+  intro f.
+  apply weaken with (Γ := Δ).
+  - exact Hsubset.
+  - specialize (HΔ f).
+    exact HΔ.
+Qed.
+
+Definition max_consistent {atom : Set} (Γ : @formula atom -> Prop) : Prop :=
+  consistent Γ /\ forall f, (Γ f \/ Γ $~f$).
 
 End Syntactic.
 
@@ -2578,3 +2661,53 @@ Proof.
 Qed.
 
 End Goldblatt.
+
+Module CanonicalModels.
+  Import Kripke.
+
+  Inductive atom : Set :=
+  | P : atom
+  | Q : atom.
+
+  Definition SWorlds := @formula atom -> Prop.
+
+  Definition R (w1 w2 : SWorlds) : Prop :=
+    forall F : @formula atom, (f_box F) ∈ w1 -> F ∈ w2.
+
+  Definition SV (w : SWorlds) (a : atom) : Prop := (f_atom a) ∈ w.
+
+  Lemma SWorlds_inhabited : inhabited SWorlds.
+  Proof.
+    apply (inhabits empty).
+  Qed.
+
+  Definition CanonicalFrame : Frame :=
+  {|
+    worlds := SWorlds;
+    worlds_inh := SWorlds_inhabited;
+    accessible := R;
+  |}.
+
+  Definition CanonicalModel : Model :=
+  {|
+    frame := CanonicalFrame;
+    valuation := SV
+  |}.
+
+  Proposition Ex_R_1_reflexive :
+    (forall φ : @formula atom, valid_in_frame CanonicalFrame $box φ -> φ$) -> reflexive (@accessible CanonicalFrame).
+  Proof.
+    intro H.
+    unfold reflexive.
+    intro Γ.
+    unfold accessible.
+    simpl.
+    unfold R.
+    intros f Hbox.
+    specialize (H f).
+    hnf in H.
+    specialize (H SV Γ).
+    hnf in H.
+    simpl in H.
+
+End CanonicalModels.
