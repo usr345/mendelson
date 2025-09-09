@@ -822,7 +822,7 @@ Proof.
 Admitted.
 
 Definition inconsistent {atom : Set} (Γ : @formula atom -> Prop) : Type :=
-  forall f : @formula atom, Γ |- f.
+  {l : list (@formula atom) & (prod (Forall Γ l) (let Γ' := (fun f => In f l) in forall f, Γ' |- f))}.
 
 (* A set of formulas Γ is consistent if one can not deduce any formula from it *)
 Definition consistent {atom : Set} (Γ : @formula atom -> Prop) : Prop :=
