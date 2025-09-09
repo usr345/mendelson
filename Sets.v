@@ -25,6 +25,13 @@ Definition subset {T : Type} (Γ Δ : T -> Prop) :=
   forall A, A ∈ Γ -> A ∈ Δ.
 Infix "⊆" := subset (at level 79) : sets_scope.
 
+Definition set_eq {T : Type} (Γ Δ : T -> Prop) :=
+  forall x : T, Γ x <-> Δ x.
+
+(* Δ is a proper extension of Γ *)
+Definition proper_extension {T : Type} (Γ Δ : T -> Prop) :=
+  subset Γ Δ /\ ~ set_eq Γ Δ.
+
 (* "extend Γ A" is the set Γ ∪ {A}. *)
 Definition extend {T : Type} (Γ : T -> Prop) (A : T) : T -> Prop := fun B : T => or (B ∈ Γ) (A = B).
 

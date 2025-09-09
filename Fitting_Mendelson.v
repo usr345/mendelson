@@ -826,7 +826,7 @@ Definition inconsistent {atom : Set} (Γ : @formula atom -> Prop) : Type :=
 
 (* A set of formulas Γ is consistent if one can not deduce any formula from it *)
 Definition consistent {atom : Set} (Γ : @formula atom -> Prop) : Prop :=
-  (forall f : @formula atom, Γ |- f) -> False.
+  (inconsistent Γ) -> False.
 
 Lemma consistent_no_contradiction {atom : Set} (Γ : @formula atom -> Prop) (f : @formula atom):
   consistent Γ -> (Γ |- $f /\ ~f$) -> False.
@@ -874,8 +874,63 @@ Proof.
     exact HΔ.
 Qed.
 
+(*
+  Множество формул Γ называется максимально консистентным, если оно консистентно, и
+  никакое его собственное расширение не является консистентным
+*)
 Definition max_consistent {atom : Set} (Γ : @formula atom -> Prop) : Prop :=
-  consistent Γ /\ forall f, (Γ f \/ Γ $~f$).
+  consistent Γ /\ forall Δ : @formula atom -> Prop, ~(proper_extension Γ Δ /\ consistent Δ).
+
+Lemma max_consistent_member_left {atom : Set} (Γ : @formula atom -> Prop) (f : @formula atom) :
+  max_consistent Γ -> Γ f -> Γ |- f.
+Proof.
+  intros H Γ_f.
+  unfold max_consistent in H.
+  destruct H as [H1 H2].
+  unfold consistent in H1.
+  apply hypo.
+  unfold elem.
+  exact Γ_f.
+Qed.
+
+Lemma max_consistent_member_right {atom : Set} (Γ : @formula atom -> Prop) (X : @formula atom) :
+  max_consistent Γ -> Γ |- X -> Γ X.
+Proof.
+  intros H Γ_X.
+  unfold max_consistent in H.
+  destruct H as [H1 H2].
+  specialize (H2 (extend Γ X)).
+  apply not_and_or in H2.
+  destruct H2 as [H2 | H2].
+  - unfold proper_extension in H2.
+    apply not_and_or in H2.
+    destruct H2 as [H2 | H2].
+    + specialize (@subset_extend (@formula atom) Γ X) as Hcontra.
+      apply H2 in Hcontra.
+      destruct Hcontra.
+    + apply NNPP in H2.
+      unfold set_eq in H2.
+      specialize (H2 X).
+      rewrite H2.
+      unfold extend.
+      right.
+      reflexivity.
+  - unfold consistent in H2.
+
+
+  destruct H2 as [H2 | H2].
+  - exact H2.
+  - specialize (meta_consistent_no_contradiction Γ f H1 Γ_f) as H3.
+    assert (Hnf : Γ |- $~ f$).
+    {
+      apply hypo.
+      unfold elem.
+      exact H2.
+    }
+
+    specialize (H3 Hnf).
+    destruct H3.
+Qed.
 
 End Syntactic.
 
