@@ -1,29 +1,28 @@
 Declare Scope sets_scope.
 Module Type TSet.
 
-  Section S.
-    (* Element type *)
-    Parameter struct_t: Type -> Type.
-    Context {T: Type}.
-    (* Реализация структуры *)
-    Local Notation struct_r := (struct_t T).
-    (* Пустое множество объектов типа T. *)
-    Parameter empty : struct_r.
-    Parameter elem : T -> struct_r -> Prop.
-    Parameter union : struct_r -> struct_r  -> struct_r.
-    Parameter subset : struct_r -> struct_r -> Prop.
-    Parameter set_eq : struct_r -> struct_r -> Prop.
-    Parameter extend : struct_r -> T -> struct_r.
-  End S.
+  Parameter T : Type.
+  (* Storage object: "T -> Prop", List T, etc *)
+  Parameter struct_t: Type -> Type.
+
+  Parameter empty : struct_t T.
+  Parameter elem : T -> struct_t T -> Prop.
+  Parameter union : struct_t T -> struct_t T  -> struct_t T.
+  Parameter extend : struct_t T -> T -> struct_t T.
+  Definition subset (Γ Δ : struct_t T) :=
+    forall A : T, (elem A Γ) -> (elem A Δ).
+
+  Definition set_eq (Γ Δ : struct_t T) :=
+    forall x : T, (elem x Γ) <-> (elem x Δ).
+
+  (* Δ is a proper extension of Γ *)
+  Definition proper_extension (Γ Δ : struct_t T) :=
+    subset Γ Δ /\ ~ set_eq Γ Δ.
 End TSet.
 
 Module Make_Set(ARG : TSet).
   Module F := ARG.
   Export F.
-
-  (* Δ is a proper extension of Γ *)
-  Definition proper_extension {T : Type} (Γ Δ : struct_t T) :=
-    subset Γ Δ /\ ~ set_eq Γ Δ.
 
   Infix "∈" := elem (at level 77) : sets_scope.
   Infix "∪" := union (at level 78, left associativity) : sets_scope.
@@ -31,13 +30,13 @@ Module Make_Set(ARG : TSet).
   Notation "Γ ,, A" := (extend Γ A) (at level 32, left associativity) : sets_scope.
 End Make_Set.
 
-Module MSet  <: TSet.
+Module MSet <: TSet.
+
+  (* A set on universum T can be represented by its
+     characteristic map: T -> Prop.
+  *)
 
   Definition struct_t {T : Type} := T -> Prop.
-  (* Instead of working with lists of assumptions we shall work with
-     sets of assumptions. A set of formulas can be represented by its
-     characteristic map formula -> Prop.
-   *)
 
   Definition empty {T : Type} : T -> Prop := fun _ => False.
   (* Отношение принадлежности между элементом типа T и множеством с элементами типа T *)
@@ -45,13 +44,6 @@ Module MSet  <: TSet.
 
   (* The union of two sets of formulas. *)
   Definition union {T : Type} (Γ Δ : struct_t) (A : T) := (elem A Γ) \/ (elem A Δ).
-
-  (* Γ --- подмножество Δ. *)
-  Definition subset {T : Type} (Γ Δ : struct_t) :=
-    forall A : T, (elem A Γ) -> (elem A Δ).
-
-  Definition set_eq {T : Type} (Γ Δ : struct_t) :=
-    forall x : T, (elem x Γ) <-> (elem x Δ).
 
   (* "extend Γ A" is the set Γ ∪ {A}. *)
   Definition extend {T : Type} (Γ : struct_t) (A : T) : struct_t := fun B : T => or (elem B Γ) (A = B).

@@ -4,6 +4,10 @@ From Mendelson Require Import FSignature.
 From Mendelson Require Import Formula.
 
 Module Syntactic.
+  Import MSet.
+  Module MSet1 := Make_Set(MSet).
+
+  Check @struct_t (@formula b).
   (* We now come to main definitions. We first define a type
    Γ |- A whose elements are derivations of formula A
    from assumptions Γ. These are presented as derivation trees,
@@ -31,7 +35,7 @@ Definition f_axiom3 {atom : Set} (A B : @formula atom) : formula :=
   $(~ B -> ~ A) -> (~ B -> A) -> B$.
 
 Reserved Notation "Γ |- A" (at level 98).
-Inductive entails {atom : Set} (Γ : @formula atom -> Prop) : @formula atom -> Type :=
+Inductive entails {atom : Set} (Γ : struct_t) : @formula atom -> Type :=
   | hypo : forall A, A ∈ Γ -> Γ |- A (* every hypothesis is provable *)
   | axiom1 : forall A B , Γ |- f_axiom1 A B
   | axiom2 : forall A B C, Γ |- f_axiom2 A B C
