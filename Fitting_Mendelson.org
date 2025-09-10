@@ -1,4 +1,7 @@
 #+STARTUP: overview
+* Глава 2
+** TODO [[./Fitting_Mendelson.v::Proposition weaken][Proposition Monotonicity]]
+** TODO [[./Fitting_Mendelson.v::Proposition compactness][Proposition compactness]]
 * [0/6] Глава 5 "Propositional Modal Logic"
 ** TODO 5.1 What Are the Formulas?
 ** DONE [2/2] 5.2 What Are the Models?

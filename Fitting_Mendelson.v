@@ -285,9 +285,9 @@ Inductive entails {atom : Set} (Γ : @formula atom -> Prop) : @formula atom -> T
   | case_analysis : forall A B C, Γ |- f_case_analysis A B C
   | ex_falso : forall A B, Γ |- f_ex_falso A B
   | tertium_non_datur : forall A, Γ |- f_tertium_non_datur A
-  | axiomK : forall A B, Γ |- f_axiomK A B
-  | mp : forall A B, Γ |- $A -> B$ -> Γ |- A -> Γ |- B (* modus ponens *)
-  | nec : forall A, Γ |- A -> Γ |- $box A$            (* necessitation *)
+  | axiomK : forall A B: @formula atom, Γ |- f_axiomK A B
+  | mp : forall A B: @formula atom, Γ |- $A -> B$ -> Γ |- A -> Γ |- B (* modus ponens *)
+  | nec : forall A: @formula atom, Γ |- A -> Γ |- $box A$            (* necessitation *)
 where "Γ |- A" := (entails Γ A).
 
 (* It is convenient to make some parameters implicit. *)
@@ -324,8 +324,9 @@ Ltac specialize_axiom A H :=
   | (_ |- f_axiomK _ _) => unfold f_axiomK in H
   end.
 
+(* Proposition 2.2.2 (Monotonicity) *)
 (* Если $\Gamma \subseteq \Delta$ и $\Gamma \vdash A$, то $\Delta \vdash A$ *)
-Theorem weaken {atom : Set} (Γ : @formula atom -> Prop) Δ A : Γ ⊆ Δ -> Γ |- A -> Δ |- A.
+Proposition weaken {atom : Set} (Γ : @formula atom -> Prop) Δ A : Γ ⊆ Δ -> Γ |- A -> Δ |- A.
 Proof.
   intros S H.
   induction H as [A H|A B|A B C|A B|A B|A B|A B|A B|A B C|A B|A|A B|A B H1 H2 IH1 IH2|A H IH].
@@ -349,6 +350,104 @@ Proof.
     exact H3.
   - pose proof (nec IH) as H1.
     exact H1.
+Qed.
+
+(* Proposition 2.2.3 (Compactness) If S |- X then there is some finite subset S' of S such that S' |- X *)
+Proposition compactness {atom : Set} (Γ : @formula atom -> Prop) : forall A : @formula atom, Γ |- A -> {l : list (@formula atom) & (prod (Forall Γ l) (let Γ' := (fun f => In f l) in Γ' |- A))}.
+Proof.
+  intros A Γ_A.
+  induction Γ_A as [A H|A B|A B C|A B|A B|A B|A B|A B|A B C|A B|A|A B|A B H1 IH1 H2 IH2|A H IH].
+  - unfold elem in H.
+    exists [A].
+    split.
+    + apply Forall_cons.
+      exact H.
+      apply Forall_nil.
+    + intro H1.
+      hypo.
+  - exists [].
+    split.
+    + apply Forall_nil.
+    + apply (axiom1 _ A B).
+  - exists [].
+    split.
+    + apply Forall_nil.
+    + apply (axiom2 _ A B C).
+  - exists [].
+    split.
+    + apply Forall_nil.
+    + apply (conj_elim1 _ A B).
+  - exists [].
+    split.
+    + apply Forall_nil.
+    + apply (conj_elim2 _ A B).
+  - exists [].
+    split.
+    + apply Forall_nil.
+    + apply (conj_intro _ A B).
+  - exists [].
+    split.
+    + apply Forall_nil.
+    + apply (disj_intro1 _ A B).
+  - exists [].
+    split.
+    + apply Forall_nil.
+    + apply (disj_intro2 _ A B).
+  - exists [].
+    split.
+    + apply Forall_nil.
+    + apply (case_analysis _ A B C).
+  - exists [].
+    split.
+    + apply Forall_nil.
+    + apply (ex_falso _ A B).
+  - exists [].
+    split.
+    + apply Forall_nil.
+    + apply (tertium_non_datur _ A).
+  - exists [].
+    split.
+    + apply Forall_nil.
+    + apply (axiomK _ A B).
+  - destruct IH1 as [l1 [H_l1 IH1]].
+    destruct IH2 as [l2 [H_l2 IH2]].
+    exists (l1 ++ l2).
+    split.
+    + rewrite Forall_app.
+      exact (conj H_l1 H_l2).
+    + set (Δ := fun f : formula => In f (l1 ++ l2)).
+      assert (H_subset1: (fun f : formula => In f l1) ⊆ Δ).
+      {
+        unfold Δ.
+        unfold subset.
+        intro f.
+        unfold elem.
+        intro H3.
+        apply in_or_app.
+        left.
+        exact H3.
+      }
+
+      specialize (weaken _ Δ _ H_subset1 IH1) as IH1_1.
+      assert (H_subset2: (fun f : formula => In f l2) ⊆ Δ).
+      {
+        unfold Δ.
+        unfold subset.
+        intro f.
+        unfold elem.
+        intro H3.
+        apply in_or_app.
+        right.
+        exact H3.
+      }
+
+      specialize (weaken _ Δ _ H_subset2 IH2) as IH2_1.
+      apply (mp IH1_1 IH2_1).
+  - destruct IH as [l [H_l IH]].
+    exists l.
+    split.
+    + exact H_l.
+    + apply (nec IH).
 Qed.
 
 Lemma meta_conj_elim1 {atom : Set} {Γ : @formula atom -> Prop} {A B : @formula atom} : Γ |- $(A /\ B)$ -> Γ |- A.
@@ -824,7 +923,7 @@ Admitted.
 Definition inconsistent {atom : Set} (Γ : @formula atom -> Prop) : Type :=
   {l : list (@formula atom) & (prod (Forall Γ l) (let Γ' := (fun f => In f l) in forall f, Γ' |- f))}.
 
-(* A set of formulas Γ is consistent if one can not deduce any formula from it *)
+(* A set of formulas Γ is consistent if it is not inconsistent *)
 Definition consistent {atom : Set} (Γ : @formula atom -> Prop) : Prop :=
   (inconsistent Γ) -> False.
 
@@ -835,7 +934,7 @@ Proof.
   unfold consistent in H.
   intro H1.
   apply H.
-  intro g.
+  unfold inconsistent.
   specialize_axiom (conj_elim1 Γ f $~f$) H2.
   specialize (mp H2 H1) as H3.
   specialize_axiom (conj_elim2 Γ f $~f$) H4.
