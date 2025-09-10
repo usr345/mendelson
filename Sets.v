@@ -1,51 +1,69 @@
-Module MSet.
-
-(* Instead of working with lists of assumptions we shall work with
-   sets of assumptions. A set of formulas can be represented by its
-   characteristic map formula -> Prop.
-*)
-
-(* Отношение принадлежности между элементом типа T и множеством с элементами типа T *)
-Definition elem {T : Type} (A : T) (Γ : T  -> Prop) := Γ A.
-
 Declare Scope sets_scope.
-Open Scope sets_scope.
-Declare Custom Entry sets_view.
+Module Type TSet.
 
-(* Пустое множество объектов типа T. *)
-Definition empty {T : Type} : T -> Prop := fun _ => False.
-Infix "∈" := elem (at level 77) : sets_scope.
+  Section S.
+    (* Element type *)
+    Parameter struct_t: Type -> Type.
+    Context {T: Type}.
+    (* Реализация структуры *)
+    Local Notation struct_r := (struct_t T).
+    (* Пустое множество объектов типа T. *)
+    Parameter empty : struct_r.
+    Parameter elem : T -> struct_r -> Prop.
+    Parameter union : struct_r -> struct_r  -> struct_r.
+    Parameter subset : struct_r -> struct_r -> Prop.
+    Parameter set_eq : struct_r -> struct_r -> Prop.
+    Parameter extend : struct_r -> T -> struct_r.
+  End S.
+End TSet.
 
-(* The union of two sets of formulas. *)
-Definition union {T : Type} (Γ Δ : T -> Prop) (A : T) := (elem A Γ) \/ A ∈ Δ.
-Infix "∪" := union (at level 78, left associativity) : sets_scope.
+Module Make_Set(ARG : TSet).
+  Module F := ARG.
+  Export F.
 
-(* Γ --- подмножество Δ. *)
-Definition subset {T : Type} (Γ Δ : T -> Prop) :=
-  forall A, A ∈ Γ -> A ∈ Δ.
-Infix "⊆" := subset (at level 79) : sets_scope.
+  (* Δ is a proper extension of Γ *)
+  Definition proper_extension {T : Type} (Γ Δ : struct_t T) :=
+    subset Γ Δ /\ ~ set_eq Γ Δ.
 
-Definition set_eq {T : Type} (Γ Δ : T -> Prop) :=
-  forall x : T, Γ x <-> Δ x.
+  Infix "∈" := elem (at level 77) : sets_scope.
+  Infix "∪" := union (at level 78, left associativity) : sets_scope.
+  Infix "⊆" := subset (at level 79) : sets_scope.
+  Notation "Γ ,, A" := (extend Γ A) (at level 32, left associativity) : sets_scope.
+End Make_Set.
 
-(* Δ is a proper extension of Γ *)
-Definition proper_extension {T : Type} (Γ Δ : T -> Prop) :=
-  subset Γ Δ /\ ~ set_eq Γ Δ.
+Module MSet  <: TSet.
 
-(* "extend Γ A" is the set Γ ∪ {A}. *)
-Definition extend {T : Type} (Γ : T -> Prop) (A : T) : T -> Prop := fun B : T => or (B ∈ Γ) (A = B).
+  Definition struct_t {T : Type} := T -> Prop.
+  (* Instead of working with lists of assumptions we shall work with
+     sets of assumptions. A set of formulas can be represented by its
+     characteristic map formula -> Prop.
+   *)
 
-Notation "Γ ,, A" := (extend Γ A) (at level 32, left associativity).
+  Definition empty {T : Type} : T -> Prop := fun _ => False.
+  (* Отношение принадлежности между элементом типа T и множеством с элементами типа T *)
+  Definition elem {T : Type} (A : T) (Γ : struct_t) := Γ A.
 
-(* Множество Gamma является подмножеством (Gamma,, A) *)
-Lemma subset_extend {T : Type} {Γ : T -> Prop} {A : T} : subset Γ (extend Γ A).
-Proof.
-  unfold subset, extend.
-  intros A0 H.
-  unfold elem.
-  left.
-  exact H.
-Qed.
+  (* The union of two sets of formulas. *)
+  Definition union {T : Type} (Γ Δ : struct_t) (A : T) := (elem A Γ) \/ (elem A Δ).
+
+  (* Γ --- подмножество Δ. *)
+  Definition subset {T : Type} (Γ Δ : struct_t) :=
+    forall A : T, (elem A Γ) -> (elem A Δ).
+
+  Definition set_eq {T : Type} (Γ Δ : struct_t) :=
+    forall x : T, (elem x Γ) <-> (elem x Δ).
+
+  (* "extend Γ A" is the set Γ ∪ {A}. *)
+  Definition extend {T : Type} (Γ : struct_t) (A : T) : struct_t := fun B : T => or (elem B Γ) (A = B).
+
+  (* Множество Gamma является подмножеством (Gamma ,, A) *)
+  Lemma subset_extend {T : Type} {Γ : T -> Prop} {A : T} : subset Γ (extend Γ A).
+  Proof.
+    unfold subset, extend.
+    intros A0 H.
+    left.
+    exact H.
+  Qed.
 
 End MSet.
 Export MSet.

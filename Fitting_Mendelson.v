@@ -927,6 +927,13 @@ Definition inconsistent {atom : Set} (Γ : @formula atom -> Prop) : Type :=
 Definition consistent {atom : Set} (Γ : @formula atom -> Prop) : Prop :=
   (inconsistent Γ) -> False.
 
+Lemma consistent_extend {atom : Set} (Γ : @formula atom -> Prop) (A : @formula atom) (l : list (@formula atom)) :
+  consistent Γ -> Forall (Γ ,, A) l -> let Γ' := (fun f => In f l) in forall f, Γ' |- f -> In A l.
+Proof.
+  intros Hcons Hall Hl f Hl_f.
+  unfold consistent in Hcons.
+  Search (In ?A ?l <-> ?b).
+
 Lemma consistent_no_contradiction {atom : Set} (Γ : @formula atom -> Prop) (f : @formula atom):
   consistent Γ -> (Γ |- $f /\ ~f$) -> False.
 Proof.
