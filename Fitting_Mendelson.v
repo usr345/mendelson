@@ -1,5 +1,5 @@
 Require Import Setoid.
-From Mendelson Require Import Sets.
+From Mendelson Require Import MSets.
 From Mendelson Require Import FSignature.
 From Mendelson Require Import EqDec.
 Require Import Lists.List.
@@ -272,8 +272,9 @@ Definition f_tertium_non_datur {atom : Set} (A : @formula atom) : formula := $A 
 Definition f_axiomK {atom : Set} (A B : @formula atom) : formula :=
   $box (A -> B) -> (box A -> box B)$.
 
+Open Scope sets_scope.
 Reserved Notation "Γ |- A" (at level 98).
-Inductive entails {atom : Set} (Γ : @formula atom -> Prop) : @formula atom -> Type :=
+Inductive entails {atom : Set} `{Set_obj : TSet} (Γ : Set_obj.(struct_t) (@formula atom)) : @formula atom -> Type :=
   | hypo : forall A, A ∈ Γ -> Γ |- A (* every hypothesis is provable *)
   | axiom1 : forall A B , Γ |- f_axiom1 A B
   | axiom2 : forall A B C, Γ |- f_axiom2 A B C
@@ -326,7 +327,7 @@ Ltac specialize_axiom A H :=
 
 (* Proposition 2.2.2 (Monotonicity) *)
 (* Если $\Gamma \subseteq \Delta$ и $\Gamma \vdash A$, то $\Delta \vdash A$ *)
-Proposition weaken {atom : Set} (Γ : @formula atom -> Prop) Δ A : Γ ⊆ Δ -> Γ |- A -> Δ |- A.
+Proposition weaken {atom : Set} `{Set_obj : TSet} (Γ Δ: Set_obj.(struct_t) (@formula atom)) (A : @formula atom) : Γ ⊆ Δ -> Γ |- A -> Δ |- A.
 Proof.
   intros S H.
   induction H as [A H|A B|A B C|A B|A B|A B|A B|A B|A B C|A B|A|A B|A B H1 H2 IH1 IH2|A H IH].

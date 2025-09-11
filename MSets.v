@@ -42,7 +42,7 @@ Declare Scope sets_scope.
 Infix "∈" := elem (at level 77) : sets_scope.
 Infix "∪" := union (at level 78, left associativity) : sets_scope.
 Infix "⊆" := subset (at level 79) : sets_scope.
-Notation "Γ ,, A" := (extend Γ A) (at level 32, left associativity) : sets_scope.
+Notation "Γ ,, A" := (extend Γ A) (A ident, at level 32, left associativity) : sets_scope.
 
 Class TSet2 (T : Type) `{Set_obj : TSet T} :=
 {
@@ -84,7 +84,7 @@ Instance List_Set2 {T : Type} : TSet2 (list T) :=
   subset_extend := List_subset_extend;
 }.
 End MSet.
-
+Export MSet.
 
 Module Relation.
 Definition relation (U: Type) := U -> U -> Prop.
