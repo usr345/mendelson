@@ -1,36 +1,41 @@
-Declare Scope sets_scope.
+From Stdlib Require Import Lists.List.
+
 Module Type TSet.
 
-  Parameter T : Type.
-  (* Storage object: "T -> Prop", List T, etc *)
-  Parameter struct_t: Type -> Type.
+  Section S.
+    Context {T: Type}.
+    (* Storage object: "T -> Prop", List T, etc *)
+    Parameter struct_t: Type -> Type.
 
-  Parameter empty : struct_t T.
-  Parameter elem : T -> struct_t T -> Prop.
-  Parameter union : struct_t T -> struct_t T  -> struct_t T.
-  Parameter extend : struct_t T -> T -> struct_t T.
-  Definition subset (Γ Δ : struct_t T) :=
-    forall A : T, (elem A Γ) -> (elem A Δ).
-
-  Definition set_eq (Γ Δ : struct_t T) :=
-    forall x : T, (elem x Γ) <-> (elem x Δ).
-
-  (* Δ is a proper extension of Γ *)
-  Definition proper_extension (Γ Δ : struct_t T) :=
-    subset Γ Δ /\ ~ set_eq Γ Δ.
+    Parameter empty : struct_t T.
+    Parameter elem : T -> struct_t T -> Prop.
+    Parameter union : struct_t T -> struct_t T  -> struct_t T.
+    Parameter extend : struct_t T -> T -> struct_t T.
+  End S.
 End TSet.
 
 Module Make_Set(ARG : TSet).
   Module F := ARG.
   Export F.
 
+  Definition subset {T : Type} (Γ Δ : struct_t T) :=
+    forall A : T, (elem A Γ) -> (elem A Δ).
+
+  Definition set_eq {T : Type} (Γ Δ : struct_t T) :=
+    forall x : T, (elem x Γ) <-> (elem x Δ).
+
+  (* Δ is a proper extension of Γ *)
+  Definition proper_extension {T : Type} (Γ Δ : struct_t T) :=
+    subset Γ Δ /\ ~ set_eq Γ Δ.
+
+  Declare Scope sets_scope.
   Infix "∈" := elem (at level 77) : sets_scope.
   Infix "∪" := union (at level 78, left associativity) : sets_scope.
   Infix "⊆" := subset (at level 79) : sets_scope.
   Notation "Γ ,, A" := (extend Γ A) (at level 32, left associativity) : sets_scope.
 End Make_Set.
 
-Module MSet <: TSet.
+Module Prop_Set <: TSet.
 
   (* A set on universum T can be represented by its
      characteristic map: T -> Prop.
@@ -43,10 +48,17 @@ Module MSet <: TSet.
   Definition elem {T : Type} (A : T) (Γ : struct_t) := Γ A.
 
   (* The union of two sets of formulas. *)
-  Definition union {T : Type} (Γ Δ : struct_t) (A : T) := (elem A Γ) \/ (elem A Δ).
+  Definition union {T : Type} (Γ Δ : struct_t) : struct_t := fun x : T => (Γ x) \/ (Δ x).
 
   (* "extend Γ A" is the set Γ ∪ {A}. *)
-  Definition extend {T : Type} (Γ : struct_t) (A : T) : struct_t := fun B : T => or (elem B Γ) (A = B).
+  Definition extend {T : Type} (Γ : struct_t) (A : T) : struct_t := fun B : T => or (Γ B) (A = B).
+
+End Prop_Set.
+Export Prop_Set.
+
+Module Prop_Set_theorems.
+  Module Set1:= Make_Set(Prop_Set).
+  Import Set1.
 
   (* Множество Gamma является подмножеством (Gamma ,, A) *)
   Lemma subset_extend {T : Type} {Γ : T -> Prop} {A : T} : subset Γ (extend Γ A).
@@ -54,11 +66,48 @@ Module MSet <: TSet.
     unfold subset, extend.
     intros A0 H.
     left.
+    unfold elem in H.
     exact H.
   Qed.
+End Prop_Set_theorems.
 
-End MSet.
-Export MSet.
+Module List_Set <: TSet.
+
+  (* A set on universum T can be represented by its
+     characteristic map: T -> Prop.
+  *)
+
+  Definition struct_t {T : Type} := list T.
+
+  Definition empty {T : Type} : list T := nil.
+  (* Отношение принадлежности между элементом типа T и множеством с элементами типа T *)
+  Definition elem {T : Type} (A : T) (lst : struct_t) := In A lst.
+
+  (* The union of two sets of formulas. *)
+  Definition union {T : Type} (l1 l2 : struct_t) : @struct_t T := l1 ++ l2.
+
+  (* "extend Γ A" is the set Γ ∪ {A}. *)
+  Definition extend {T : Type} (lst : struct_t) (A : T) : struct_t := A :: lst.
+
+End List_Set.
+Export List_Set.
+
+Module List_Set_theorems.
+  Module Set_mod:= Make_Set(List_Set).
+  Import Set_mod.
+
+  (* Множество Gamma является подмножеством (Gamma ,, A) *)
+  Lemma subset_extend {T : Type} {Γ : list T} {A : T} : subset Γ (extend Γ A).
+  Proof.
+    unfold subset, extend.
+    intros A0 H.
+    unfold elem.
+    simpl.
+    right.
+    unfold elem in H.
+    exact H.
+  Qed.
+End List_Set_theorems.
 
 Module Relation.
 Definition relation (U: Type) := U -> U -> Prop.
