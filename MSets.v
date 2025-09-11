@@ -66,45 +66,25 @@ Instance Prop_Set2 {T : Type} : TSet2 (T -> Prop) :=
   subset_extend := Prop_subset_extend;
 }.
 
+(* Список Gamma является подмножеством (Gamma ,, A) *)
+Lemma List_subset_extend {T : Type} (lst : list T) (A : T) : @subset _ (list T) List_Set lst (@extend (list T) _ _ lst A).
+Proof.
+  unfold subset, extend.
+  intros A0 H.
+  unfold elem.
+  simpl.
+  right.
+  unfold elem in H.
+  simpl in H.
+  exact H.
+Qed.
+
+Instance List_Set2 {T : Type} : TSet2 (list T) :=
+{
+  subset_extend := List_subset_extend;
+}.
 End MSet.
 
-Module List_Set <: TSet.
-
-  (* A set on universum T can be represented by its
-     characteristic map: T -> Prop.
-  *)
-
-  Definition struct_t {T : Type} := list T.
-
-  Definition empty {T : Type} : list T := nil.
-  (* Отношение принадлежности между элементом типа T и множеством с элементами типа T *)
-  Definition elem {T : Type} (A : T) (lst : struct_t) := In A lst.
-
-  (* The union of two sets of formulas. *)
-  Definition union {T : Type} (l1 l2 : struct_t) : @struct_t T := l1 ++ l2.
-
-  (* "extend Γ A" is the set Γ ∪ {A}. *)
-  Definition extend {T : Type} (lst : struct_t) (A : T) : struct_t := A :: lst.
-
-End List_Set.
-Export List_Set.
-
-Module List_Set_theorems.
-  Module Set_mod:= Make_Set(List_Set).
-  Import Set_mod.
-
-  (* Множество Gamma является подмножеством (Gamma ,, A) *)
-  Lemma subset_extend {T : Type} {Γ : list T} {A : T} : subset Γ (extend Γ A).
-  Proof.
-    unfold subset, extend.
-    intros A0 H.
-    unfold elem.
-    simpl.
-    right.
-    unfold elem in H.
-    exact H.
-  Qed.
-End List_Set_theorems.
 
 Module Relation.
 Definition relation (U: Type) := U -> U -> Prop.
