@@ -9,22 +9,44 @@ Class TSet (T : Type) := {
   elem : T -> struct_t -> Prop;
   union : struct_t -> struct_t  -> struct_t;
   extend : struct_t -> T -> struct_t;
+  extend_correct (G : struct_t) (A: T) : elem A (extend G A);
 }.
+
+Definition Prop_extend {T : Type} (Γ : T -> Prop) (A : T) := fun x : T => Γ x \/ A = x.
+
+Lemma Prop_extend_correct {T : Type} (G : T -> Prop) (A : T) : (Prop_extend G A) A.
+Proof.
+  unfold Prop_extend.
+  right.
+  reflexivity.
+Qed.
 
 Instance Prop_Set {T : Type} : TSet T := {
   struct_t := T -> Prop;
   empty _ := False;
   elem (A : T) (Γ : T -> Prop) := Γ A;
   union  (Γ Δ : T -> Prop) (A : T) := Γ A \/ Δ A;
-  extend (Γ : T -> Prop) (A B : T) := Γ B \/ A = B;
+  extend := Prop_extend;
+  extend_correct := Prop_extend_correct;
 }.
+
+Definition List_extend {T : Type} (lst : list T) (A : T) := A :: lst.
+
+Lemma List_extend_correct {T : Type} (lst : list T) (A : T) : In A (List_extend lst A).
+Proof.
+  unfold List_extend.
+  simpl.
+  left.
+  reflexivity.
+Qed.
 
 Instance List_Set {T : Type} : TSet T := {
   struct_t := list T;
   empty := nil;
   elem := @In _;
   union := @app _;
-  extend lst A := A :: lst;
+  extend := List_extend;
+  extend_correct := List_extend_correct;
 }.
 
 Definition subset {T : Type} `{Set_obj1 : TSet T} `{Set_obj2 : TSet T} (Γ : Set_obj1.(struct_t)) (Δ : Set_obj2.(struct_t)) : Prop := forall A : T, elem A Γ -> elem A Δ.
