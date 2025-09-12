@@ -354,99 +354,89 @@ Proof.
 Qed.
 
 (* Proposition 2.2.3 (Compactness) If S |- X then there is some finite subset S' of S such that S' |- X *)
-Proposition compactness {atom : Set} (Γ : @formula atom -> Prop) : forall A : @formula atom, Γ |- A -> {l : list (@formula atom) & (prod (Forall Γ l) (let Γ' := (fun f => In f l) in Γ' |- A))}.
+Proposition compactness {atom : Set} (Γ : Prop_Set.(struct_t)) :
+  forall A : @formula atom, Γ |- A -> {l : List_Set.(struct_t) & l ⊆ Γ & l |- A}.
 Proof.
   intros A Γ_A.
   induction Γ_A as [A H|A B|A B C|A B|A B|A B|A B|A B|A B C|A B|A|A B|A B H1 IH1 H2 IH2|A H IH].
   - unfold elem in H.
+    simpl in H.
     exists [A].
-    split.
-    + apply Forall_cons.
-      exact H.
-      apply Forall_nil.
-    + intro H1.
-      hypo.
+    + unfold subset.
+      intros A0 H1.
+      unfold elem in H1.
+      simpl in H1.
+      unfold elem.
+      simpl.
+      destruct H1 as [H1 | []].
+      * rewrite <-H1.
+        exact H.
+    + hypo.
   - exists [].
-    split.
-    + apply Forall_nil.
+    + apply nil_subset_Prop.
     + apply (axiom1 _ A B).
   - exists [].
-    split.
-    + apply Forall_nil.
+    + apply nil_subset_Prop.
     + apply (axiom2 _ A B C).
   - exists [].
-    split.
-    + apply Forall_nil.
+    + apply nil_subset_Prop.
     + apply (conj_elim1 _ A B).
   - exists [].
-    split.
-    + apply Forall_nil.
+    + apply nil_subset_Prop.
     + apply (conj_elim2 _ A B).
   - exists [].
-    split.
-    + apply Forall_nil.
+    + apply nil_subset_Prop.
     + apply (conj_intro _ A B).
   - exists [].
-    split.
-    + apply Forall_nil.
+    + apply nil_subset_Prop.
     + apply (disj_intro1 _ A B).
   - exists [].
-    split.
-    + apply Forall_nil.
+    + apply nil_subset_Prop.
     + apply (disj_intro2 _ A B).
   - exists [].
-    split.
-    + apply Forall_nil.
+    + apply nil_subset_Prop.
     + apply (case_analysis _ A B C).
   - exists [].
-    split.
-    + apply Forall_nil.
+    + apply nil_subset_Prop.
     + apply (ex_falso _ A B).
   - exists [].
-    split.
-    + apply Forall_nil.
+    + apply nil_subset_Prop.
     + apply (tertium_non_datur _ A).
   - exists [].
-    split.
-    + apply Forall_nil.
+    + apply nil_subset_Prop.
     + apply (axiomK _ A B).
-  - destruct IH1 as [l1 [H_l1 IH1]].
-    destruct IH2 as [l2 [H_l2 IH2]].
+  - destruct IH1 as [l1 H_l1 IH1].
+    destruct IH2 as [l2 H_l2 IH2].
     exists (l1 ++ l2).
-    split.
-    + rewrite Forall_app.
+    + rewrite (subset_app_eq_conj l1 l2 Γ).
       exact (conj H_l1 H_l2).
-    + set (Δ := fun f : formula => In f (l1 ++ l2)).
-      assert (H_subset1: (fun f : formula => In f l1) ⊆ Δ).
+    + assert (H_subset: l1 ⊆ (l1 ++ l2)).
       {
-        unfold Δ.
         unfold subset.
-        intro f.
-        unfold elem.
-        intro H3.
+        simpl.
+        intros A1 H3.
         apply in_or_app.
         left.
         exact H3.
       }
 
-      specialize (weaken _ Δ _ H_subset1 IH1) as IH1_1.
-      assert (H_subset2: (fun f : formula => In f l2) ⊆ Δ).
+      specialize (weaken _ (l1 ++ l2) _ H_subset IH1) as IH1_1.
+      clear H_subset.
+      assert (H_subset: l2 ⊆ (l1 ++ l2)).
       {
-        unfold Δ.
         unfold subset.
-        intro f.
-        unfold elem.
-        intro H3.
+        simpl.
+        intros A1 H3.
         apply in_or_app.
         right.
         exact H3.
       }
 
-      specialize (weaken _ Δ _ H_subset2 IH2) as IH2_1.
+      specialize (weaken _ (l1 ++ l2) _ H_subset IH2) as IH2_1.
+      clear H_subset.
       apply (mp IH1_1 IH2_1).
-  - destruct IH as [l [H_l IH]].
+  - destruct IH as [l H_l IH].
     exists l.
-    split.
     + exact H_l.
     + apply (nec IH).
 Qed.

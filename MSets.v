@@ -4,7 +4,7 @@ Import ListNotations.
 
 Module MSet.
 Class TSet (T : Type) := {
-  struct_t : Type;
+  struct_t :> Type;
   empty : struct_t;
   elem : T -> struct_t -> Prop;
   union : struct_t -> struct_t  -> struct_t;
@@ -79,16 +79,99 @@ Instance List_Set2 {T : Type} : @TSet2 T List_Set :=
 {
   subset_extend := List_subset_extend;
 }.
+
+Lemma nil_subset_Prop {T : Type} Γ : @subset T List_Set Prop_Set nil Γ.
+Proof.
+  unfold subset.
+  intros A1 H.
+  unfold elem in H.
+  simpl in H.
+  destruct H.
+Qed.
+
+Lemma nil_subset_list {T : Type} lst : @subset T List_Set List_Set nil lst.
+Proof.
+  unfold subset.
+  intros A1 H.
+  unfold elem in H.
+  simpl in H.
+  destruct H.
+Qed.
+
+Lemma subset_app_eq_conj {T : Type} lst1 lst2 all : (@subset T List_Set Prop_Set (lst1 ++ lst2) all) <->
+                                                       ((@subset T List_Set Prop_Set lst1 all) /\
+                                                          (@subset T List_Set Prop_Set lst2 all)).
+Proof.
+  split.
+  - intro H.
+    unfold subset in H.
+    unfold subset.
+    split.
+    + intros A H1.
+      unfold elem in H1.
+      simpl in H1.
+      unfold elem.
+      simpl.
+      specialize (H A).
+      unfold elem in H.
+      simpl in H.
+      assert (Hor : In A lst1 \/ In A lst2).
+      {
+        left.
+        apply H1.
+      }
+
+      apply in_or_app in Hor.
+      specialize (H Hor).
+      exact H.
+    + intros A H1.
+      unfold elem in H1.
+      simpl in H1.
+      unfold elem.
+      simpl.
+      specialize (H A).
+      unfold elem in H.
+      simpl in H.
+      assert (Hor : In A lst1 \/ In A lst2).
+      {
+        right.
+        apply H1.
+      }
+
+      apply in_or_app in Hor.
+      specialize (H Hor).
+      exact H.
+  - intro H.
+    unfold subset in H.
+    unfold subset.
+    intros A H1.
+    unfold elem in H1.
+    simpl in H1.
+    destruct H as [H2 H3].
+    specialize (H2 A).
+    specialize (H3 A).
+    unfold elem in H2, H3.
+    simpl in H2, H3.
+    unfold elem.
+    simpl.
+    rewrite in_app_iff in H1.
+    destruct H1.
+    + specialize (H2 H).
+      exact H2.
+    + specialize (H3 H).
+      exact H3.
+Qed.
+
 End MSet.
 Export MSet.
 
-Definition odd (n : nat) : Prop :=
-  Nat.modulo n 2 <> 0.
+(* Definition odd (n : nat) : Prop := *)
+(*   Nat.modulo n 2 <> 0. *)
 
-Definition odd_list : list nat := [1; 3; 5; 7].
+(* Definition odd_list : list nat := [1; 3; 5; 7]. *)
 
-Check subset.
-Example Test1 : subset odd_list odd.
+(* Check subset. *)
+(* Example Test1 : subset odd_list odd. *)
 
 Module Relation.
 Definition relation (U: Type) := U -> U -> Prop.
