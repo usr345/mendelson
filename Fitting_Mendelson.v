@@ -683,15 +683,13 @@ Proof.
   assert (H1 : Γ ,, $X -> Y$ |- $X -> Y$).
   {
     apply hypo.
-    unfold elem.
-    unfold extend.
-
+    apply extend_correct.
   }
 
   specialize (contraposition (Γ,, $X -> Y$) X Y) as H2.
   specialize (mp H2 H1) as H3.
   specialize (nec H3) as H4.
-  pose proof (@axiomK _ (Γ,, $X -> Y$) $~Y$ $~X$) as H5.
+  pose proof (axiomK (Γ,, $X -> Y$) $~Y$ $~X$) as H5.
   unfold f_axiomK in H5.
   specialize (mp H5 H4) as H6.
   specialize (contraposition (Γ,, $X -> Y$) $box ~ Y$ $box ~ X$) as H7.
@@ -776,17 +774,17 @@ Inductive subformula {atom : Set} : (@formula atom) -> (@formula atom) -> Prop :
 | s_imp2 (X F1 F2 : @formula atom): subformula X F2 -> subformula X $F1 -> F2$.
 
 
-Theorem Replacement {atom : Set} `{EqDec atom} (Γ : @formula atom -> Prop) (X X' Y Y' : @formula atom) : forall n : nat, n <> 0 -> subformula X Y -> Γ |- $X <-> X'$ -> Y' = (replace_subformula X X' Y n) -> Γ |- $Y <-> Y'$.
+Theorem Replacement {atom : Set} `{EqDec atom} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X X' Y Y' : @formula atom) : forall n : nat, n <> 0 -> subformula X Y -> Γ |- $X <-> X'$ -> Y' = (replace_subformula X X' Y n) -> Γ |- $Y <-> Y'$.
 Admitted.
 
 (* Example 6.1.7 *)
-Proposition E6_1_7 {atom : Set} (Γ : @formula atom -> Prop) (X : @formula atom) : Γ |- $diamond diamond ~X -> ~ box box X$.
+Proposition E6_1_7 {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X : @formula atom) : Γ |- $diamond diamond ~X -> ~ box box X$.
 Proof.
 Admitted.
 
 
 (* Exercize 6.1.3.1 -> *)
-Proposition diamond_disj_1 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $diamond (X \/ Y) ->  (diamond X \/ diamond Y)$.
+Proposition diamond_disj_1 {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $diamond (X \/ Y) ->  (diamond X \/ diamond Y)$.
 Proof.
   specialize (deMorganDisj_rev Γ X Y) as H1.
   apply reguarity in H1.
@@ -800,7 +798,7 @@ Proof.
 Qed.
 
 (* Exercize 6.1.3.1 <- *)
-Proposition diamond_disj_2 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $(diamond X \/ diamond Y) -> diamond (X \/ Y)$.
+Proposition diamond_disj_2 {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $(diamond X \/ diamond Y) -> diamond (X \/ Y)$.
 Proof.
   specialize (deMorganDisj Γ X Y) as H1.
   apply reguarity in H1.
@@ -814,21 +812,21 @@ Proof.
 Qed.
 
 (* Exercize 6.1.3.1 <-> *)
-Proposition diamond_disj {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $diamond (X \/ Y) <-> (diamond X \/ diamond Y)$.
+Proposition diamond_disj {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $diamond (X \/ Y) <-> (diamond X \/ diamond Y)$.
 Proof.
   specialize (diamond_disj_1 Γ X Y) as H1.
   specialize (diamond_disj_2 Γ X Y) as H2.
-  specialize (meta_conj_intro H1 H2) as H3.
+  specialize (meta_conj_intro Γ H1 H2) as H3.
   unfold equivalence.
   exact H3.
 Qed.
 
 (* Exercize 6.1.3.2 *)
-Proposition E6_1_3_2 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $box (X -> Y) -> (diamond X -> diamond Y)$.
+Proposition E6_1_3_2 {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $box (X -> Y) -> (diamond X -> diamond Y)$.
 Proof.
   specialize (contraposition Γ X Y) as H1.
   apply reguarity in H1.
-  specialize_axiom (@axiomK _ Γ $~Y$ $~X$) H2.
+  specialize_axiom (axiomK Γ $~Y$ $~X$) H2.
   specialize (meta_transitivity H1 H2) as H3.
   specialize (contraposition Γ $box ~ Y$ $box ~ X$) as H4.
   specialize (meta_transitivity H3 H4) as H5.
@@ -837,7 +835,7 @@ Proof.
 Qed.
 
 (* Exercize 6.1.3.3 *)
-Proposition E6_1_3_3 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $(box X \/ box Y) -> box(X \/ Y)$.
+Proposition E6_1_3_3 {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $(box X \/ box Y) -> box(X \/ Y)$.
 Proof.
   specialize_axiom (disj_intro1 Γ X Y) H1.
   specialize_axiom (disj_intro2 Γ X Y) H2.
@@ -857,7 +855,7 @@ Proof.
 Qed.
 
 (* Exercize 6.1.3.4 *)
-Proposition E6_1_3_4 {atom : Set} `{EqDec atom} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $box (X \/ Y) -> (box X \/ diamond Y)$.
+Proposition E6_1_3_4 {atom : Set} `{EqDec atom} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $box (X \/ Y) -> (box X \/ diamond Y)$.
 Proof.
   rewrite Possibility.
   specialize (disj_comm Γ X Y) as Hdisj.
@@ -905,23 +903,24 @@ Proof.
 Admitted.
 
 (* Exercize 6.1.3.5 *)
-Proposition E6_1_3_5 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $(box X \/ diamond Y) -> diamond(X /\ Y)$.
+Proposition E6_1_3_5 {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $(box X \/ diamond Y) -> diamond(X /\ Y)$.
 Proof.
 Admitted.
 
 (* Exercize 6.1.3.6 *)
-Proposition E6_1_3_6 {atom : Set} (Γ : @formula atom -> Prop) (X Y : @formula atom) : Γ |- $(diamond X -> box Y) -> box(X \/ Y)$.
+Proposition E6_1_3_6 {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $(diamond X -> box Y) -> box(X \/ Y)$.
 Proof.
 Admitted.
 
-Definition inconsistent {atom : Set} (Γ : @formula atom -> Prop) : Type :=
-  {l : list (@formula atom) & (prod (Forall Γ l) (let Γ' := (fun f => In f l) in forall f, Γ' |- f))}.
+(* (prod (Forall Γ l) & (let Γ' := (fun f => In f l) in forall f, Γ' |- f)) *)
+Definition inconsistent {atom : Set} (Γ: (@Prop_Set (@formula atom)).(struct_t)) : Type :=
+  {lst : (@List_Set (@formula atom)).(struct_t) & (subset lst Γ) & forall F : (@formula atom), lst |- F}.
 
 (* A set of formulas Γ is consistent if it is not inconsistent *)
-Definition consistent {atom : Set} (Γ : @formula atom -> Prop) : Prop :=
+Definition consistent {atom : Set} (Γ: (@Prop_Set (@formula atom)).(struct_t)) : Prop :=
   (inconsistent Γ) -> False.
 
-Lemma consistent_no_contradiction {atom : Set} (Γ : @formula atom -> Prop) (f : @formula atom):
+Lemma consistent_no_contradiction {atom : Set} (Γ: (@Prop_Set (@formula atom)).(struct_t)) (f : @formula atom):
   consistent Γ -> (Γ |- $f /\ ~f$) -> False.
 Proof.
   intro H.
@@ -933,10 +932,14 @@ Proof.
   specialize (mp H2 H1) as H3.
   specialize_axiom (conj_elim2 Γ f $~f$) H4.
   specialize (mp H4 H1) as H5.
-  specialize_axiom (ex_falso Γ f g) H6.
-  specialize (mp H6 H5) as H7.
-  specialize (mp H7 H3) as H8.
-  exact H8.
+  exists [].
+  - apply nil_subset_Prop.
+  - intro g.
+    specialize_axiom (ex_falso Γ f g) H6.
+    apply (weaken empty Γ _) in H3.
+    specialize (mp H6 H5) as H7.
+    specialize (mp H7 H3) as H8.
+    exact H8.
 Qed.
 
 Lemma meta_consistent_no_contradiction {atom : Set} (Γ : @formula atom -> Prop) (f : @formula atom):
