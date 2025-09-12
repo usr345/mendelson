@@ -16,6 +16,9 @@ FSignature.vo : FSignature.v
 Sets.vo : Sets.v
 	$(COQC) Sets.v
 
+MSets.vo : MSets.v
+	$(COQC) MSets.v
+
 Formula.vo : Formula.v FSignature.vo
 	$(COQC) Formula.v
 

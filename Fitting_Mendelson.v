@@ -274,7 +274,7 @@ Definition f_axiomK {atom : Set} (A B : @formula atom) : formula :=
 
 Open Scope sets_scope.
 Reserved Notation "Γ |- A" (at level 98).
-Inductive entails {atom : Set} `{Set_obj : TSet} (Γ : Set_obj.(struct_t) (@formula atom)) : @formula atom -> Type :=
+Inductive entails {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ : Set_obj.(struct_t)) : @formula atom -> Type :=
   | hypo : forall A, A ∈ Γ -> Γ |- A (* every hypothesis is provable *)
   | axiom1 : forall A B , Γ |- f_axiom1 A B
   | axiom2 : forall A B C, Γ |- f_axiom2 A B C
@@ -293,19 +293,19 @@ where "Γ |- A" := (entails Γ A).
 
 (* It is convenient to make some parameters implicit. *)
 Arguments hypo {_} {_} _.
-Arguments axiom1 {_} (_) _ _.
-Arguments axiom2 {_} (_) _ _ _.
-Arguments conj_elim1 {_} (_) _ _.
-Arguments conj_elim2 {_} (_) _ _.
-Arguments conj_intro {_} (_) _ _.
-Arguments disj_intro1 {_} (_) _ _.
-Arguments disj_intro2 {_} (_) _ _.
-Arguments case_analysis {_} _ _ _ _.
-Arguments ex_falso {_} (_) _ _.
-Arguments tertium_non_datur {_} (_) _.
-Arguments axiomK {_} (_) _ _.
-Arguments mp {_} {_} {_} {_} (_) (_).
-Arguments nec {_} {_} {_} (_).
+Arguments axiom1 {_} {_} (_) _ _.
+Arguments axiom2 {_} {_} (_) _ _ _.
+Arguments conj_elim1 {_} {_} (_) _ _.
+Arguments conj_elim2 {_} {_} (_) _ _.
+Arguments conj_intro {_} {_} (_) _ _.
+Arguments disj_intro1 {_} {_} (_) _ _.
+Arguments disj_intro2 {_} {_} (_) _ _.
+Arguments case_analysis {_} {_} _ _ _ _.
+Arguments ex_falso {_} {_} (_) _ _.
+Arguments tertium_non_datur {_} {_} (_) _.
+Arguments axiomK {_} {_} (_) _ _.
+Arguments mp {_} {_} {_} {_} {_} (_) (_).
+Arguments nec {_} {_} {_} {_} (_).
 
 Ltac hypo := (apply hypo ; cbv in * ; auto 6).
 
@@ -327,7 +327,7 @@ Ltac specialize_axiom A H :=
 
 (* Proposition 2.2.2 (Monotonicity) *)
 (* Если $\Gamma \subseteq \Delta$ и $\Gamma \vdash A$, то $\Delta \vdash A$ *)
-Proposition weaken {atom : Set} `{Set_obj : TSet} (Γ Δ: Set_obj.(struct_t) (@formula atom)) (A : @formula atom) : Γ ⊆ Δ -> Γ |- A -> Δ |- A.
+Proposition weaken {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ Δ: Set_obj.(struct_t)) (A : @formula atom) : Γ ⊆ Δ -> Γ |- A -> Δ |- A.
 Proof.
   intros S H.
   induction H as [A H|A B|A B C|A B|A B|A B|A B|A B|A B C|A B|A|A B|A B H1 H2 IH1 IH2|A H IH].

@@ -1,56 +1,52 @@
-From Stdlib Require Import Lists.List.
+Require Import Lists.List.
+(* From Stdlib Require Import Lists.List. *)
+Import ListNotations.
 
 Module MSet.
-Class TSet (A : Type) :=
-{
-  struct_t: Type -> Type;
-  empty {T : Type}: struct_t T;
-  elem {T : Type}: T -> struct_t T -> Prop;
-  union {T : Type}: struct_t T -> struct_t T  -> struct_t T;
-  extend {T : Type}: struct_t T -> T -> struct_t T;
+Class TSet (T : Type) := {
+  struct_t : Type;
+  empty : struct_t;
+  elem : T -> struct_t -> Prop;
+  union : struct_t -> struct_t  -> struct_t;
+  extend : struct_t -> T -> struct_t;
 }.
 
-Instance Prop_Set {T : Type} : TSet (T -> Prop) :=
-{
-  struct_t := fun X => X -> Prop;
-  empty {T : Type} := fun _ => False;
-  elem {T : Type} (A : T) (Γ : T -> Prop) := Γ A;
-  union {T : Type} (Γ Δ : T -> Prop) := fun x : T => (Γ x) \/ (Δ x);
-  extend {T : Type} (Γ : T -> Prop) (A : T) := fun B : T => or (Γ B) (A = B);
+Instance Prop_Set {T : Type} : TSet T := {
+  struct_t := T -> Prop;
+  empty _ := False;
+  elem (A : T) (Γ : T -> Prop) := Γ A;
+  union  (Γ Δ : T -> Prop) (A : T) := Γ A \/ Δ A;
+  extend (Γ : T -> Prop) (A B : T) := Γ B \/ A = B;
 }.
 
-Instance List_Set {T : Type} : TSet (list T) :=
-{
-  struct_t := list;
-  empty {T : Type} := nil;
-  elem {T : Type} (A : T) (lst : list T) := In A lst;
-  union {T : Type} (l1 l2 : list T) := l1 ++ l2;
-  extend {T : Type} (lst : list T) (A : T) := A :: lst;
+Instance List_Set {T : Type} : TSet T := {
+  struct_t := list T;
+  empty := nil;
+  elem := @In _;
+  union := @app _;
+  extend lst A := A :: lst;
 }.
 
-Definition subset {T : Type} `{Set_obj : TSet} (Γ Δ : Set_obj.(struct_t) T) :=
-  forall A : T, (elem A Γ) -> (elem A Δ).
+Definition subset {T : Type} `{Set_obj1 : TSet T} `{Set_obj2 : TSet T} (Γ : Set_obj1.(struct_t)) (Δ : Set_obj2.(struct_t)) : Prop := forall A : T, elem A Γ -> elem A Δ.
 
-Definition set_eq {T : Type} `{Set_obj : TSet} (Γ Δ : Set_obj.(struct_t) T) :=
-  forall x : T, (elem x Γ) <-> (elem x Δ).
+Definition set_eq {T : Type} `{Set_obj : TSet T} (Γ Δ : Set_obj.(struct_t)) : Prop := forall A : T, elem A Γ <-> elem A Δ.
 
-(*   (* Δ is a proper extension of Γ *) *)
-Definition proper_extension {T : Type} `{Set_obj : TSet} (Γ Δ : Set_obj.(struct_t) T) :=
-  subset Γ Δ /\ ~ set_eq Γ Δ.
+(* Δ is a proper extension of Γ *)
+Definition proper_extension {T : Type} `{Set_obj : TSet T} Γ Δ := subset Γ Δ /\ ~ set_eq Γ Δ.
 
 Declare Scope sets_scope.
+Open Scope sets_scope.
 Infix "∈" := elem (at level 77) : sets_scope.
 Infix "∪" := union (at level 78, left associativity) : sets_scope.
 Infix "⊆" := subset (at level 79) : sets_scope.
-Notation "Γ ,, A" := (extend Γ A) (A ident, at level 32, left associativity).
+Notation "Γ ,, A" := (extend Γ A) (at level 32, left associativity) : sets_scope.
 
-Class TSet2 (T : Type) `{Set_obj : TSet T} :=
-{
-  subset_extend {Γ : Set_obj.(struct_t) T} {X : T}: subset Γ (extend Γ X);
+Class TSet2 (T : Type) `{Set_obj : TSet T} := {
+  subset_extend {Γ : Set_obj.(struct_t)} {X : T} : subset Γ (extend Γ X);
 }.
 
 (* Множество Gamma является подмножеством (Gamma ,, A) *)
-Lemma Prop_subset_extend {T : Type} (Γ : T -> Prop) (A : T) : @subset _ (T -> Prop) Prop_Set Γ (@extend (T -> Prop) _ _ Γ A).
+Lemma Prop_subset_extend {T : Type} Γ (A : T) : @subset _ Prop_Set Prop_Set Γ (extend Γ A).
 Proof.
   unfold subset, extend.
   intros A0 H.
@@ -61,13 +57,13 @@ Proof.
   exact H.
 Qed.
 
-Instance Prop_Set2 {T : Type} : TSet2 (T -> Prop) :=
+Instance Prop_Set2 {T : Type} : @TSet2 T Prop_Set :=
 {
   subset_extend := Prop_subset_extend;
 }.
 
 (* Список Gamma является подмножеством (Gamma ,, A) *)
-Lemma List_subset_extend {T : Type} (lst : list T) (A : T) : @subset _ (list T) List_Set lst (@extend (list T) _ _ lst A).
+Lemma List_subset_extend {T : Type} lst (A : T) : @subset _ List_Set List_Set lst (extend lst A).
 Proof.
   unfold subset, extend.
   intros A0 H.
@@ -79,12 +75,20 @@ Proof.
   exact H.
 Qed.
 
-Instance List_Set2 {T : Type} : TSet2 (list T) :=
+Instance List_Set2 {T : Type} : @TSet2 T List_Set :=
 {
   subset_extend := List_subset_extend;
 }.
 End MSet.
 Export MSet.
+
+Definition odd (n : nat) : Prop :=
+  Nat.modulo n 2 <> 0.
+
+Definition odd_list : list nat := [1; 3; 5; 7].
+
+Check subset.
+Example Test1 : subset odd_list odd.
 
 Module Relation.
 Definition relation (U: Type) := U -> U -> Prop.
