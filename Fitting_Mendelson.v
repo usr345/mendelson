@@ -936,7 +936,8 @@ Proof.
   - apply nil_subset_Prop.
   - intro g.
     specialize_axiom (ex_falso Γ f g) H6.
-    apply (weaken empty Γ _) in H3.
+    Check @weaken atom List_Set Γ [].
+    apply (weaken Γ [] g).
     specialize (mp H6 H5) as H7.
     specialize (mp H7 H3) as H8.
     exact H8.
