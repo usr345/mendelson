@@ -4,13 +4,15 @@ Import ListNotations.
 
 Module MSet.
 Class TSet (T : Type) := {
-  struct_t :> Type;
+  struct_t : Type;
   empty : struct_t;
   elem : T -> struct_t -> Prop;
   union : struct_t -> struct_t  -> struct_t;
   extend : struct_t -> T -> struct_t;
   extend_correct (G : struct_t) (A: T) : elem A (extend G A);
 }.
+
+Coercion TSet_Type {T : Type} (s : TSet T): Type := s.(struct_t).
 
 Definition Prop_extend {T : Type} (Γ : T -> Prop) (A : T) := fun x : T => Γ x \/ A = x.
 
@@ -49,12 +51,31 @@ Instance List_Set {T : Type} : TSet T := {
   extend_correct := List_extend_correct;
 }.
 
-Definition subset {T : Type} `{Set_obj1 : TSet T} `{Set_obj2 : TSet T} (Γ : Set_obj1.(struct_t)) (Δ : Set_obj2.(struct_t)) : Prop := forall A : T, elem A Γ -> elem A Δ.
+Definition subset {T : Type} `{Set_obj1 : TSet T} `{Set_obj2 : TSet T} (Γ : Set_obj1) (Δ : Set_obj2) : Prop := forall A : T, elem A Γ -> elem A Δ.
 
-Definition set_eq {T : Type} `{Set_obj : TSet T} (Γ Δ : Set_obj.(struct_t)) : Prop := forall A : T, elem A Γ <-> elem A Δ.
+Definition set_eq {T : Type} `{Set_obj : TSet T} (Γ Δ : Set_obj) : Prop := forall A : T, elem A Γ <-> elem A Δ.
 
 (* Δ is a proper extension of Γ *)
 Definition proper_extension {T : Type} `{Set_obj : TSet T} Γ Δ := subset Γ Δ /\ ~ set_eq Γ Δ.
+
+Lemma subset_refl {T : Type} `{Set_obj1 : TSet T} {Γ : Set_obj1} : subset Γ Γ.
+Proof.
+  unfold subset.
+  intros A H.
+  exact H.
+Qed.
+
+Lemma subset_trans {T : Type} `{Set_obj1 : TSet T} `{Set_obj2 : TSet T} `{Set_obj3 : TSet T} {Γ : Set_obj1} {Δ : Set_obj2} {Ε : Set_obj3} : subset Γ Δ -> subset Δ Ε -> subset Γ Ε.
+Proof.
+  unfold subset.
+  intros H1 H2.
+  intros A H3.
+  specialize (H1 A).
+  specialize (H2 A).
+  specialize (H1 H3).
+  specialize (H2 H1).
+  exact H2.
+Qed.
 
 Declare Scope sets_scope.
 Open Scope sets_scope.

@@ -327,7 +327,7 @@ Ltac specialize_axiom A H :=
 
 (* Proposition 2.2.2 (Monotonicity) *)
 (* Если $\Gamma \subseteq \Delta$ и $\Gamma \vdash A$, то $\Delta \vdash A$ *)
-Proposition weaken {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ Δ: Set_obj.(struct_t)) (A : @formula atom) : Γ ⊆ Δ -> Γ |- A -> Δ |- A.
+Proposition weaken {atom : Set} `{Set_obj1 : TSet (@formula atom)} `{Set_obj2 : TSet (@formula atom)} (Γ : Set_obj1.(struct_t)) (Δ : Set_obj2.(struct_t)) (A : @formula atom) : Γ ⊆ Δ -> Γ |- A -> Δ |- A.
 Proof.
   intros S H.
   induction H as [A H|A B|A B C|A B|A B|A B|A B|A B|A B C|A B|A|A B|A B H1 H2 IH1 IH2|A H IH].
@@ -913,14 +913,15 @@ Proof.
 Admitted.
 
 (* (prod (Forall Γ l) & (let Γ' := (fun f => In f l) in forall f, Γ' |- f)) *)
-Definition inconsistent {atom : Set} (Γ: (@Prop_Set (@formula atom)).(struct_t)) : Type :=
-  {lst : (@List_Set (@formula atom)).(struct_t) & (subset lst Γ) & forall F : (@formula atom), lst |- F}.
+Definition inconsistent {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) : Type :=
+  {lst : List_Set & (subset lst Γ) & forall F : (@formula atom), lst |- F}.
 
 (* A set of formulas Γ is consistent if it is not inconsistent *)
-Definition consistent {atom : Set} (Γ: (@Prop_Set (@formula atom)).(struct_t)) : Prop :=
+Definition consistent {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) : Prop :=
   (inconsistent Γ) -> False.
 
-Lemma consistent_no_contradiction {atom : Set} (Γ: (@Prop_Set (@formula atom)).(struct_t)) (f : @formula atom):
+(*
+Lemma consistent_no_contradiction {atom : Set} (Γ: Prop_Set) (f : @formula atom):
   consistent Γ -> (Γ |- $f /\ ~f$) -> False.
 Proof.
   intro H.
@@ -936,8 +937,8 @@ Proof.
   - apply nil_subset_Prop.
   - intro g.
     specialize_axiom (ex_falso Γ f g) H6.
-    Check @weaken atom List_Set Γ [].
-    apply (weaken Γ [] g).
+    Check @weaken.
+    specialize (@weaken atom List_Set Prop_Set [] Γ g) as Hweak.
     specialize (mp H6 H5) as H7.
     specialize (mp H7 H3) as H8.
     exact H8.
@@ -955,45 +956,67 @@ Proof.
   specialize (mp H2 Hf) as H3.
   exact H3.
 Qed.
+*)
 
-Lemma consistent_member {atom : Set} (Γ Δ: @formula atom -> Prop):
+Lemma consistent_subset {atom : Set} `{Set_obj1 : TSet (@formula atom)} `{Set_obj2 : TSet (@formula atom)} (Γ: Set_obj1) (Δ: Set_obj2):
   consistent Γ -> subset Δ Γ -> consistent Δ.
 Proof.
-  intros HΓ Hsubset.
+  intros HΓ HΔ_Γ.
   unfold consistent.
   intro HΔ.
   unfold consistent in HΓ.
   apply HΓ.
-  intro f.
-  apply weaken with (Γ := Δ).
-  - exact Hsubset.
-  - specialize (HΔ f).
-    exact HΔ.
+  unfold inconsistent.
+  unfold inconsistent in HΔ.
+  destruct HΔ as [Ε HΕ_Δ H].
+  exists Ε.
+  - specialize (subset_trans HΕ_Δ HΔ_Γ) as HΕ_Γ.
+    apply HΕ_Γ.
+  - intro A.
+    apply weaken with (Γ := Ε).
+    + apply subset_refl.
+    + specialize (H A).
+      exact H.
+Qed.
+
+Lemma inconsistent_subset {atom : Set} `{Set_obj1 : TSet (@formula atom)} `{Set_obj2 : TSet (@formula atom)} (Γ: Set_obj1) (Δ: Set_obj2):
+  inconsistent Γ -> subset Γ Δ -> inconsistent Δ.
+Proof.
+  intros HΓ HΓ_Δ.
+  unfold inconsistent.
+  unfold inconsistent in HΓ.
+  destruct HΓ as [Ε HΕ_Γ H].
+  exists Ε.
+  - specialize (subset_trans HΕ_Γ HΓ_Δ) as HΕ_Δ.
+    exact HΕ_Δ.
+  - intro A.
+    specialize (H A).
+    exact H.
 Qed.
 
 (*
   Множество формул Γ называется максимально консистентным, если оно консистентно, и
   никакое его собственное расширение не является консистентным
 *)
-Definition max_consistent {atom : Set} (Γ : @formula atom -> Prop) : Prop :=
-  consistent Γ /\ forall Δ : @formula atom -> Prop, ~(proper_extension Γ Δ /\ consistent Δ).
+Definition max_consistent {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ : Set_obj) : Prop :=
+  consistent Γ /\ forall Δ : Set_obj, ~(proper_extension Γ Δ /\ consistent Δ).
 
-Lemma max_consistent_member_left {atom : Set} (Γ : @formula atom -> Prop) (f : @formula atom) :
-  max_consistent Γ -> Γ f -> Γ |- f.
+Lemma max_consistent_extend {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ : Set_obj) (X : @formula atom) :
+  let Δ := Γ ,, X in
+  consistent Γ -> {lst : List_Set & (subset lst Δ) & forall F : (@formula atom), lst |- F} -> X ∈ Δ.
 Proof.
-  intros H Γ_f.
-  unfold max_consistent in H.
-  destruct H as [H1 H2].
-  unfold consistent in H1.
-  apply hypo.
-  unfold elem.
-  exact Γ_f.
-Qed.
+  intros Δ HΓ HΔ.
+  destruct HΔ as [Ε HΕ_Δ H].
 
-Lemma max_consistent_member_right {atom : Set} (Γ : @formula atom -> Prop) (X : @formula atom) :
-  max_consistent Γ -> Γ |- X -> Γ X.
+
+Lemma max_consistent_extension {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ : Set_obj) :
+  forall X : @formula atom, max_consistent Γ -> Γ |- X -> X ∈ Γ.
+
+
+Lemma max_consistent_elem {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ : Set_obj) :
+  forall X : @formula atom, max_consistent Γ -> Γ |- X -> X ∈ Γ.
 Proof.
-  intros H Γ_X.
+  intros X H Γ_X.
   unfold max_consistent in H.
   destruct H as [H1 H2].
   specialize (H2 (extend Γ X)).
