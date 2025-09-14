@@ -327,7 +327,7 @@ Ltac specialize_axiom A H :=
 
 (* Proposition 2.2.2 (Monotonicity) *)
 (* Если $\Gamma \subseteq \Delta$ и $\Gamma \vdash A$, то $\Delta \vdash A$ *)
-Proposition weaken {atom : Set} `{Set_obj1 : TSet (@formula atom)} `{Set_obj2 : TSet (@formula atom)} (Γ : Set_obj1.(struct_t)) (Δ : Set_obj2.(struct_t)) (A : @formula atom) : Γ ⊆ Δ -> Γ |- A -> Δ |- A.
+Proposition weaken {atom : Set} `{Set_obj1 : TSet (@formula atom)} `{Set_obj2 : TSet (@formula atom)} (Γ : Set_obj1) (Δ : Set_obj2) (A : @formula atom) : Γ ⊆ Δ -> Γ |- A -> Δ |- A.
 Proof.
   intros S H.
   induction H as [A H|A B|A B C|A B|A B|A B|A B|A B|A B C|A B|A|A B|A B H1 H2 IH1 IH2|A H IH].
@@ -973,10 +973,8 @@ Proof.
   - specialize (subset_trans HΕ_Δ HΔ_Γ) as HΕ_Γ.
     apply HΕ_Γ.
   - intro A.
-    apply weaken with (Γ := Ε).
-    + apply subset_refl.
-    + specialize (H A).
-      exact H.
+    specialize (H A).
+    exact H.
 Qed.
 
 Lemma inconsistent_subset {atom : Set} `{Set_obj1 : TSet (@formula atom)} `{Set_obj2 : TSet (@formula atom)} (Γ: Set_obj1) (Δ: Set_obj2):
@@ -995,19 +993,19 @@ Proof.
 Qed.
 
 (*
-  Множество формул Γ называется максимально консистентным, если оно консистентно, и
-  никакое его собственное расширение не является консистентным
+  Множество формул Γ называется максимально консистентным, если оно консистентно, и никакое его собственное расширение не является консистентным
 *)
 Definition max_consistent {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ : Set_obj) : Prop :=
   consistent Γ /\ forall Δ : Set_obj, ~(proper_extension Γ Δ /\ consistent Δ).
 
-Lemma max_consistent_extend {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ : Set_obj) (X : @formula atom) :
+(*
+Lemma max_consistent_extend {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ : Set_obj) (X : @formula atom) (Ε : @List_Set (@formula atom)) :
   let Δ := Γ ,, X in
-  consistent Γ -> {lst : List_Set & (subset lst Δ) & forall F : (@formula atom), lst |- F} -> X ∈ Δ.
+  consistent Γ -> subset Ε Δ -> (forall F : (@formula atom), Ε |- F) -> X ∈ Ε.
 Proof.
-  intros Δ HΓ HΔ.
-  destruct HΔ as [Ε HΕ_Δ H].
-
+  intros Δ HΓ HΔ H.
+  unfold consistent in HΓ.
+*)  
 
 Lemma max_consistent_extension {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ : Set_obj) :
   forall X : @formula atom, max_consistent Γ -> Γ |- X -> X ∈ Γ.

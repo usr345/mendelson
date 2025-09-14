@@ -14,6 +14,8 @@ Class TSet (T : Type) := {
 
 Coercion TSet_Type {T : Type} (s : TSet T): Type := s.(struct_t).
 
+(* Parameter elem_dec {T : Type} `{Set_obj: TSet T} (obj : Set_obj) : forall x : T, { elem Set_obj t } + { ~elem Set_obj t }. *)
+
 Definition Prop_extend {T : Type} (Γ : T -> Prop) (A : T) := fun x : T => Γ x \/ A = x.
 
 Lemma Prop_extend_correct {T : Type} (G : T -> Prop) (A : T) : (Prop_extend G A) A.
@@ -32,7 +34,8 @@ Instance Prop_Set {T : Type} : TSet T := {
   extend_correct := Prop_extend_correct;
 }.
 
-Definition List_extend {T : Type} (lst : list T) (A : T) := A :: lst.
+Print list.
+Definition List_extend {T : Type} (lst : list T) (A : T) := cons A lst.
 
 Lemma List_extend_correct {T : Type} (lst : list T) (A : T) : In A (List_extend lst A).
 Proof.
@@ -45,20 +48,20 @@ Qed.
 Instance List_Set {T : Type} : TSet T := {
   struct_t := list T;
   empty := nil;
-  elem := @In _;
-  union := @app _;
+  elem := @In T;
+  union := @app T;
   extend := List_extend;
   extend_correct := List_extend_correct;
 }.
 
 Definition subset {T : Type} `{Set_obj1 : TSet T} `{Set_obj2 : TSet T} (Γ : Set_obj1) (Δ : Set_obj2) : Prop := forall A : T, elem A Γ -> elem A Δ.
 
-Definition set_eq {T : Type} `{Set_obj : TSet T} (Γ Δ : Set_obj) : Prop := forall A : T, elem A Γ <-> elem A Δ.
+Definition set_eq {T : Type} `{Set_obj1 : TSet T} `{Set_obj2 : TSet T} (Γ : Set_obj1) (Δ : Set_obj2) : Prop := forall A : T, elem A Γ <-> elem A Δ.
 
 (* Δ is a proper extension of Γ *)
-Definition proper_extension {T : Type} `{Set_obj : TSet T} Γ Δ := subset Γ Δ /\ ~ set_eq Γ Δ.
+Definition proper_extension {T : Type} `{Set_obj1 : TSet T} `{Set_obj2 : TSet T} (Γ : Set_obj1) (Δ : Set_obj2) := subset Γ Δ /\ ~ set_eq Γ Δ.
 
-Lemma subset_refl {T : Type} `{Set_obj1 : TSet T} {Γ : Set_obj1} : subset Γ Γ.
+Lemma subset_refl {T : Type} `{Set_obj : TSet T} {Γ : Set_obj} : subset Γ Γ.
 Proof.
   unfold subset.
   intros A H.
@@ -85,7 +88,7 @@ Infix "⊆" := subset (at level 79) : sets_scope.
 Notation "Γ ,, A" := (extend Γ A) (at level 32, left associativity) : sets_scope.
 
 Class TSet2 (T : Type) `{Set_obj : TSet T} := {
-  subset_extend {Γ : Set_obj.(struct_t)} {X : T} : subset Γ (extend Γ X);
+  subset_extend {Γ : Set_obj} {X : T} : subset Γ (extend Γ X);
 }.
 
 (* Множество Gamma является подмножеством (Gamma ,, A) *)
@@ -96,6 +99,7 @@ Proof.
   simpl.
   unfold elem in H.
   simpl in H.
+  unfold Prop_extend.
   left.
   exact H.
 Qed.
@@ -123,7 +127,7 @@ Instance List_Set2 {T : Type} : @TSet2 T List_Set :=
   subset_extend := List_subset_extend;
 }.
 
-Lemma nil_subset_Prop {T : Type} Γ : @subset T List_Set Prop_Set nil Γ.
+Lemma nil_subset_Prop {T : Type} {Γ : Prop_Set} : @subset T List_Set Prop_Set nil Γ.
 Proof.
   unfold subset.
   intros A1 H.
@@ -132,7 +136,7 @@ Proof.
   destruct H.
 Qed.
 
-Lemma nil_subset_list {T : Type} lst : @subset T List_Set List_Set nil lst.
+Lemma nil_subset_list {T : Type} {lst: List_Set} : @subset T List_Set List_Set nil lst.
 Proof.
   unfold subset.
   intros A1 H.
@@ -141,9 +145,7 @@ Proof.
   destruct H.
 Qed.
 
-Lemma subset_app_eq_conj {T : Type} lst1 lst2 all : (@subset T List_Set Prop_Set (lst1 ++ lst2) all) <->
-                                                       ((@subset T List_Set Prop_Set lst1 all) /\
-                                                          (@subset T List_Set Prop_Set lst2 all)).
+Lemma subset_app_eq_conj {T : Type} lst1 lst2 all : (@subset T List_Set Prop_Set (lst1 ++ lst2) all) <-> ((@subset T List_Set Prop_Set lst1 all) /\ (@subset T List_Set Prop_Set lst2 all)).
 Proof.
   split.
   - intro H.
