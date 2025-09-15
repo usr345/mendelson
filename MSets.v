@@ -107,11 +107,11 @@ Infix "⊆" := subset (at level 79) : sets_scope.
 Notation "Γ ,, A" := (extend Γ A) (at level 32, left associativity) : sets_scope.
 
 Class TSet2 (T : Type) `{Set_obj : TSet T} := {
-  subset_extend {Γ : Set_obj} {X : T} : subset Γ (extend Γ X);
+    subset_extend {Γ : Set_obj} {X : T} : subset Γ (extend Γ X);
 }.
 
 (* Множество Gamma является подмножеством (Gamma ,, A) *)
-Lemma Prop_subset_extend {T : Type} Γ (A : T) : @subset _ Prop_Set Prop_Set Γ (extend Γ A).
+Lemma Prop_subset_extend {T : Type} (Γ : Prop_Set) (A : T) : @subset _ Prop_Set Prop_Set Γ (extend Γ A).
 Proof.
   unfold subset, extend.
   intros A0 H.
@@ -122,6 +122,23 @@ Proof.
   left.
   exact H.
 Qed.
+
+Lemma List_Prop_subset_extend_not {T : Type} `{Set_obj : TSet T} (Γ: Set_obj) (Δ: @List_Set T) (A: T) : Δ ⊆ (extend Γ A) -> ~(A ∈ Δ) -> Δ ⊆ Γ.
+Proof.
+  intros H1 H2.
+  unfold subset.
+  intros B Δ_B.
+  unfold subset in H1.
+  specialize (H1 B).
+  specialize (H1 Δ_B).
+  apply extend_elem in H1.
+  destruct H1.
+  - exact H.
+  - rewrite <-H in Δ_B.
+    specialize (H2 Δ_B).
+    destruct H2.
+Qed.
+
 
 Instance Prop_Set2 {T : Type} : @TSet2 T Prop_Set :=
 {
@@ -145,6 +162,37 @@ Instance List_Set2 {T : Type} : @TSet2 T List_Set :=
 {
   subset_extend := List_subset_extend;
 }.
+
+Lemma List_elem_excl_middle (T : Type) (Heq_dec : forall x y : T, {x = y} + {x <> y}) (l : list T) : forall x : T, {In x l} + {~ In x l}.
+Proof.
+  intro x.
+  induction l as [|a l' IH].
+  - right.
+    unfold In.
+    intro H.
+    exact H.
+  - destruct (Heq_dec x a) eqn:Heq.
+    + left.
+      cbn.
+      left.
+      symmetry.
+      exact e.
+    + destruct IH as [In_x_l | nIn_x_l].
+      * left.
+        cbn.
+        right.
+        exact In_x_l.
+      * right.
+        cbn.
+        unfold not.
+        intro H.
+        destruct H.
+        ** symmetry in H.
+           specialize (n H) as Hcontra.
+           destruct Hcontra.
+        ** specialize (nIn_x_l H) as Hcontra.
+           destruct Hcontra.
+Qed.
 
 Lemma nil_subset_Prop {T : Type} {Γ : Prop_Set} : @subset T List_Set Prop_Set nil Γ.
 Proof.

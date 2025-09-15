@@ -998,18 +998,32 @@ Qed.
 Definition max_consistent {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ : Set_obj) : Prop :=
   consistent Γ /\ forall Δ : Set_obj, ~(proper_extension Γ Δ /\ consistent Δ).
 
-(*
-Lemma max_consistent_extend {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ : Set_obj) (X : @formula atom) (Ε : @List_Set (@formula atom)) :
-  let Δ := Γ ,, X in
-  consistent Γ -> subset Ε Δ -> (forall F : (@formula atom), Ε |- F) -> X ∈ Ε.
+
+Lemma max_consistent_extend {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ : Set_obj) (X : @formula atom) (Δ  : @List_Set (@formula atom)) :
+  let Γ_X := Γ ,, X in
+  consistent Γ -> subset Δ Γ_X -> (forall F : (@formula atom), Δ |- F) -> X ∈ Δ.
 Proof.
-  intros Δ HΓ HΔ H.
+  intros Γ_X HΓ HΔ H.
   unfold consistent in HΓ.
-*)  
+  specialize (List_elem_excl_middle (@formula atom) formula_eq Δ) as Hexcl.
+  specialize (Hexcl X).
+  destruct Hexcl as [Yes | No].
+  - unfold elem.
+    simpl.
+    exact Yes.
+  - specialize (extend_correct Γ X) as Hext.
+    specialize (List_Prop_subset_extend_not Γ Δ X HΔ No) as H1.
+    assert (HContra: inconsistent Γ).
+    {
+      unfold inconsistent.
+      exists Δ.
+      - exact H1.
+      - exact H.
+    }
 
-Lemma max_consistent_extension {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ : Set_obj) :
-  forall X : @formula atom, max_consistent Γ -> Γ |- X -> X ∈ Γ.
-
+    specialize (HΓ HContra).
+    destruct HΓ.
+Qed.
 
 Lemma max_consistent_elem {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ : Set_obj) :
   forall X : @formula atom, max_consistent Γ -> Γ |- X -> X ∈ Γ.
