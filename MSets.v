@@ -10,6 +10,7 @@ Class TSet (T : Type) := {
   union : struct_t -> struct_t  -> struct_t;
   extend : struct_t -> T -> struct_t;
   extend_correct (G : struct_t) (A: T) : elem A (extend G A);
+  extend_elem (G : struct_t) (A B: T) : elem B (extend G A) -> elem B G \/ A = B;
 }.
 
 Coercion TSet_Type {T : Type} (s : TSet T): Type := s.(struct_t).
@@ -25,6 +26,13 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma Prop_extend_elem {T : Type} (G : T -> Prop) (A B: T) : (Prop_extend G A) B -> G B \/ A = B.
+Proof.
+  intro H.
+  unfold Prop_extend in H.
+  exact H.
+Qed.
+
 Instance Prop_Set {T : Type} : TSet T := {
   struct_t := T -> Prop;
   empty _ := False;
@@ -32,9 +40,13 @@ Instance Prop_Set {T : Type} : TSet T := {
   union  (Γ Δ : T -> Prop) (A : T) := Γ A \/ Δ A;
   extend := Prop_extend;
   extend_correct := Prop_extend_correct;
+  extend_elem := Prop_extend_elem;
 }.
 
-Print list.
+Declare Scope sets_scope.
+Open Scope sets_scope.
+Infix "∈" := elem (at level 77) : sets_scope.
+
 Definition List_extend {T : Type} (lst : list T) (A : T) := cons A lst.
 
 Lemma List_extend_correct {T : Type} (lst : list T) (A : T) : In A (List_extend lst A).
@@ -45,6 +57,15 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma List_extend_elem {T : Type} (lst : list T) (A B : T) : In B (List_extend lst A) -> In B lst \/ A = B.
+Proof.
+  intro H.
+  unfold List_extend in H.
+  simpl in H.
+  rewrite or_comm in H.
+  exact H.
+Qed.
+
 Instance List_Set {T : Type} : TSet T := {
   struct_t := list T;
   empty := nil;
@@ -52,11 +73,12 @@ Instance List_Set {T : Type} : TSet T := {
   union := @app T;
   extend := List_extend;
   extend_correct := List_extend_correct;
+  extend_elem := List_extend_elem;
 }.
 
-Definition subset {T : Type} `{Set_obj1 : TSet T} `{Set_obj2 : TSet T} (Γ : Set_obj1) (Δ : Set_obj2) : Prop := forall A : T, elem A Γ -> elem A Δ.
+Definition subset {T : Type} `{Set_obj1 : TSet T} `{Set_obj2 : TSet T} (Γ : Set_obj1) (Δ : Set_obj2) : Prop := forall A : T, A ∈ Γ -> A ∈ Δ.
 
-Definition set_eq {T : Type} `{Set_obj1 : TSet T} `{Set_obj2 : TSet T} (Γ : Set_obj1) (Δ : Set_obj2) : Prop := forall A : T, elem A Γ <-> elem A Δ.
+Definition set_eq {T : Type} `{Set_obj1 : TSet T} `{Set_obj2 : TSet T} (Γ : Set_obj1) (Δ : Set_obj2) : Prop := forall A : T, A ∈ Γ <-> A ∈ Δ.
 
 (* Δ is a proper extension of Γ *)
 Definition proper_extension {T : Type} `{Set_obj1 : TSet T} `{Set_obj2 : TSet T} (Γ : Set_obj1) (Δ : Set_obj2) := subset Γ Δ /\ ~ set_eq Γ Δ.
@@ -80,9 +102,6 @@ Proof.
   exact H2.
 Qed.
 
-Declare Scope sets_scope.
-Open Scope sets_scope.
-Infix "∈" := elem (at level 77) : sets_scope.
 Infix "∪" := union (at level 78, left associativity) : sets_scope.
 Infix "⊆" := subset (at level 79) : sets_scope.
 Notation "Γ ,, A" := (extend Γ A) (at level 32, left associativity) : sets_scope.
@@ -143,6 +162,21 @@ Proof.
   unfold elem in H.
   simpl in H.
   destruct H.
+Qed.
+
+Lemma subset_extend_no_A {T : Type} `{Set_obj1 : TSet T} `{Set_obj2 : TSet T} {Γ : Set_obj1} {Δ : Set_obj2} (A : T) : Δ ⊆ (Γ ,, A) -> ~(A ∈ Δ) -> Δ ⊆ Γ.
+Proof.
+  intros H1 H2.
+  unfold subset.
+  intros B Δ_B.
+  unfold subset in H1.
+  specialize (H1 B Δ_B).
+  apply extend_elem in H1.
+  destruct H1 as [H1 | H1].
+  - exact H1.
+  - rewrite <-H1 in Δ_B.
+    specialize (H2 Δ_B).
+    destruct H2.
 Qed.
 
 Lemma subset_app_eq_conj {T : Type} lst1 lst2 all : (@subset T List_Set Prop_Set (lst1 ++ lst2) all) <-> ((@subset T List_Set Prop_Set lst1 all) /\ (@subset T List_Set Prop_Set lst2 all)).
