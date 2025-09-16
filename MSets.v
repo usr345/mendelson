@@ -3,7 +3,7 @@ Require Import Lists.List.
 Import ListNotations.
 
 Module MSet.
-Class TSet (T : Type) := {
+Record TSet (T : Type) : Type := mkTSet {
   struct_t : Type;
   empty : struct_t;
   elem : T -> struct_t -> Prop;
@@ -13,7 +13,7 @@ Class TSet (T : Type) := {
   extend_elem (G : struct_t) (A B: T) : elem B (extend G A) -> elem B G \/ A = B;
 }.
 
-Coercion TSet_Type {T : Type} (s : TSet T): Type := s.(struct_t).
+Coercion TSet_Type {T : Type} (s : TSet T): Type := s.(struct_t T).
 
 (* Parameter elem_dec {T : Type} `{Set_obj: TSet T} (obj : Set_obj) : forall x : T, { elem Set_obj t } + { ~elem Set_obj t }. *)
 
@@ -33,7 +33,7 @@ Proof.
   exact H.
 Qed.
 
-Instance Prop_Set {T : Type} : TSet T := {
+Definition Prop_Set {T : Type} : TSet T := {|
   struct_t := T -> Prop;
   empty _ := False;
   elem (A : T) (Γ : T -> Prop) := Γ A;
@@ -41,11 +41,13 @@ Instance Prop_Set {T : Type} : TSet T := {
   extend := Prop_extend;
   extend_correct := Prop_extend_correct;
   extend_elem := Prop_extend_elem;
-}.
+|}.
 
 Declare Scope sets_scope.
 Open Scope sets_scope.
-Infix "∈" := elem (at level 77) : sets_scope.
+Infix "∈" := (elem _ _) (at level 77) : sets_scope.
+Infix "∪" := (union _ _) (at level 78, left associativity) : sets_scope.
+Notation "Γ ,, A" := (extend _ _ Γ A) (at level 32, left associativity) : sets_scope.
 
 Definition List_extend {T : Type} (lst : list T) (A : T) := cons A lst.
 
@@ -66,7 +68,7 @@ Proof.
   exact H.
 Qed.
 
-Instance List_Set {T : Type} : TSet T := {
+Definition List_Set {T : Type} : TSet T := {|
   struct_t := list T;
   empty := nil;
   elem := @In T;
@@ -74,14 +76,19 @@ Instance List_Set {T : Type} : TSet T := {
   extend := List_extend;
   extend_correct := List_extend_correct;
   extend_elem := List_extend_elem;
-}.
+|}.
 
-Definition subset {T : Type} `{Set_obj1 : TSet T} `{Set_obj2 : TSet T} (Γ : Set_obj1) (Δ : Set_obj2) : Prop := forall A : T, A ∈ Γ -> A ∈ Δ.
+Definition subset {T : Type} {Set_obj1 Set_obj2 : TSet T} (Γ : Set_obj1) (Δ : Set_obj2 ) : Prop :=
+  forall A : T, A ∈ Γ -> A ∈ Δ.
 
-Definition set_eq {T : Type} `{Set_obj1 : TSet T} `{Set_obj2 : TSet T} (Γ : Set_obj1) (Δ : Set_obj2) : Prop := forall A : T, A ∈ Γ <-> A ∈ Δ.
+Infix "⊆" := subset (at level 79) : sets_scope.
+
+Definition set_eq {T : Type} {Set_obj1 Set_obj2 : TSet T} (Γ : Set_obj1) (Δ : Set_obj2) : Prop :=
+  forall A : T, A ∈ Γ <-> A ∈ Δ.
 
 (* Δ is a proper extension of Γ *)
-Definition proper_extension {T : Type} `{Set_obj1 : TSet T} `{Set_obj2 : TSet T} (Γ : Set_obj1) (Δ : Set_obj2) := subset Γ Δ /\ ~ set_eq Γ Δ.
+Definition proper_extension {T : Type} {Set_obj1 Set_obj2: TSet T} (Γ : Set_obj1) (Δ : Set_obj2) :=
+  subset Γ Δ /\ ~ set_eq Γ Δ.
 
 Lemma subset_refl {T : Type} `{Set_obj : TSet T} {Γ : Set_obj} : subset Γ Γ.
 Proof.
@@ -90,7 +97,7 @@ Proof.
   exact H.
 Qed.
 
-Lemma subset_trans {T : Type} `{Set_obj1 : TSet T} `{Set_obj2 : TSet T} `{Set_obj3 : TSet T} {Γ : Set_obj1} {Δ : Set_obj2} {Ε : Set_obj3} : subset Γ Δ -> subset Δ Ε -> subset Γ Ε.
+Lemma subset_trans {T : Type} {Set_obj1 Set_obj2 Set_obj3 : TSet T} {Γ : Set_obj1} {Δ : Set_obj2} {Ε : Set_obj3} : subset Γ Δ -> subset Δ Ε -> subset Γ Ε.
 Proof.
   unfold subset.
   intros H1 H2.
@@ -102,16 +109,15 @@ Proof.
   exact H2.
 Qed.
 
-Infix "∪" := union (at level 78, left associativity) : sets_scope.
-Infix "⊆" := subset (at level 79) : sets_scope.
-Notation "Γ ,, A" := (extend Γ A) (at level 32, left associativity) : sets_scope.
-
-Class TSet2 (T : Type) `{Set_obj : TSet T} := {
-    subset_extend {Γ : Set_obj} {X : T} : subset Γ (extend Γ X);
+Record TSet2 (T : Type) := {
+  TSet_car : TSet T;
+  subset_extend {Γ : TSet_car} X : subset Γ (extend _ _ Γ X);
 }.
 
+Coercion TSet2_Type {T : Type} (s : TSet2 T): Type := s.(TSet_car T).(struct_t T).
+
 (* Множество Gamma является подмножеством (Gamma ,, A) *)
-Lemma Prop_subset_extend {T : Type} (Γ : Prop_Set) (A : T) : @subset _ Prop_Set Prop_Set Γ (extend Γ A).
+Lemma Prop_subset_extend {T : Type} (Γ : Prop_Set) (A : T) : Γ ⊆ (Γ ,, A).
 Proof.
   unfold subset, extend.
   intros A0 H.
@@ -123,7 +129,7 @@ Proof.
   exact H.
 Qed.
 
-Lemma List_Prop_subset_extend_not {T : Type} `{Set_obj : TSet T} (Γ: Set_obj) (Δ: @List_Set T) (A: T) : Δ ⊆ (extend Γ A) -> ~(A ∈ Δ) -> Δ ⊆ Γ.
+Lemma List_Prop_subset_extend_not {T : Type} {Set_obj : TSet T} (Γ: Set_obj) (Δ: @List_Set T) (A: T) : Δ ⊆ (Γ ,, A) -> ~(A ∈ Δ) -> Δ ⊆ Γ.
 Proof.
   intros H1 H2.
   unfold subset.
@@ -139,14 +145,14 @@ Proof.
     destruct H2.
 Qed.
 
-
-Instance Prop_Set2 {T : Type} : @TSet2 T Prop_Set :=
-{
+Definition Prop_Set2 {T : Type} : @TSet2 T :=
+{|
+  TSet_car := Prop_Set;
   subset_extend := Prop_subset_extend;
-}.
+|}.
 
 (* Список Gamma является подмножеством (Gamma ,, A) *)
-Lemma List_subset_extend {T : Type} lst (A : T) : @subset _ List_Set List_Set lst (extend lst A).
+Lemma List_subset_extend {T : Type} (lst : List_Set) (A : T) : lst ⊆ (lst ,, A).
 Proof.
   unfold subset, extend.
   intros A0 H.
@@ -158,10 +164,11 @@ Proof.
   exact H.
 Qed.
 
-Instance List_Set2 {T : Type} : @TSet2 T List_Set :=
-{
+Definition List_Set2 {T : Type} : @TSet2 T :=
+{|
+  TSet_car := List_Set;
   subset_extend := List_subset_extend;
-}.
+|}.
 
 Lemma List_elem_excl_middle (T : Type) (Heq_dec : forall x y : T, {x = y} + {x <> y}) (l : list T) : forall x : T, {In x l} + {~ In x l}.
 Proof.

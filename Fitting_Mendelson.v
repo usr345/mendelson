@@ -1025,7 +1025,7 @@ Proof.
     destruct HΓ.
 Qed.
 
-Lemma max_consistent_elem {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ : Set_obj) :
+Lemma max_consistent_elem {atom : Set} `{Set_obj : TSet2 (@formula atom)} (Γ : Set_obj) :
   forall X : @formula atom, max_consistent Γ -> Γ |- X -> X ∈ Γ.
 Proof.
   intros X H Γ_X.
@@ -1037,7 +1037,8 @@ Proof.
   - unfold proper_extension in H2.
     apply not_and_or in H2.
     destruct H2 as [H2 | H2].
-    + specialize (@subset_extend (@formula atom) Γ X) as Hcontra.
+    + Check @subset_extend (@formula atom) Set_obj.
+      specialize (subset_extend (@formula atom) Γ X) as Hcontra.
       apply H2 in Hcontra.
       destruct Hcontra.
     + apply NNPP in H2.
