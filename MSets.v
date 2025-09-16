@@ -3,6 +3,9 @@ Require Import Lists.List.
 Import ListNotations.
 
 Module MSet.
+
+Definition eq_by {T : Type} {TElem : Type} (P : TElem -> T -> Prop) (x y : T) : Prop := forall e : TElem, P e x <-> P e y.
+
 Record TSet (T : Type) : Type := mkTSet {
   struct_t : Type;
   empty : struct_t;
@@ -11,11 +14,20 @@ Record TSet (T : Type) : Type := mkTSet {
   extend : struct_t -> T -> struct_t;
   extend_correct (G : struct_t) (A: T) : elem A (extend G A);
   extend_elem (G : struct_t) (A B: T) : elem B (extend G A) -> elem B G \/ A = B;
-  union_comm (A B : struct_t) : (union A B) = (union B A);
-  union_assoc (A B C: struct_t) : (union (union A B) C) = (union A (union B C));
-  union_zero (A: struct_t) : union A empty = A;
-  union_idempotent (A: struct_t) : union A A = A;
+  union_comm (A B : struct_t) : eq_by elem (union A B) (union B A);
+  union_assoc (A B C: struct_t) : eq_by elem (union (union A B) C) (union A (union B C));
+  union_zero (A: struct_t) : eq_by elem (union A empty) A;
+  union_idempotent (A: struct_t) : eq_by elem (union A A) A;
 }.
+
+Lemma eq_by1 {T : Type} {TElem : Type} (x y : T) : x = y -> forall P : TElem -> T -> Prop, eq_by P x y.
+Proof.
+  intros Heq P.
+  unfold eq_by.
+  intro a.
+  rewrite Heq.
+  reflexivity.
+Qed.
 
 Declare Scope sets_scope.
 Open Scope sets_scope.
@@ -43,26 +55,64 @@ Proof.
   exact H.
 Qed.
 
-Lemma Prop_union_comm {T : Type} (Γ Δ: T -> Prop) : forall A : T, (Γ A \/ Δ A) = (Δ A \/ Γ A).
+Definition Prop_elem {T : Type} (A : T) (Γ : T -> Prop) := Γ A.
+Definition Prop_union {T : Type} (Γ Δ : T -> Prop) (A : T) := Γ A \/ Δ A.
+
+Lemma Prop_union_comm {T : Type} (Γ Δ: T -> Prop) : eq_by Prop_elem (Prop_union Γ Δ) (Prop_union Δ Γ).
 Proof.
   intro A.
-  specialize (or_comm (Γ A) (Δ A)) as H.
-  rewrite H.
+  unfold Prop_elem.
+  unfold Prop_union.
   apply or_comm.
+Qed.
 
-(* Lemma subset_union {T : Type} {Set_obj1 Set_obj2 : TSet T} {Γ Δ: Set_obj1} {Ε : Set_obj2} : Γ ⊆ Ε -> Δ ⊆ Ε -> (Γ ∪ Δ) ⊆ Ε. *)
-(* Proof. *)
-(*   intros Γ_Ε Δ_Ε. *)
+Lemma Prop_union_assoc {T : Type} (Γ Δ Ε: T -> Prop) : eq_by Prop_elem (Prop_union (Prop_union Γ Δ) Ε) (Prop_union Γ (Prop_union Δ Ε)).
+Proof.
+  unfold eq_by.
+  unfold Prop_elem.
+  intro a.
+  unfold Prop_union.
+  apply or_assoc.
+Qed.
 
+Lemma Prop_zero {T : Type} (Γ: T -> Prop) : eq_by Prop_elem (Prop_union Γ (fun _ => False)) Γ.
+Proof.
+  unfold eq_by.
+  unfold Prop_elem.
+  unfold Prop_union.
+  intro a.
+  split ; intro H.
+  - destruct H.
+    + exact H.
+    + destruct H.
+  - left.
+    exact H.
+Qed.
 
-Definition Prop_Set {T : Type} : TSet T := {|
+Lemma Prop_union_idempotent {T : Type} (Γ: T -> Prop) : eq_by Prop_elem (Prop_union Γ Γ) Γ.
+Proof.
+  unfold eq_by.
+  unfold Prop_elem.
+  unfold Prop_union.
+  intro a.
+  split ; intro H.
+  - destruct H ; exact H.
+  - left.
+    exact H.
+Qed.
+
+Definition Prop_Set (T : Type) : TSet T := {|
   struct_t := T -> Prop;
   empty _ := False;
-  elem (A : T) (Γ : T -> Prop) := Γ A;
-  union  (Γ Δ : T -> Prop) (A : T) := Γ A \/ Δ A;
+  elem := Prop_elem;
+  union := Prop_union;
   extend := Prop_extend;
   extend_correct := Prop_extend_correct;
   extend_elem := Prop_extend_elem;
+  union_comm := Prop_union_comm;
+  union_assoc := Prop_union_assoc;
+  union_zero := Prop_zero ;
+  union_idempotent := Prop_union_idempotent;
 |}.
 
 Definition List_extend {T : Type} (lst : list T) (A : T) := cons A lst.
@@ -84,7 +134,50 @@ Proof.
   exact H.
 Qed.
 
-Definition List_Set {T : Type} : TSet T := {|
+Lemma List_append_comm {T : Type} (Γ Δ: list T) : forall a : T,
+    In a (Γ ++ Δ) -> In a (Δ ++ Γ).
+Admitted.
+
+Lemma List_union_comm {T : Type} (Γ Δ: list T) : eq_by (@In T) (Γ ++ Δ) (Δ ++ Γ).
+Proof.
+  unfold eq_by.
+  intro a.
+  split.
+  - apply (List_append_comm Γ Δ).
+  - apply (List_append_comm Δ Γ).
+Qed.
+
+Lemma List_union_assoc {T : Type} (Γ Δ Ε: list T) : eq_by (@In T) ((Γ ++ Δ) ++ Ε) (Γ ++ (Δ ++ Ε)).
+Proof.
+  unfold eq_by.
+  intro a.
+  rewrite app_assoc.
+  reflexivity.
+Qed.
+
+Lemma List_union_zero {T : Type} (Γ: list T) : eq_by (@In T) (Γ ++ nil) Γ.
+Proof.
+  unfold eq_by.
+  intro a.
+  rewrite app_nil_r.
+  reflexivity.
+Qed.
+
+Lemma List_union_idempotent {T : Type} (Γ: list T) : eq_by (@In T) (Γ ++ Γ) Γ.
+Proof.
+  unfold eq_by.
+  intro a.
+  split.
+  - intro H.
+    apply in_app_or in H.
+    destruct H ; exact H.
+  - intro H.
+    apply in_or_app.
+    left.
+    exact H.
+Qed.
+
+Definition List_Set (T : Type) : TSet T := {|
   struct_t := list T;
   empty := nil;
   elem := @In T;
@@ -92,6 +185,10 @@ Definition List_Set {T : Type} : TSet T := {|
   extend := List_extend;
   extend_correct := List_extend_correct;
   extend_elem := List_extend_elem;
+  union_comm := List_union_comm;
+  union_assoc := List_union_assoc;
+  union_zero := List_union_zero;
+  union_idempotent := List_union_idempotent;
 |}.
 
 Definition subset {T : Type} {Set_obj1 Set_obj2 : TSet T} (Γ : Set_obj1) (Δ : Set_obj2 ) : Prop :=
@@ -123,6 +220,35 @@ Proof.
   specialize (H1 H3).
   specialize (H2 H1).
   exact H2.
+Qed.
+
+Lemma Prop_subset_union1 {T : Type} (Γ Δ : Prop_Set T) : Γ ⊆ (Γ ∪ Δ).
+Proof.
+  unfold subset.
+  intros A H.
+  unfold union.
+  simpl.
+  unfold Prop_elem.
+  unfold Prop_union.
+  unfold elem in H.
+  simpl in H.
+  unfold Prop_elem in H.
+  left.
+  exact H.
+Qed.
+
+(*
+TODO
+A <-> B -> C <-> D -> (subset A C) <-> subset (B D) *)
+Lemma Prop_subset_union2 {T : Type} (Γ Δ : Prop_Set T) : Δ ⊆ (Γ ∪ Δ).
+Proof.
+  specialize (union_comm T (Prop_Set T) Γ Δ) as H.
+  unfold eq_by in H.
+  specialize (Prop_subset_union1 Δ Γ) as H1.
+  unfold subset in H1.
+  rewrite H in H1.
+  unfold subset.
+  intros A Δ_A.
 Qed.
 
 Record TSet2 (T : Type) := {
