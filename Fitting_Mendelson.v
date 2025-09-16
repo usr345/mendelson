@@ -215,10 +215,10 @@ Module Formula.
   Qed.
 
   #[export] Instance eqFormula {atom : Set} `{EqDec atom} : EqDec (@formula atom) :=
-    {
-      eqb := formula_beq;
-      eqb_eq := formula_beq_eq;
-    }.
+  {
+     eqb := formula_beq;
+     eqb_eq := formula_beq_eq;
+  }.
 
   Lemma meta_contraposition_rev :  forall (P Q : Prop), (~Q -> ~P) -> (P -> Q) .
     unfold not.
@@ -231,7 +231,6 @@ Module Formula.
       specialize (A B).
       destruct A.
   Qed.
-
 
 End Formula.
 Export Formula.
@@ -274,7 +273,7 @@ Definition f_axiomK {atom : Set} (A B : @formula atom) : formula :=
 
 Open Scope sets_scope.
 Reserved Notation "Γ |- A" (at level 98).
-Inductive entails {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ : Set_obj.(struct_t)) : @formula atom -> Type :=
+Inductive entails {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) : @formula atom -> Type :=
   | hypo : forall A, A ∈ Γ -> Γ |- A (* every hypothesis is provable *)
   | axiom1 : forall A B , Γ |- f_axiom1 A B
   | axiom2 : forall A B C, Γ |- f_axiom2 A B C
@@ -327,7 +326,7 @@ Ltac specialize_axiom A H :=
 
 (* Proposition 2.2.2 (Monotonicity) *)
 (* Если $\Gamma \subseteq \Delta$ и $\Gamma \vdash A$, то $\Delta \vdash A$ *)
-Proposition weaken {atom : Set} `{Set_obj1 : TSet (@formula atom)} `{Set_obj2 : TSet (@formula atom)} (Γ : Set_obj1) (Δ : Set_obj2) (A : @formula atom) : Γ ⊆ Δ -> Γ |- A -> Δ |- A.
+Proposition weaken {atom : Set} {SetType1 SetType2 : TSet (@formula atom)} (Γ : SetType1) (Δ : SetType2) (A : @formula atom) : Γ ⊆ Δ -> Γ |- A -> Δ |- A.
 Proof.
   intros S H.
   induction H as [A H|A B|A B C|A B|A B|A B|A B|A B|A B C|A B|A|A B|A B H1 H2 IH1 IH2|A H IH].
@@ -354,7 +353,7 @@ Proof.
 Qed.
 
 (* Proposition 2.2.3 (Compactness) If S |- X then there is some finite subset S' of S such that S' |- X *)
-Proposition compactness {atom : Set} (Γ : Prop_Set.(struct_t)) :
+Proposition compactness {atom : Set} {SetType : TSet (@formula atom)} (Γ : SetType) :
   forall A : @formula atom, Γ |- A -> {l : List_Set & l ⊆ Γ & l |- A}.
 Proof.
   intros A Γ_A.
@@ -410,7 +409,7 @@ Proof.
     exists (l1 ++ l2).
     + rewrite (subset_app_eq_conj l1 l2 Γ).
       exact (conj H_l1 H_l2).
-    + assert (H_subset: l1 ⊆ (l1 ++ l2)).
+    + assert (H_subset: @subset (@formula atom) List_Set List_Set l1 (l1 ++ l2)).
       {
         unfold subset.
         simpl.
@@ -420,9 +419,9 @@ Proof.
         exact H3.
       }
 
-      specialize (weaken _ (l1 ++ l2) _ H_subset IH1) as IH1_1.
+      specialize (@weaken atom List_Set List_Set l1 (l1 ++ l2) _ H_subset IH1) as IH1_1.
       clear H_subset.
-      assert (H_subset: l2 ⊆ (l1 ++ l2)).
+      assert (H_subset: @subset (@formula atom) List_Set List_Set l2 (l1 ++ l2)).
       {
         unfold subset.
         simpl.
@@ -432,7 +431,7 @@ Proof.
         exact H3.
       }
 
-      specialize (weaken _ (l1 ++ l2) _ H_subset IH2) as IH2_1.
+      specialize (@weaken atom List_Set List_Set l2 (l1 ++ l2) _ H_subset IH2) as IH2_1.
       clear H_subset.
       apply (mp IH1_1 IH2_1).
   - destruct IH as [l H_l IH].
@@ -441,7 +440,7 @@ Proof.
     + apply (nec IH).
 Qed.
 
-Lemma meta_conj_elim1 {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) {A B : @formula atom} : Γ |- $(A /\ B)$ -> Γ |- A.
+Lemma meta_conj_elim1 {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) {A B : @formula atom} : Γ |- $(A /\ B)$ -> Γ |- A.
 Proof.
   intro H1.
   specialize_axiom (conj_elim1 Γ A B) H2.
@@ -449,7 +448,7 @@ Proof.
   exact H3.
 Qed.
 
-Lemma meta_conj_elim2 {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) {A B : @formula atom} : Γ |- $(A /\ B)$ -> Γ |- B.
+Lemma meta_conj_elim2 {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) {A B : @formula atom} : Γ |- $(A /\ B)$ -> Γ |- B.
 Proof.
   intro H1.
   specialize_axiom (conj_elim2 Γ A B) H2.
@@ -457,7 +456,7 @@ Proof.
   exact H3.
 Qed.
 
-Lemma meta_conj_intro {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) {A B : @formula atom} : Γ |- A -> Γ |- B -> Γ |- $A /\ B$.
+Lemma meta_conj_intro {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) {A B : @formula atom} : Γ |- A -> Γ |- B -> Γ |- $A /\ B$.
 Proof.
   intros H1 H2.
   specialize_axiom (conj_intro Γ A B) H3.
@@ -467,14 +466,14 @@ Proof.
 Qed.
 
 (* Импликация из объектного в метаязык *)
-Lemma obj_meta_impl {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) A B : Γ |- $A -> B$ -> (Γ |- A -> Γ |- B).
+Lemma obj_meta_impl {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) A B : Γ |- $A -> B$ -> (Γ |- A -> Γ |- B).
 Proof.
   intros H1 H2.
   specialize (mp H1 H2) as H3.
   exact H3.
 Qed.
 
-Lemma obj_meta_equiv1 {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) A B : Γ |- $A <-> B$ -> (Γ |- A -> Γ |- B).
+Lemma obj_meta_equiv1 {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) A B : Γ |- $A <-> B$ -> (Γ |- A -> Γ |- B).
 Proof.
   intros H1 H2.
   unfold equivalence in H1.
@@ -483,7 +482,7 @@ Proof.
   exact H4.
 Qed.
 
-Lemma obj_meta_equiv2 {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) A B : Γ |- $A <-> B$ -> (Γ |- B -> Γ |- A).
+Lemma obj_meta_equiv2 {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) A B : Γ |- $A <-> B$ -> (Γ |- B -> Γ |- A).
 Proof.
   intros H1 H2.
   unfold equivalence in H1.
@@ -495,7 +494,7 @@ Qed.
 
 (* Here are some basic observation about |-. *)
 (* Лемма 1.7. $\vdash_L A \supset A$ для любой формулы A. *)
-Lemma imply_self {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (A : @formula atom) : Γ |- $A -> A$.
+Lemma imply_self {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (A : @formula atom) : Γ |- $A -> A$.
 Proof.
   (* (1) $(A \supset ((A \supset A) \supset A)) \supset ((A \supset (A \supset A)) \supset (A \supset A))$ --- подстановка в схему аксиом A2 *)
   specialize_axiom (axiom2 Γ A $A -> A$ A) H1.
@@ -511,7 +510,7 @@ Proof.
 Qed.
 
 (* We need this lemma in the deduction theorem. *)
-Lemma add_context {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (A B : @formula atom) : Γ |- B -> Γ |- $A -> B$.
+Lemma add_context {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (A B : @formula atom) : Γ |- B -> Γ |- $A -> B$.
 Proof.
   intro H.
   (* 1. $B \supset (A \supset B)$ --- схема аксиом A1 *)
@@ -521,19 +520,19 @@ Proof.
   exact H2.
 Qed.
 
-Lemma A_impl_conj {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (A X Y : @formula atom) : Γ |- $(A -> X) -> (A -> Y) -> (A -> (X /\ Y))$.
+Lemma A_impl_conj {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (A X Y : @formula atom) : Γ |- $(A -> X) -> (A -> Y) -> (A -> (X /\ Y))$.
 Proof.
   specialize_axiom (axiom1 Γ $A -> X$ $A -> Y$) H1.
   specialize (imply_self Γ $A -> Y$) as H2.
   specialize (add_context Γ $A -> X$ $(A -> Y) -> (A -> Y)$ H2) as H3.
 Admitted.
 
-Lemma transitivity {atom : Set} `{Set_obj : TSet (@formula atom)} {Γ: Set_obj} {A} B {C} :
+Lemma transitivity {atom : Set} {Set_obj : TSet (@formula atom)} {Γ: Set_obj} {A} B {C} :
   Γ |- $(A -> B) -> (B -> C) -> A -> C$.
 Proof.
 Admitted.
 
-Lemma meta_transitivity {atom : Set} `{Set_obj : TSet (@formula atom)} {Γ: Set_obj} {A B C: @formula atom} :
+Lemma meta_transitivity {atom : Set} {Set_obj : TSet (@formula atom)} {Γ: Set_obj} {A B C: @formula atom} :
   Γ |- $A -> B$ -> Γ |- $B -> C$ -> Γ |- $A -> C$.
 Proof.
   intros H1 H2.
@@ -543,12 +542,12 @@ Proof.
   exact H5.
 Qed.
 
-Lemma impl_conj {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) X Y Z :
+Lemma impl_conj {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) X Y Z :
   Γ |- $(X -> (Y -> Z)) -> (X /\ Y -> Z)$.
 Proof.
 Admitted.
 
-Lemma conj_comm {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y: @formula atom) :
+Lemma conj_comm {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y: @formula atom) :
   Γ |- $(X /\ Y) -> (Y /\ X)$.
 Proof.
   specialize_axiom (conj_elim1 Γ X Y) H1.
@@ -562,7 +561,7 @@ Proof.
 Qed.
 
 (* 2.6.3 *)
-Lemma disj_commutativity_impl {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y: @formula atom) :
+Lemma disj_commutativity_impl {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y: @formula atom) :
   Γ |- $(X \/ Y) -> (Y \/ X)$.
 Proof.
   specialize_axiom (disj_intro2 Γ Y X) H1.
@@ -573,7 +572,7 @@ Proof.
   exact H5.
 Qed.
 
-Lemma disj_comm {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y: @formula atom) :
+Lemma disj_comm {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y: @formula atom) :
   Γ |- $(X \/ Y) <-> (Y \/ X)$.
 Proof.
   unfold equivalence.
@@ -585,7 +584,7 @@ Proof.
   exact H5.
 Qed.
 
-Lemma reguarity {atom : Set} `{Set_obj : TSet (@formula atom)} {Γ: Set_obj} {A B : @formula atom} : Γ |- $A -> B$ -> Γ |- $box A -> box B$.
+Lemma reguarity {atom : Set} {Set_obj : TSet (@formula atom)} {Γ: Set_obj} {A B : @formula atom} : Γ |- $A -> B$ -> Γ |- $box A -> box B$.
 Proof.
   intro H1.
   specialize (nec H1) as H2.
@@ -595,7 +594,7 @@ Proof.
 Qed.
 
 (* Example 6.1.4 *)
-Lemma box_conj {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (A B : @formula atom) : Γ |- $box (A /\ B) -> (box A /\ box B)$.
+Lemma box_conj {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (A B : @formula atom) : Γ |- $box (A /\ B) -> (box A /\ box B)$.
 Proof.
   specialize_axiom (conj_elim1 Γ A B) H1.
   specialize (reguarity H1) as H2.
@@ -607,7 +606,7 @@ Proof.
   exact H7.
 Qed.
 
-Lemma meta_box_conj {atom : Set} `{Set_obj : TSet (@formula atom)} {Γ: Set_obj} (A B : @formula atom) : Γ |- $box (A /\ B)$ -> Γ |-  $box A /\ box B$.
+Lemma meta_box_conj {atom : Set} {Set_obj : TSet (@formula atom)} {Γ: Set_obj} (A B : @formula atom) : Γ |- $box (A /\ B)$ -> Γ |-  $box A /\ box B$.
 Proof.
   intro H1.
   specialize (box_conj Γ A B) as H2.
@@ -616,7 +615,7 @@ Proof.
 Qed.
 
 (* Example 6.1.5 *)
-Lemma conj_box {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $(box X /\ box Y) -> box (X /\ Y)$.
+Lemma conj_box {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $(box X /\ box Y) -> box (X /\ Y)$.
 Proof.
   specialize_axiom (conj_intro Γ X Y) H1.
   specialize (reguarity H1) as H2.
@@ -629,11 +628,11 @@ Proof.
   exact H8.
 Qed.
 
-Theorem contraposition {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) A B : Γ |- $(A -> B) -> ~B -> ~ A$.
+Theorem contraposition {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) A B : Γ |- $(A -> B) -> ~B -> ~ A$.
 Proof.
 Admitted.
 
-Theorem meta_contraposition {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) A B : Γ |- $(A -> B)$ -> Γ |- $~B -> ~ A$.
+Theorem meta_contraposition {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) A B : Γ |- $(A -> B)$ -> Γ |- $~B -> ~ A$.
 Proof.
   intro H1.
   specialize (contraposition Γ A B) as H2.
@@ -641,11 +640,11 @@ Proof.
   exact H3.
 Qed.
 
-Theorem deMorganDisj {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) A B : Γ |- $~(A \/ B) -> ~A /\ ~B$.
+Theorem deMorganDisj {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) A B : Γ |- $~(A \/ B) -> ~A /\ ~B$.
 Proof.
 Admitted.
 
-Theorem meta_deMorganDisj {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) A B : Γ |- $~(A \/ B)$ -> Γ |- $~A /\ ~B$.
+Theorem meta_deMorganDisj {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) A B : Γ |- $~(A \/ B)$ -> Γ |- $~A /\ ~B$.
 Proof.
   intro H1.
   specialize (deMorganDisj Γ A B) as H2.
@@ -653,15 +652,15 @@ Proof.
   exact H3.
 Qed.
 
-Theorem deMorganDisj_rev {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) A B : Γ |- $~A /\ ~B -> ~(A \/ B)$.
+Theorem deMorganDisj_rev {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) A B : Γ |- $~A /\ ~B -> ~(A \/ B)$.
 Proof.
 Admitted.
 
-Theorem deMorganConj {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) A B : Γ |- $~(A /\ B) -> ~A \/ ~B$.
+Theorem deMorganConj {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) A B : Γ |- $~(A /\ B) -> ~A \/ ~B$.
 Proof.
 Admitted.
 
-Theorem meta_deMorganConj {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) A B : Γ |- $~(A /\ B)$ -> Γ |- $~A \/ ~B$.
+Theorem meta_deMorganConj {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) A B : Γ |- $~(A /\ B)$ -> Γ |- $~A \/ ~B$.
 Proof.
   intro H1.
   specialize (deMorganConj Γ A B) as H2.
@@ -669,7 +668,7 @@ Proof.
   exact H3.
 Qed.
 
-Theorem deMorganConj_rev {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) A B : Γ |- $~A \/ ~B -> ~(A /\ B)$.
+Theorem deMorganConj_rev {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) A B : Γ |- $~A \/ ~B -> ~(A /\ B)$.
 Proof.
 Admitted.
 
@@ -678,7 +677,7 @@ Admitted.
 (* Proof. *)
 
 (* Exercize 6.1.1 *)
-Proposition impl_diamond {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ ,, $X -> Y$ |- (f_imp (f_diamond X) (f_diamond Y)).
+Proposition impl_diamond {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ ,, $X -> Y$ |- (f_imp (f_diamond X) (f_diamond Y)).
 Proof.
   assert (H1 : Γ ,, $X -> Y$ |- $X -> Y$).
   {
@@ -774,17 +773,17 @@ Inductive subformula {atom : Set} : (@formula atom) -> (@formula atom) -> Prop :
 | s_imp2 (X F1 F2 : @formula atom): subformula X F2 -> subformula X $F1 -> F2$.
 
 
-Theorem Replacement {atom : Set} `{EqDec atom} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X X' Y Y' : @formula atom) : forall n : nat, n <> 0 -> subformula X Y -> Γ |- $X <-> X'$ -> Y' = (replace_subformula X X' Y n) -> Γ |- $Y <-> Y'$.
+Theorem Replacement {atom : Set} `{EqDec atom} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X X' Y Y' : @formula atom) : forall n : nat, n <> 0 -> subformula X Y -> Γ |- $X <-> X'$ -> Y' = (replace_subformula X X' Y n) -> Γ |- $Y <-> Y'$.
 Admitted.
 
 (* Example 6.1.7 *)
-Proposition E6_1_7 {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X : @formula atom) : Γ |- $diamond diamond ~X -> ~ box box X$.
+Proposition E6_1_7 {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X : @formula atom) : Γ |- $diamond diamond ~X -> ~ box box X$.
 Proof.
 Admitted.
 
 
 (* Exercize 6.1.3.1 -> *)
-Proposition diamond_disj_1 {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $diamond (X \/ Y) ->  (diamond X \/ diamond Y)$.
+Proposition diamond_disj_1 {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $diamond (X \/ Y) ->  (diamond X \/ diamond Y)$.
 Proof.
   specialize (deMorganDisj_rev Γ X Y) as H1.
   apply reguarity in H1.
@@ -798,7 +797,7 @@ Proof.
 Qed.
 
 (* Exercize 6.1.3.1 <- *)
-Proposition diamond_disj_2 {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $(diamond X \/ diamond Y) -> diamond (X \/ Y)$.
+Proposition diamond_disj_2 {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $(diamond X \/ diamond Y) -> diamond (X \/ Y)$.
 Proof.
   specialize (deMorganDisj Γ X Y) as H1.
   apply reguarity in H1.
@@ -812,7 +811,7 @@ Proof.
 Qed.
 
 (* Exercize 6.1.3.1 <-> *)
-Proposition diamond_disj {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $diamond (X \/ Y) <-> (diamond X \/ diamond Y)$.
+Proposition diamond_disj {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $diamond (X \/ Y) <-> (diamond X \/ diamond Y)$.
 Proof.
   specialize (diamond_disj_1 Γ X Y) as H1.
   specialize (diamond_disj_2 Γ X Y) as H2.
@@ -822,7 +821,7 @@ Proof.
 Qed.
 
 (* Exercize 6.1.3.2 *)
-Proposition E6_1_3_2 {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $box (X -> Y) -> (diamond X -> diamond Y)$.
+Proposition E6_1_3_2 {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $box (X -> Y) -> (diamond X -> diamond Y)$.
 Proof.
   specialize (contraposition Γ X Y) as H1.
   apply reguarity in H1.
@@ -835,7 +834,7 @@ Proof.
 Qed.
 
 (* Exercize 6.1.3.3 *)
-Proposition E6_1_3_3 {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $(box X \/ box Y) -> box(X \/ Y)$.
+Proposition E6_1_3_3 {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $(box X \/ box Y) -> box(X \/ Y)$.
 Proof.
   specialize_axiom (disj_intro1 Γ X Y) H1.
   specialize_axiom (disj_intro2 Γ X Y) H2.
@@ -855,7 +854,7 @@ Proof.
 Qed.
 
 (* Exercize 6.1.3.4 *)
-Proposition E6_1_3_4 {atom : Set} `{EqDec atom} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $box (X \/ Y) -> (box X \/ diamond Y)$.
+Proposition E6_1_3_4 {atom : Set} `{EqDec atom} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $box (X \/ Y) -> (box X \/ diamond Y)$.
 Proof.
   rewrite Possibility.
   specialize (disj_comm Γ X Y) as Hdisj.
@@ -903,21 +902,21 @@ Proof.
 Admitted.
 
 (* Exercize 6.1.3.5 *)
-Proposition E6_1_3_5 {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $(box X \/ diamond Y) -> diamond(X /\ Y)$.
+Proposition E6_1_3_5 {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $(box X \/ diamond Y) -> diamond(X /\ Y)$.
 Proof.
 Admitted.
 
 (* Exercize 6.1.3.6 *)
-Proposition E6_1_3_6 {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $(diamond X -> box Y) -> box(X \/ Y)$.
+Proposition E6_1_3_6 {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (X Y : @formula atom) : Γ |- $(diamond X -> box Y) -> box(X \/ Y)$.
 Proof.
 Admitted.
 
 (* (prod (Forall Γ l) & (let Γ' := (fun f => In f l) in forall f, Γ' |- f)) *)
-Definition inconsistent {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) : Type :=
+Definition inconsistent {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) : Type :=
   {lst : List_Set & (subset lst Γ) & forall F : (@formula atom), lst |- F}.
 
 (* A set of formulas Γ is consistent if it is not inconsistent *)
-Definition consistent {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ: Set_obj) : Prop :=
+Definition consistent {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) : Prop :=
   (inconsistent Γ) -> False.
 
 (*
@@ -958,7 +957,7 @@ Proof.
 Qed.
 *)
 
-Lemma consistent_subset {atom : Set} `{Set_obj1 : TSet (@formula atom)} `{Set_obj2 : TSet (@formula atom)} (Γ: Set_obj1) (Δ: Set_obj2):
+Lemma consistent_subset {atom : Set} {Set_obj1 : TSet (@formula atom)} {Set_obj2 : TSet (@formula atom)} (Γ: Set_obj1) (Δ: Set_obj2):
   consistent Γ -> subset Δ Γ -> consistent Δ.
 Proof.
   intros HΓ HΔ_Γ.
@@ -977,7 +976,7 @@ Proof.
     exact H.
 Qed.
 
-Lemma inconsistent_subset {atom : Set} `{Set_obj1 : TSet (@formula atom)} `{Set_obj2 : TSet (@formula atom)} (Γ: Set_obj1) (Δ: Set_obj2):
+Lemma inconsistent_subset {atom : Set} {Set_obj1 : TSet (@formula atom)} {Set_obj2 : TSet (@formula atom)} (Γ: Set_obj1) (Δ: Set_obj2):
   inconsistent Γ -> subset Γ Δ -> inconsistent Δ.
 Proof.
   intros HΓ HΓ_Δ.
@@ -995,11 +994,11 @@ Qed.
 (*
   Множество формул Γ называется максимально консистентным, если оно консистентно, и никакое его собственное расширение не является консистентным
 *)
-Definition max_consistent {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ : Set_obj) : Prop :=
+Definition max_consistent {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) : Prop :=
   consistent Γ /\ forall Δ : Set_obj, ~(proper_extension Γ Δ /\ consistent Δ).
 
 
-Lemma max_consistent_extend {atom : Set} `{Set_obj : TSet (@formula atom)} (Γ : Set_obj) (X : @formula atom) (Δ  : @List_Set (@formula atom)) :
+Lemma max_consistent_extend {atom : Set} {SetType : TSet2 (@formula atom)} (Γ : SetType) (X : @formula atom) (Δ : @List_Set (@formula atom)) :
   let Γ_X := Γ ,, X in
   consistent Γ -> subset Δ Γ_X -> (forall F : (@formula atom), Δ |- F) -> X ∈ Δ.
 Proof.
@@ -1011,7 +1010,7 @@ Proof.
   - unfold elem.
     simpl.
     exact Yes.
-  - specialize (extend_correct Γ X) as Hext.
+  - specialize (extend_correct _ _ Γ X) as Hext.
     specialize (List_Prop_subset_extend_not Γ Δ X HΔ No) as H1.
     assert (HContra: inconsistent Γ).
     {
@@ -1025,13 +1024,23 @@ Proof.
     destruct HΓ.
 Qed.
 
-Lemma max_consistent_elem {atom : Set} `{Set_obj : TSet2 (@formula atom)} (Γ : Set_obj) :
+Lemma max_consistent_elem {atom : Set} {Set_obj : TSet2 (@formula atom)} (Γ : Set_obj) :
   forall X : @formula atom, max_consistent Γ -> Γ |- X -> X ∈ Γ.
 Proof.
   intros X H Γ_X.
   unfold max_consistent in H.
   destruct H as [H1 H2].
-  specialize (H2 (extend Γ X)).
+  assert (Hcons : consistent (Γ ,, X)).
+  {
+    unfold consistent.
+    intro HContra.
+    unfold inconsistent in HContra.
+    destruct HContra as [Δ H3 H4].
+    specialize (max_consistent_extend Γ X Δ H1 H3 H4) as Δ_X.
+    specialize (compactness Γ X Γ_X) as Hcompact.
+    destruct Hcompact as [Ε HΕ_Γ Ε_X].
+
+  specialize (H2 (Γ ,, X)).
   apply not_and_or in H2.
   destruct H2 as [H2 | H2].
   - unfold proper_extension in H2.

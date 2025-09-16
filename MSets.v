@@ -11,7 +11,17 @@ Record TSet (T : Type) : Type := mkTSet {
   extend : struct_t -> T -> struct_t;
   extend_correct (G : struct_t) (A: T) : elem A (extend G A);
   extend_elem (G : struct_t) (A B: T) : elem B (extend G A) -> elem B G \/ A = B;
+  union_comm (A B : struct_t) : (union A B) = (union B A);
+  union_assoc (A B C: struct_t) : (union (union A B) C) = (union A (union B C));
+  union_zero (A: struct_t) : union A empty = A;
+  union_idempotent (A: struct_t) : union A A = A;
 }.
+
+Declare Scope sets_scope.
+Open Scope sets_scope.
+Infix "∈" := (elem _ _) (at level 77) : sets_scope.
+Infix "∪" := (union _ _) (at level 78, left associativity) : sets_scope.
+Notation "Γ ,, A" := (extend _ _ Γ A) (at level 32, left associativity) : sets_scope.
 
 Coercion TSet_Type {T : Type} (s : TSet T): Type := s.(struct_t T).
 
@@ -33,6 +43,18 @@ Proof.
   exact H.
 Qed.
 
+Lemma Prop_union_comm {T : Type} (Γ Δ: T -> Prop) : forall A : T, (Γ A \/ Δ A) = (Δ A \/ Γ A).
+Proof.
+  intro A.
+  specialize (or_comm (Γ A) (Δ A)) as H.
+  rewrite H.
+  apply or_comm.
+
+(* Lemma subset_union {T : Type} {Set_obj1 Set_obj2 : TSet T} {Γ Δ: Set_obj1} {Ε : Set_obj2} : Γ ⊆ Ε -> Δ ⊆ Ε -> (Γ ∪ Δ) ⊆ Ε. *)
+(* Proof. *)
+(*   intros Γ_Ε Δ_Ε. *)
+
+
 Definition Prop_Set {T : Type} : TSet T := {|
   struct_t := T -> Prop;
   empty _ := False;
@@ -42,12 +64,6 @@ Definition Prop_Set {T : Type} : TSet T := {|
   extend_correct := Prop_extend_correct;
   extend_elem := Prop_extend_elem;
 |}.
-
-Declare Scope sets_scope.
-Open Scope sets_scope.
-Infix "∈" := (elem _ _) (at level 77) : sets_scope.
-Infix "∪" := (union _ _) (at level 78, left associativity) : sets_scope.
-Notation "Γ ,, A" := (extend _ _ Γ A) (at level 32, left associativity) : sets_scope.
 
 Definition List_extend {T : Type} (lst : list T) (A : T) := cons A lst.
 
@@ -88,7 +104,7 @@ Definition set_eq {T : Type} {Set_obj1 Set_obj2 : TSet T} (Γ : Set_obj1) (Δ : 
 
 (* Δ is a proper extension of Γ *)
 Definition proper_extension {T : Type} {Set_obj1 Set_obj2: TSet T} (Γ : Set_obj1) (Δ : Set_obj2) :=
-  subset Γ Δ /\ ~ set_eq Γ Δ.
+  Γ ⊆ Δ /\ ~ set_eq Γ Δ.
 
 Lemma subset_refl {T : Type} `{Set_obj : TSet T} {Γ : Set_obj} : subset Γ Γ.
 Proof.
@@ -112,6 +128,8 @@ Qed.
 Record TSet2 (T : Type) := {
   TSet_car : TSet T;
   subset_extend {Γ : TSet_car} X : subset Γ (extend _ _ Γ X);
+  union_subset1 (A B: struct_t) : A ⊆ (union A B;
+  union_subset2 (A B: struct_t) : B ⊆ (union A A);
 }.
 
 Coercion TSet2_Type {T : Type} (s : TSet2 T): Type := s.(TSet_car T).(struct_t T).
@@ -234,7 +252,7 @@ Proof.
     destruct H2.
 Qed.
 
-Lemma subset_app_eq_conj {T : Type} lst1 lst2 all : (@subset T List_Set Prop_Set (lst1 ++ lst2) all) <-> ((@subset T List_Set Prop_Set lst1 all) /\ (@subset T List_Set Prop_Set lst2 all)).
+Lemma subset_app_eq_conj {T : Type} {SetType : TSet T} (lst1 lst2 : List_Set) (all : SetType) : (@subset T List_Set SetType (lst1 ++ lst2) all) <-> ((@subset T List_Set SetType lst1 all) /\ (@subset T List_Set SetType lst2 all)).
 Proof.
   split.
   - intro H.
@@ -244,11 +262,7 @@ Proof.
     + intros A H1.
       unfold elem in H1.
       simpl in H1.
-      unfold elem.
-      simpl.
       specialize (H A).
-      unfold elem in H.
-      simpl in H.
       assert (Hor : In A lst1 \/ In A lst2).
       {
         left.
@@ -256,15 +270,13 @@ Proof.
       }
 
       apply in_or_app in Hor.
+      simpl in H.
       specialize (H Hor).
       exact H.
     + intros A H1.
       unfold elem in H1.
       simpl in H1.
-      unfold elem.
-      simpl.
       specialize (H A).
-      unfold elem in H.
       simpl in H.
       assert (Hor : In A lst1 \/ In A lst2).
       {
@@ -284,10 +296,7 @@ Proof.
     destruct H as [H2 H3].
     specialize (H2 A).
     specialize (H3 A).
-    unfold elem in H2, H3.
     simpl in H2, H3.
-    unfold elem.
-    simpl.
     rewrite in_app_iff in H1.
     destruct H1.
     + specialize (H2 H).
