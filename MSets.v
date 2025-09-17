@@ -109,10 +109,6 @@ Proof.
   exact H.
 Qed.
 
-Lemma List_append_comm {T : Type} (Γ Δ: list T) : forall a : T,
-    In a (Γ ++ Δ) -> In a (Δ ++ Γ).
-Admitted.
-
 Lemma List_union_correct {T : Type} (Γ Δ: list T) (A: T) :
   In A (Γ ++ Δ) <-> (In A Γ) \/ (In A Δ).
 Proof.
@@ -237,6 +233,15 @@ Proof.
   exact H2.
 Qed.
 
+Record TSet2 (T : Type) := {
+  TSet_car : TSet T;
+  subset_extend {Γ : TSet_car} X : subset Γ (extend _ _ Γ X);
+  union_subset1 (A B: TSet_car) : A ⊆ (A ∪ B);
+  union_subset2 (A B: TSet_car) : B ⊆ (A ∪ B);
+}.
+
+Coercion TSet2_Type {T : Type} (s : TSet2 T): Type := s.(TSet_car T).(struct_t T).
+
 Lemma Prop_subset_union1 {T : Type} (Γ Δ : Prop_Set T) : Γ ⊆ (Γ ∪ Δ).
 Proof.
   unfold subset.
@@ -257,26 +262,21 @@ TODO
 A <-> B -> C <-> D -> (subset A C) <-> subset (B D) *)
 Lemma Prop_subset_union2 {T : Type} (Γ Δ : Prop_Set T) : Δ ⊆ (Γ ∪ Δ).
 Proof.
-  specialize (union_comm T (Prop_Set T) Γ Δ) as H.
-  unfold eq_by in H.
-  specialize (Prop_subset_union1 Δ Γ) as H1.
-  unfold subset in H1.
-  rewrite H in H1.
   unfold subset.
-  intros A Δ_A.
+  intros A H.
+  unfold union.
+  simpl.
+  unfold Prop_elem.
+  unfold Prop_union.
+  unfold elem in H.
+  simpl in H.
+  unfold Prop_elem in H.
+  right.
+  exact H.
 Qed.
 
-Record TSet2 (T : Type) := {
-  TSet_car : TSet T;
-  subset_extend {Γ : TSet_car} X : subset Γ (extend _ _ Γ X);
-  union_subset1 (A B: struct_t) : A ⊆ (union A B;
-  union_subset2 (A B: struct_t) : B ⊆ (union A A);
-}.
-
-Coercion TSet2_Type {T : Type} (s : TSet2 T): Type := s.(TSet_car T).(struct_t T).
-
 (* Множество Gamma является подмножеством (Gamma ,, A) *)
-Lemma Prop_subset_extend {T : Type} (Γ : Prop_Set) (A : T) : Γ ⊆ (Γ ,, A).
+Lemma Prop_subset_extend {T : Type} (Γ : Prop_Set T) (A : T) : Γ ⊆ (Γ ,, A).
 Proof.
   unfold subset, extend.
   intros A0 H.
@@ -288,7 +288,7 @@ Proof.
   exact H.
 Qed.
 
-Lemma List_Prop_subset_extend_not {T : Type} {Set_obj : TSet T} (Γ: Set_obj) (Δ: @List_Set T) (A: T) : Δ ⊆ (Γ ,, A) -> ~(A ∈ Δ) -> Δ ⊆ Γ.
+Lemma List_Prop_subset_extend_not {T : Type} {Set_obj : TSet T} (Γ: Set_obj) (Δ: List_Set T) (A: T) : Δ ⊆ (Γ ,, A) -> ~(A ∈ Δ) -> Δ ⊆ Γ.
 Proof.
   intros H1 H2.
   unfold subset.
@@ -306,12 +306,14 @@ Qed.
 
 Definition Prop_Set2 {T : Type} : @TSet2 T :=
 {|
-  TSet_car := Prop_Set;
+  TSet_car := Prop_Set T;
   subset_extend := Prop_subset_extend;
+  union_subset1 := Prop_subset_union1;
+  union_subset2 := Prop_subset_union2;
 |}.
 
 (* Список Gamma является подмножеством (Gamma ,, A) *)
-Lemma List_subset_extend {T : Type} (lst : List_Set) (A : T) : lst ⊆ (lst ,, A).
+Lemma List_subset_extend {T : Type} (lst : List_Set T) (A : T) : lst ⊆ (lst ,, A).
 Proof.
   unfold subset, extend.
   intros A0 H.
@@ -323,10 +325,32 @@ Proof.
   exact H.
 Qed.
 
+Lemma List_subset_union1 {T : Type} (Γ Δ : List_Set T) : Γ ⊆ (Γ ∪ Δ).
+Proof.
+  unfold subset, union.
+  simpl.
+  intros A H.
+  apply in_or_app.
+  left.
+  exact H.
+Qed.
+
+Lemma List_subset_union2 {T : Type} (Γ Δ : List_Set T) : Δ ⊆ (Γ ∪ Δ).
+Proof.
+  unfold subset, union.
+  simpl.
+  intros A H.
+  apply in_or_app.
+  right.
+  exact H.
+Qed.
+
 Definition List_Set2 {T : Type} : @TSet2 T :=
 {|
-  TSet_car := List_Set;
+  TSet_car := List_Set T;
   subset_extend := List_subset_extend;
+  union_subset1 := List_subset_union1;
+  union_subset2 := List_subset_union2;
 |}.
 
 Lemma List_elem_excl_middle (T : Type) (Heq_dec : forall x y : T, {x = y} + {x <> y}) (l : list T) : forall x : T, {In x l} + {~ In x l}.
@@ -360,7 +384,7 @@ Proof.
            destruct Hcontra.
 Qed.
 
-Lemma nil_subset_Prop {T : Type} {Γ : Prop_Set} : @subset T List_Set Prop_Set nil Γ.
+Lemma nil_subset_Prop {T : Type} {Γ : Prop_Set T} : @subset T (List_Set T) (Prop_Set T) nil Γ.
 Proof.
   unfold subset.
   intros A1 H.
@@ -369,7 +393,7 @@ Proof.
   destruct H.
 Qed.
 
-Lemma nil_subset_list {T : Type} {lst: List_Set} : @subset T List_Set List_Set nil lst.
+Lemma nil_subset_list {T : Type} {lst: List_Set T} : @subset T (List_Set T) (List_Set T) nil lst.
 Proof.
   unfold subset.
   intros A1 H.
@@ -393,7 +417,7 @@ Proof.
     destruct H2.
 Qed.
 
-Lemma subset_app_eq_conj {T : Type} {SetType : TSet T} (lst1 lst2 : List_Set) (all : SetType) : (@subset T List_Set SetType (lst1 ++ lst2) all) <-> ((@subset T List_Set SetType lst1 all) /\ (@subset T List_Set SetType lst2 all)).
+Lemma subset_app_eq_conj {T : Type} {SetType : TSet T} (lst1 lst2 : List_Set T) (all : SetType) : (@subset T (List_Set T) SetType (lst1 ++ lst2) all) <-> ((@subset T (List_Set T) SetType lst1 all) /\ (@subset T (List_Set T) SetType lst2 all)).
 Proof.
   split.
   - intro H.
