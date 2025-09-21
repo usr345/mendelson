@@ -4,8 +4,6 @@ Import ListNotations.
 
 Module MSet.
 
-Definition eq_by {T : Type} {TElem : Type} (P : TElem -> T -> Prop) (x y : T) : Prop := forall e : TElem, P e x <-> P e y.
-
 Record TSet (T : Type) : Type := mkTSet {
   struct_t : Type;
   elem : T -> struct_t -> Prop;
@@ -21,7 +19,7 @@ Record TSet (T : Type) : Type := mkTSet {
 
 Coercion TSet_Type {T : Type} (s : TSet T): Type := s.(struct_t T).
 
-Definition extend {T : Type} {Set_obj : TSet T} (Γ : Set_obj) (A : T) := union _ _ (sgt _ _ A) Γ.
+Definition extend {T : Type} {Set_obj : TSet T} (Γ : Set_obj) (A : T) := union _ _ Γ (sgt _ _ A).
 Definition subtract_elem {T : Type} {Set_obj : TSet T} (Γ : Set_obj) (A : T) := subtract _ _ Γ (sgt _ _ A).
 
 Section Constructs.
@@ -48,75 +46,77 @@ Infix "⊊" := proper_extension (at level 73) : sets_scope.
 
 Section Properties.
 
-Context {T : Type} {Set_obj Set_obj2 Set_obj3 : TSet T} {Γ : Set_obj} {Δ : Set_obj2} {Σ : Set_obj3}.
+  Context {T : Type} {Set_obj Set_obj2 Set_obj3 : TSet T} {Γ : Set_obj} {Δ : Set_obj2} {Σ : Set_obj3}.
 
-Lemma no_elem_in_empty (A : T) : A ∈ (∅ : Set_obj) <-> False.
-Proof.
-  split.
-  - intro H.
+  Lemma no_elem_in_empty (A : T) : A ∈ (∅ : Set_obj) <-> False.
+  Proof.
+    split.
+    - intro H.
+      apply empty_correct in H.
+      exact H.
+    - intros [].
+  Qed.
+
+  Lemma empty_subtract : (∅ : Set_obj) ≡ Γ ∖∖ Γ.
+  Proof.
+    unfold set_eq.
+    intro a.
+    split.
+    - rewrite no_elem_in_empty.
+      intros [].
+    - rewrite subtract_correct.
+      intros [H1 H2].
+      apply H2 in H1.
+      rewrite no_elem_in_empty.
+      exact H1.
+  Qed.
+
+  Lemma empty_subset : (∅ : Set_obj) ⊆ Δ.
+  Proof.
+    unfold subset.
+    intros a H.
     apply empty_correct in H.
-    exact H.
-  - intros [].
-Qed.
+    destruct H.
+  Qed.
 
-Lemma empty_subtract : (∅ : Set_obj) ≡ Γ∖∖ Γ.
-Proof.
-  split.
-  - rewrite no_elem_in_empty.
-    intros [].
-  - rewrite no_elem_in_empty.
+  Lemma extend_correct (A B: T) : B ∈ Γ,, A <-> A = B \/ B ∈ Γ.
+  Proof.
+    unfold extend.
+    split.
+    - intro H.
+      rewrite union_correct in H.
+      destruct H.
+      + right.
+        exact H.
+      + rewrite sgt_correct in H.
+        left.
+        exact H.
+    - intro H.
+      rewrite union_correct.
+      destruct H.
+      + right.
+        apply sgt_correct.
+        exact H.
+      + left.
+        exact H.
+  Qed.
+
+  Lemma subtract_elem_correct (A B : T) : B ∈ (Γ ∖ A) <-> A <> B /\ B ∈ Γ.
+  Proof.
+    unfold subtract_elem.
     rewrite subtract_correct.
-    intros [H1 H2].
-    apply H2 in H1.
-    exact H1.
-Qed.
+    rewrite sgt_correct.
+    split.
+    - intros [H1 H2].
+      apply (conj H2 H1).
+    - intros [H1 H2].
+      apply (conj H2 H1).
+  Qed.
 
-Lemma empty_subset : (∅ : Set_obj) ⊆ Δ.
-Proof.
-  unfold subset.
-  intros  a H.
-  apply empty_correct in H.
-  destruct H.
-Qed.
-
-Lemma extend_correct (A B: T) : B ∈ Γ,, A <-> A = B \/ B ∈ Γ.
-Proof.
-  unfold extend.
-  split.
-  - intro H.
-    rewrite union_correct in H.
-    destruct H.
-    + rewrite sgt_correct in H.
-      left.
-      exact H.
-    + right.
-      exact H.
-  - intro H.
-    rewrite union_correct.
-    destruct H.
-    + left.
-      apply sgt_correct.
-      exact H.
-    + right.
-      exact H.
-Qed.
-
-Lemma subtract_elem_correct (A B : T) : B ∈ (Γ ∖ A) <-> A <> B /\ B ∈ Γ.
-Proof.
-  unfold subtract_elem.
-  rewrite subtract_correct.
-  rewrite sgt_correct.
-  split.
-  - intros [H1 H2].
-    apply (conj H2 H1).
-  - intros [H1 H2].
-    apply (conj H2 H1).
-Qed.
-
-Lemma subset_refl : subset Γ Γ.
-Proof.
-  exact (fun _ H => H).
-Qed.
+  Lemma subset_refl : subset Γ Γ.
+  Proof.
+    exact (fun _ Proof_a_Γ => Proof_a_Γ).
+  Qed.
 
 (* Lemma subset_trans {T : Type} {Set_obj1 Set_obj2 Set_obj3 : TSet T} {Γ : Set_obj1} {Δ : Set_obj2} {Ε : Set_obj3} : subset Γ Δ -> subset Δ Ε -> subset Γ Ε. *)
 (* Proof. *)
@@ -129,128 +129,151 @@ Qed.
 (*   specialize (H2 H1). *)
 (*   exact H2. *)
 (* Qed. *)
+(*
+  H1: forall A : T, elem _ _ A Γ -> elem _ _ A Δ.
+  H2: forall A : T, elem _ _ A Δ -> elem _ _ A Σ.
+  forall A : T,
+  H3: elem _ _ A Γ
+        Goal: elem _ _ A Σ.
+*)
+  
+  Lemma subset_trans :
+    Γ ⊆ Δ -> Δ ⊆ Σ -> Γ ⊆ Σ.
+  Proof.
+    exact (fun H1 H2 A H3 => H2 A (H1 A H3)).
+  Qed.
 
-Lemma subset_trans :
-  Γ ⊆ Δ -> Δ ⊆ Σ -> Γ ⊆ Σ.
-Proof. exact (fun H1 H2 A H3 => H2 A (H1 A H3)).
-Qed.
+  Lemma subset_extend (A : T) : Γ ⊆ Γ,, A.
+  Proof.
+    intros B HB.
+    apply extend_correct.
+    right.
+    assumption.
+  Qed.
 
-Lemma subset_extend (A : T) : Γ ⊆ Γ,, A.
-Proof.
-  intros B HB.
-  apply extend_correct.
-  right.
-  assumption.
-Qed.
+  Lemma subset_extend_not (A: T) :
+    Δ ⊆ Γ,, A -> ~ A ∈ Δ -> Δ ⊆ Γ.
+  Proof.
+    intros H1 H2 B HB.
+    unfold subset in H1.
+    specialize (H1 B HB).
+    apply extend_correct in H1.
+    destruct H1.
+    - rewrite H in H2.
+      contradiction.
+    - exact H.
+  Qed.
 
-Lemma subset_extend_not (A: T) :
-  Δ ⊆ Γ,, A -> ~ A ∈ Δ -> Δ ⊆ Γ.
-Proof.
-  intros H1 H2 B HB.
-  specialize (H1 B HB).
-  apply extend_correct in H1 as [-> | HB'].
-  - contradiction.
-  - assumption.
-Qed.
-
-(* Общие теоремы для объединения *)
-Lemma union_zero : Γ ∪ ∅ ≡ Γ.
-Proof.
-  unfold set_eq.
-  intro A.
-  split.
-  - intro H.
-    rewrite union_correct in H.
-    destruct H.
-    + exact H.
-    + apply empty_correct in H.
+  (* Общие теоремы для объединения *)
+  Lemma union_zero : Γ ∪ ∅ ≡ Γ.
+  Proof.
+    unfold set_eq.
+    intro A.
+    split.
+    - intro H.
+      rewrite union_correct in H.
       destruct H.
-  - intro H.
-    apply union_correct.
-    left.
-    exact H.
-Qed.
-
-Lemma union_comm (Γ' : Set_obj) : Γ ∪ Γ' ≡ Γ' ∪ Γ.
-Proof.
-  intro a.
-  split ; intros H.
-  - apply union_correct in H.
-    apply union_correct.
-    apply or_comm.
-    exact H.
-  - apply union_correct in H.
-    apply union_correct.
-    apply or_comm.
-    exact H.
-Qed.
-
-Lemma union_assoc  (Θ Λ : Set_obj) : ((Γ ∪ Θ) ∪ Λ) ≡ (Γ ∪ (Θ ∪ Λ)).
-Proof.
-  intro a.
-  split ; intros H.
-  - apply union_correct in H.
-    apply union_correct.
-    destruct H.
-    + apply union_correct in H.
-      destruct H.
-      * left.
-        exact H.
-      * right.
-        apply union_correct.
-        left.
-        exact H.
-    + right.
-      apply union_correct.
-      right.
-      exact H.
-  - apply union_correct in H.
-    apply union_correct.
-    destruct H.
-    + left.
+      + exact H.
+      + apply empty_correct in H.
+        destruct H.
+    - intro H.
       apply union_correct.
       left.
       exact H.
-    + apply union_correct in H.
+  Qed.
+
+  Lemma union_comm (Γ' : Set_obj) : Γ ∪ Γ' ≡ Γ' ∪ Γ.
+  Proof.
+    intro a.
+    split ; intros H.
+    - apply union_correct in H.
+      apply union_correct.
+      apply or_comm.
+      exact H.
+    - apply union_correct in H.
+      apply union_correct.
+      apply or_comm.
+      exact H.
+  Qed.
+
+  Lemma union_assoc  (Θ Λ : Set_obj) : ((Γ ∪ Θ) ∪ Λ) ≡ (Γ ∪ (Θ ∪ Λ)).
+  Proof.
+    intro a.
+    split ; intros H.
+    - apply union_correct in H.
+      apply union_correct.
       destruct H.
-      * left.
+      + apply union_correct in H.
+        destruct H.
+        * left.
+          exact H.
+        * right.
+          apply union_correct.
+          left.
+          exact H.
+      + right.
         apply union_correct.
         right.
         exact H.
-      * right.
+    - apply union_correct in H.
+      apply union_correct.
+      destruct H.
+      + left.
+        apply union_correct.
+        left.
         exact H.
-Qed.
+      + apply union_correct in H.
+        destruct H.
+        * left.
+          apply union_correct.
+          right.
+          exact H.
+        * right.
+          exact H.
+  Qed.
 
-Lemma union_idempotent : Γ ∪ Γ ≡ Γ.
-Proof.
-  intro a.
-  split ; intros H.
-  - apply union_correct in H.
-    destruct H ; exact H.
-  - apply union_correct.
+  Lemma union_idempotent : Γ ∪ Γ ≡ Γ.
+  Proof.
+    intro a.
+    split ; intros H.
+    - apply union_correct in H.
+      destruct H ; exact H.
+    - apply union_correct.
+      left.
+      exact H.
+  Qed.
+
+  Lemma union_subset1 (Θ : Set_obj) : Γ ⊆ Γ ∪ Θ.
+  Proof.
+    intros a H.
+    apply union_correct.
     left.
-    exact H.
-Qed.
+    assumption.
+  Qed.
 
-Lemma union_subset1 (Θ : Set_obj) : Γ ⊆ Γ ∪ Θ.
-Proof.
-  intros a H.
-  apply union_correct.
-  left.
-  assumption.
-Qed.
-
-Lemma union_subset2 (Θ : Set_obj) : Θ ⊆ Γ ∪ Θ.
-Proof.
-  intros a H.
-  apply union_correct.
-  right.
-  assumption.
-Qed.
+  Lemma union_subset2 (Θ : Set_obj) : Θ ⊆ Γ ∪ Θ.
+  Proof.
+    intros a H.
+    apply union_correct.
+    right.
+    assumption.
+  Qed.
 
 End Properties.
 
+(*
+sgt  : forall (T : Type) (t : TSet T),
+       T -> struct_t T t
+@eq
+     : forall A : Type, A -> A -> Prop
 
+sgt Prop_Set:
+
+T → (T -> Prop)
+
+eq:
+T → (T → Prop)
+*)
 (* Instances *)
 Definition Prop_Set (T : Type) : TSet T := {|
   struct_t := T -> Prop;
@@ -258,7 +281,7 @@ Definition Prop_Set (T : Type) : TSet T := {|
   elem A Γ := Γ A;
   union Γ Δ A := Γ A \/ Δ A;
   subtract Γ Δ A := Γ A /\ ~ Δ A;
-  sgt := eq;
+  sgt := @eq T;
   sgt_correct _ _ := iff_refl _;
   union_correct _ _ _ := iff_refl _;
   subtract_correct _ _ _ := iff_refl _;
@@ -307,7 +330,7 @@ Proof.
   exact (in_dec Heq_dec x l).
 Qed.
 
-Lemma subset_app_eq_conj {T : Type} {SetType : TSet T} (lst1 lst2 : List_Set T) (all : SetType) : (@subset T (List_Set T) SetType (lst1 ++ lst2) all) <-> ((@subset T (List_Set T) SetType lst1 all) /\ (@subset T (List_Set T) SetType lst2 all)).
+Lemma subset_app_eq_conj {T : Type} {SetType : TSet T} (eq_dec : forall x y : T, {x = y} + {x <> y}) (lst1 lst2 : List_Set T eq_dec) (all : SetType) : (@subset T (List_Set T eq_dec) SetType (lst1 ++ lst2) all) <-> ((@subset T (List_Set T eq_dec) SetType lst1 all) /\ (@subset T (List_Set T eq_dec) SetType lst2 all)).
 Proof.
   split.
   - intro H.
