@@ -354,7 +354,7 @@ Qed.
 
 (* Proposition 2.2.3 (Compactness) If S |- X then there is some finite subset S' of S such that S' |- X *)
 Proposition compactness {atom : Set} {SetType : TSet (@formula atom)} (Γ : SetType) :
-  forall A : @formula atom, Γ |- A -> {l : List_Set & l ⊆ Γ & l |- A}.
+  forall A : @formula atom, Γ |- A -> {l : (List_Set (@formula atom) formula_eq) & l ⊆ Γ & l |- A}.
 Proof.
   intros A Γ_A.
   induction Γ_A as [A H|A B|A B C|A B|A B|A B|A B|A B|A B C|A B|A|A B|A B H1 IH1 H2 IH2|A H IH].

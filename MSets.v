@@ -136,7 +136,7 @@ Section Properties.
   H3: elem _ _ A Γ
         Goal: elem _ _ A Σ.
 *)
-  
+
   Lemma subset_trans :
     Γ ⊆ Δ -> Δ ⊆ Σ -> Γ ⊆ Σ.
   Proof.
