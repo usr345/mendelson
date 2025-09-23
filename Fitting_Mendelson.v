@@ -1049,43 +1049,75 @@ Proof.
     assert (H_S1_S2: forall F : formula, (S1 ∖ X) ∪ S2 |- F).
     {
       intro F.
-      apply hypo.
-      apply union_correct.
-      split.
+      specialize (H4 F).
+      induction H4.
+      - destruct (formula_eq A X) as [Yes | No].
+        + rewrite <-Yes in S2_X.
+          assert (H5 : S2 ⊆ (S1 ∖ X) ∪ S2).
+          {
+            unfold subset.
+            intros A1 HS2.
+            rewrite union_correct.
+            right.
+            exact HS2.
+          }
+
+          specialize (weaken S2 (S1 ∖ X ∪ S2) A H5 S2_X) as Hweak.
+          exact Hweak.
+        + apply hypo.
+          rewrite union_correct.
+          left.
+          unfold subtract_elem.
+          rewrite subtract_correct.
+          split.
+          * exact e.
+          * simpl.
+            unfold not.
+            intro HContra.
+            destruct HContra as [HContra | []].
+            symmetry in HContra.
+            specialize (No HContra).
+            exact No.
+      - apply axiom1.
+      - apply axiom2.
+      - apply conj_elim1.
+      - apply conj_elim2.
+      - apply conj_intro.
+      - apply disj_intro1.
+      - apply disj_intro2.
+      - apply case_analysis.
+      - apply ex_falso.
+      - apply tertium_non_datur.
+      - apply axiomK.
+      - apply (mp IHentails1 IHentails2).
+      - apply (nec IHentails).
     }
 
-  specialize (H2 (Γ ,, X)).
-  apply not_and_or in H2.
-  destruct H2 as [H2 | H2].
-  - unfold proper_extension in H2.
-    apply not_and_or in H2.
-    destruct H2 as [H2 | H2].
-    + Check @subset_extend (@formula atom) Set_obj.
-      specialize (subset_extend (@formula atom) Γ X) as Hcontra.
-      apply H2 in Hcontra.
-      destruct Hcontra.
-    + apply NNPP in H2.
-      unfold set_eq in H2.
-      specialize (H2 X).
-      rewrite H2.
-      unfold extend.
-      right.
-      reflexivity.
-  - unfold consistent in H2.
+    specialize (extend_subtract X H3) as H5.
+    specialize (union_subset H5 S2_Γ) as HUnion.
 
-
-  destruct H2 as [H2 | H2].
-  - exact H2.
-  - specialize (meta_consistent_no_contradiction Γ f H1 Γ_f) as H3.
-    assert (Hnf : Γ |- $~ f$).
+    assert (HContra: inconsistent Γ).
     {
-      apply hypo.
-      unfold elem.
-      exact H2.
+      unfold inconsistent.
+      exists (S1 ∖ X ∪ S2).
+      - exact HUnion.
+      - exact H_S1_S2.
     }
 
-    specialize (H3 Hnf).
-    destruct H3.
+    unfold consistent in H1.
+    specialize (H1 HContra).
+    exact H1.
+  }
+
+  specialize (subset_extend Γ X) as HSubset.
+  specialize (H2 (Γ,, X)).
+  unfold proper_extension in H2.
+
+  unfold not in H2.
+  specialize (conj HSubset Hcons) as HContra.
+
+  destruct H
+  specialize (H2 HContra).
 Qed.
 
 End Syntactic.

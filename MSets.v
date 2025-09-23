@@ -120,7 +120,7 @@ Proof.
   exact (fun H1 H2 A H3 => H2 A (H1 A H3)).
 Qed.
 
-Lemma subset_extend {T : Type} {Set_obj : TSet T} {Γ : Set_obj} (A : T) : Γ ⊆ Γ,, A.
+Lemma subset_extend {T : Type} {Set_obj : TSet T} (Γ : Set_obj) (A : T) : Γ ⊆ Γ,, A.
 Proof.
   intros B HB.
   apply extend_correct.
