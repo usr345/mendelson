@@ -918,7 +918,7 @@ Admitted.
 
 (* (prod (Forall Γ l) & (let Γ' := (fun f => In f l) in forall f, Γ' |- f)) *)
 Definition inconsistent {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) : Type :=
-  {lst : List_Set & (subset lst Γ) & forall F : (@formula atom), lst |- F}.
+  {lst : (List_Set (@formula atom) formula_eq) & (subset lst Γ) & forall F : (@formula atom), lst |- F}.
 
 (* A set of formulas Γ is consistent if it is not inconsistent *)
 Definition consistent {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) : Prop :=
@@ -1003,7 +1003,7 @@ Definition max_consistent {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Se
   consistent Γ /\ forall Δ : Set_obj, ~(proper_extension Γ Δ /\ consistent Δ).
 
 
-Lemma max_consistent_extend {atom : Set} {SetType : TSet2 (@formula atom)} (Γ : SetType) (X : @formula atom) (Δ : @List_Set (@formula atom)) :
+Lemma max_consistent_extend {atom : Set} {SetType : TSet (@formula atom)} (Γ : SetType) (X : @formula atom) (Δ : @List_Set (@formula atom) formula_eq) :
   let Γ_X := Γ ,, X in
   consistent Γ -> subset Δ Γ_X -> (forall F : (@formula atom), Δ |- F) -> X ∈ Δ.
 Proof.
@@ -1015,8 +1015,8 @@ Proof.
   - unfold elem.
     simpl.
     exact Yes.
-  - specialize (extend_correct _ _ Γ X) as Hext.
-    specialize (List_Prop_subset_extend_not Γ Δ X HΔ No) as H1.
+  - specialize (extend_correct Γ X) as Hext.
+    specialize (subset_extend_not Γ Δ X HΔ No) as H1.
     assert (HContra: inconsistent Γ).
     {
       unfold inconsistent.
@@ -1029,21 +1029,30 @@ Proof.
     destruct HΓ.
 Qed.
 
-Lemma max_consistent_elem {atom : Set} {Set_obj : TSet2 (@formula atom)} (Γ : Set_obj) :
+Lemma max_consistent_elem {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) :
   forall X : @formula atom, max_consistent Γ -> Γ |- X -> X ∈ Γ.
 Proof.
   intros X H Γ_X.
   unfold max_consistent in H.
   destruct H as [H1 H2].
+  specialize (compactness Γ X Γ_X) as Hcompact.
+  destruct Hcompact as [S2 S2_Γ S2_X].
+
   assert (Hcons : consistent (Γ ,, X)).
   {
     unfold consistent.
     intro HContra.
     unfold inconsistent in HContra.
-    destruct HContra as [Δ H3 H4].
-    specialize (max_consistent_extend Γ X Δ H1 H3 H4) as Δ_X.
-    specialize (compactness Γ X Γ_X) as Hcompact.
-    destruct Hcompact as [Ε HΕ_Γ Ε_X].
+    destruct HContra as [S1 H3 H4].
+    specialize (max_consistent_extend Γ X S1 H1 H3 H4) as S1_X.
+
+    assert (H_S1_S2: forall F : formula, (S1 ∖ X) ∪ S2 |- F).
+    {
+      intro F.
+      apply hypo.
+      apply union_correct.
+      split.
+    }
 
   specialize (H2 (Γ ,, X)).
   apply not_and_or in H2.

@@ -128,7 +128,7 @@ Proof.
   assumption.
 Qed.
 
-Lemma subset_extend_not {T : Type} {Set_obj Set_obj2 : TSet T} {Γ : Set_obj} {Δ : Set_obj2} (A: T) :
+Lemma subset_extend_not {T : Type} {Set_obj Set_obj2 : TSet T} (Γ : Set_obj) (Δ : Set_obj2) (A: T) :
   Δ ⊆ Γ,, A -> ~ A ∈ Δ -> Δ ⊆ Γ.
 Proof.
   intros H1 H2 B HB.
