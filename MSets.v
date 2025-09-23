@@ -67,7 +67,7 @@ Proof.
     exact H1.
 Qed.
 
-Lemma empty_subset {T : Type} {Set_obj : TSet T} {Γ : Set_obj} : (∅ : Set_obj) ⊆ Γ.
+Lemma empty_subset {T : Type} {Set_obj1 Set_obj2  : TSet T} {Γ : Set_obj1} : (∅ : Set_obj2) ⊆ Γ.
 Proof.
   unfold subset.
   intros a H.

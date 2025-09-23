@@ -357,6 +357,8 @@ Proposition compactness {atom : Set} {SetType : TSet (@formula atom)} (Γ : SetT
   forall A : @formula atom, Γ |- A -> {l : (List_Set (@formula atom) formula_eq) & l ⊆ Γ & l |- A}.
 Proof.
   intros A Γ_A.
+  set (ListFormulas := List_Set (@formula atom) formula_eq).
+  set (Hempty := @empty_subset (@formula atom) SetType ListFormulas).
   induction Γ_A as [A H|A B|A B C|A B|A B|A B|A B|A B|A B C|A B|A|A B|A B H1 IH1 H2 IH2|A H IH].
   - unfold elem in H.
     simpl in H.
@@ -372,44 +374,45 @@ Proof.
         exact H.
     + hypo.
   - exists [].
-    + apply nil_subset_Prop.
+    + apply Hempty.
     + apply (axiom1 _ A B).
   - exists [].
-    + apply nil_subset_Prop.
+    + apply Hempty.
     + apply (axiom2 _ A B C).
   - exists [].
-    + apply nil_subset_Prop.
+    + apply Hempty.
     + apply (conj_elim1 _ A B).
   - exists [].
-    + apply nil_subset_Prop.
+    + apply Hempty.
     + apply (conj_elim2 _ A B).
   - exists [].
-    + apply nil_subset_Prop.
+    + apply Hempty.
     + apply (conj_intro _ A B).
   - exists [].
-    + apply nil_subset_Prop.
+    + apply Hempty.
     + apply (disj_intro1 _ A B).
   - exists [].
-    + apply nil_subset_Prop.
+    + apply Hempty.
     + apply (disj_intro2 _ A B).
   - exists [].
-    + apply nil_subset_Prop.
+    + apply Hempty.
     + apply (case_analysis _ A B C).
   - exists [].
-    + apply nil_subset_Prop.
+    + apply Hempty.
     + apply (ex_falso _ A B).
   - exists [].
-    + apply nil_subset_Prop.
+    + apply Hempty.
     + apply (tertium_non_datur _ A).
   - exists [].
-    + apply nil_subset_Prop.
+    + apply Hempty.
     + apply (axiomK _ A B).
   - destruct IH1 as [l1 H_l1 IH1].
     destruct IH2 as [l2 H_l2 IH2].
     exists (l1 ++ l2).
-    + rewrite (subset_app_eq_conj l1 l2 Γ).
+    + unfold ListFormulas.
+      rewrite (subset_app_eq_conj formula_eq l1 l2 Γ).
       exact (conj H_l1 H_l2).
-    + assert (H_subset: @subset (@formula atom) List_Set List_Set l1 (l1 ++ l2)).
+    + assert (H_subset: @subset (@formula atom) ListFormulas ListFormulas l1 (l1 ++ l2)).
       {
         unfold subset.
         simpl.
@@ -419,9 +422,9 @@ Proof.
         exact H3.
       }
 
-      specialize (@weaken atom List_Set List_Set l1 (l1 ++ l2) _ H_subset IH1) as IH1_1.
+      specialize (@weaken atom  ListFormulas  ListFormulas l1 (l1 ++ l2) _ H_subset IH1) as IH1_1.
       clear H_subset.
-      assert (H_subset: @subset (@formula atom) List_Set List_Set l2 (l1 ++ l2)).
+      assert (H_subset: @subset (@formula atom) ListFormulas  ListFormulas l2 (l1 ++ l2)).
       {
         unfold subset.
         simpl.
@@ -431,7 +434,7 @@ Proof.
         exact H3.
       }
 
-      specialize (@weaken atom List_Set List_Set l2 (l1 ++ l2) _ H_subset IH2) as IH2_1.
+      specialize (@weaken atom ListFormulas ListFormulas l2 (l1 ++ l2) _ H_subset IH2) as IH2_1.
       clear H_subset.
       apply (mp IH1_1 IH2_1).
   - destruct IH as [l H_l IH].
@@ -683,6 +686,8 @@ Proof.
   {
     apply hypo.
     apply extend_correct.
+    left.
+    reflexivity.
   }
 
   specialize (contraposition (Γ,, $X -> Y$) X Y) as H2.
