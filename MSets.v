@@ -382,6 +382,26 @@ Proof.
       exact H3.
 Qed.
 
+Lemma not_conj1 (A B : Prop) : ~(A /\ B) -> A -> ~B.
+Proof.
+  unfold not.
+  intros HnA_B HA HB.
+  specialize (conj HA HB) as HA_B.
+  specialize (HnA_B HA_B) as HContra.
+  exact HContra.
+Qed.
+
+Lemma DeMogran_conj2 (A B : Prop) : ~A \/ ~B -> ~(A /\ B).
+Proof.
+  intro H.
+  unfold not in H.
+  unfold not.
+  intros [H1 H2].
+  destruct H.
+  - exact (H H1).
+  - exact (H H2).
+Qed.
+
 End MSet.
 Export MSet.
 

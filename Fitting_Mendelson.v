@@ -999,8 +999,8 @@ Qed.
 (*
   Множество формул Γ называется максимально консистентным, если оно консистентно, и никакое его собственное расширение не является консистентным
 *)
-Definition max_consistent {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) : Prop :=
-  consistent Γ /\ forall Δ : Set_obj, ~(proper_extension Γ Δ /\ consistent Δ).
+Definition max_consistent {atom : Set} {Set_obj1 : TSet (@formula atom)} {Set_obj2 : TSet (@formula atom)} (Γ : Set_obj1) : Prop :=
+  consistent Γ /\ forall Δ : Set_obj2, ~(proper_extension Γ Δ /\ consistent Δ).
 
 
 Lemma max_consistent_extend {atom : Set} {SetType : TSet (@formula atom)} (Γ : SetType) (X : @formula atom) (Δ : @List_Set (@formula atom) formula_eq) :
@@ -1035,6 +1035,8 @@ Proof.
   intros X H Γ_X.
   unfold max_consistent in H.
   destruct H as [H1 H2].
+  specialize (H2 (Γ ,, X)).
+  unfold proper_extension in H2.
   specialize (compactness Γ X Γ_X) as Hcompact.
   destruct Hcompact as [S2 S2_Γ S2_X].
 
