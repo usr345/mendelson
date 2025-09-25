@@ -1028,7 +1028,7 @@ Proof.
     destruct HΓ.
 Qed.
 
-Lemma max_consistent_elem {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) :
+Proposition max_consistent_elem {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) :
   forall X : @formula atom, max_consistent Set_obj Γ -> Γ |- X -> X ∈ Γ.
 Proof.
   intros X H Γ_X.
@@ -1120,6 +1120,58 @@ Proof.
   rewrite extend_correct.
   left.
   reflexivity.
+Qed.
+
+Definition theorem {atom : Set} (Set_obj : TSet (@formula atom)) (A : @formula atom) : Type :=
+  (@empty _ Set_obj) |- A.
+
+Proposition max_consistent_theorem {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj):
+  forall A : @formula atom, theorem Set_obj A -> max_consistent Set_obj Γ -> A ∈ Γ.
+Proof.
+  intros A H1 H2.
+  unfold theorem in H1.
+  specialize (empty_subset Set_obj Γ) as H3.
+  specialize (weaken ∅ Γ A H3 H1) as H4.
+  specialize (max_consistent_elem Γ A H2 H4) as H5.
+  exact H5.
+Qed.
+
+Lemma max_consistent_conjunction {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) (A B : @formula atom) :
+  max_consistent Set_obj Γ -> ($A /\ B$ ∈ Γ <-> A ∈ Γ /\ B ∈ Γ).
+Proof.
+  intro HCons.
+  split ; intro H.
+  - specialize (hypo Γ $A /\ B$ H) as H1.
+    specialize (meta_conj_elim1 Γ H1) as H2.
+    specialize (meta_conj_elim2 Γ H1) as H3.
+    specialize (max_consistent_elem Γ A HCons H2) as Γ_A.
+    specialize (max_consistent_elem Γ B HCons H3) as Γ_B.
+    exact (conj Γ_A Γ_B).
+  - destruct H as [Γ_A Γ_B].
+    specialize (hypo Γ A Γ_A) as H1.
+    specialize (hypo Γ B Γ_B) as H2.
+    specialize (meta_conj_intro Γ H1 H2) as HConj.
+    specialize (max_consistent_elem Γ $A /\ B$ HCons HConj) as Γ_Conj.
+    exact Γ_Conj.
+Qed.
+
+Lemma max_consistent_disjunction {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) (A B : @formula atom) :
+  max_consistent Set_obj Γ -> ($A \/ B$ ∈ Γ <-> A ∈ Γ \/ B ∈ Γ).
+Proof.
+  intro HCons.
+  split ; intro H.
+  - admit.
+  - destruct H as [Γ_A | Γ_B].
+    + specialize (hypo Γ A Γ_A) as H1.
+      specialize_axiom (disj_intro1 Γ A B) H2.
+      specialize (obj_meta_impl Γ A $A \/ B$ H2 H1) as HDisj.
+      specialize (max_consistent_elem Γ $A \/ B$ HCons HDisj) as Γ_Disj.
+      exact Γ_Disj.
+    + specialize (hypo Γ B Γ_B) as H1.
+      specialize_axiom (disj_intro2 Γ A B) H2.
+      specialize (obj_meta_impl Γ B $A \/ B$ H2 H1) as HDisj.
+      specialize (max_consistent_elem Γ $A \/ B$ HCons HDisj) as Γ_Disj.
+      exact Γ_Disj.
 Qed.
 
 End Syntactic.

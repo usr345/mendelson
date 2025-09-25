@@ -1,7 +1,18 @@
 #+STARTUP: overview
-* Глава 2
-** TODO [[./Fitting_Mendelson.v::Proposition weaken][Proposition Monotonicity]]
-** TODO [[./Fitting_Mendelson.v::Proposition compactness][Proposition compactness]]
+* [0/11] Глава 2 Propositional axiomatics
+** IN-PROGRESS [[./Fitting_Mendelson.v::Proposition weaken][Proposition Monotonicity]]
+** IN-PROGRESS [[./Fitting_Mendelson.v::Proposition compactness][Proposition compactness]]
+** IN-PROGRESS inconsistent set of formulas
+** IN-PROGRESS consistent set of formulas
+** IN-PROGRESS maximal consistent set of formulas
+** IN-PROGRESS [[./Fitting_Mendelson.v::Proposition max_consistent_elem][Proposition 2.4.4]] (S - maximally consistent) -> S |- F -> F \in S
+** IN-PROGRESS [[./Fitting_Mendelson.v::Proposition max_consistent_theorem][Proposition 2.4.5]] (S - maximally consistent) -> theorem A -> A \in S
+** TODO Proposition 2.6.1 maximally consistent set - conjunction
+** TODO Proposition 2.6.2 maximally consistent set - disjunction
+** TODO Proposition 2.6.3 maximally consistent set - negation
+** TODO Proposition 2.6.4 maximally consistent set - implication
+
+* [0/0] Глава 3 Propositional tableaus
 * [0/6] Глава 5 "Propositional Modal Logic"
 ** TODO 5.1 What Are the Formulas?
 ** DONE [2/2] 5.2 What Are the Models?
@@ -93,4 +104,24 @@ Example Ex5_3_7
 ** DONE [[./Fitting_Mendelson.v::Proposition Ex_R_9_weakly_connected][Стр. 12 Задача № 9 Weakly connected \<-]]
 ** DONE [[./Fitting_Mendelson.v::Proposition Ex_R_10][Стр. 12 Задача № 10 Weakly directed -\>]]
 ** DONE [[./Fitting_Mendelson.v::Proposition Ex_R_10_weakly_directed][Стр. 12 Задача № 10 Weakly directed \<-]]
-*
+* [0/20] Goldblatt - canonical models
+** TODO [[./Fitting_Mendelson.v::Proposition boxP_P][Стр. 12 Задача № 1 Reflexive -\>]]
+** TODO [[./Fitting_Mendelson.v::Proposition Ex_R_1_reflexive][Стр. 12 Задача № 1 Reflexive \<-]]
+** TODO [[./Fitting_Mendelson.v::Theorem E5_4_3_2][Стр. 12 Задача № 2 Symmetric -\>]]
+** TODO [[./Fitting_Mendelson.v::Proposition Ex_R_2_symmetric][Стр. 12 Задача № 2 Symmetric \<-]]
+** TODO [[./Fitting_Mendelson.v::Proposition E5_4_1][Стр. 12 Задача № 3 Serial -\>]]
+** TODO [[./Fitting_Mendelson.v::Proposition Ex_R_3_serial][Стр. 12 Задача № 3 Serial \<-]]
+** TODO [[./Fitting_Mendelson.v::Theorem E5_4_5_trans_valid][Стр. 12 Задача № 4 Transitive -\>]]
+** TODO [[./Fitting_Mendelson.v::Theorem E5_4_5_valid_trans][Стр. 12 Задача № 4 Transitive <\-]]
+** TODO [[./Fitting_Mendelson.v::Proposition Ex_R_5][Стр. 12 Задача № 5 Euclidean -\>]]
+** TODO [[./Fitting_Mendelson.v::Proposition Ex_R_5_eucl][Стр. 12 Задача № 5 Euclidean <\-]]
+** TODO [[./Fitting_Mendelson.v::Proposition Ex_R_6][Стр. 12 Задача № 6 Partially functional -\>]]
+** TODO [[./Fitting_Mendelson.v::Proposition Ex_R_6_par_fun][Стр. 12 Задача № 6 Partially functional \<-]]
+** TODO [[./Fitting_Mendelson.v::Proposition Ex_R_7][Стр. 12 Задача № 7 Functional -\>]]
+** TODO [[./Fitting_Mendelson.v::Proposition Ex_R_7_functional][Стр. 12 Задача № 7 Functional \<-]]
+** TODO [[./Fitting_Mendelson.v::Proposition Ex_R_8][Стр. 12 Задача № 8 Weakly dense -\>]]
+** TODO [[./Fitting_Mendelson.v::Proposition Ex_R_8_weakly_dense][Стр. 12 Задача № 8 Weakly dense \<-]]
+** TODO [[./Fitting_Mendelson.v::Proposition Ex_R_9][Стр. 12 Задача № 9 Weakly connected -\>]]
+** TODO [[./Fitting_Mendelson.v::Proposition Ex_R_9_weakly_connected][Стр. 12 Задача № 9 Weakly connected \<-]]
+** TODO [[./Fitting_Mendelson.v::Proposition Ex_R_10][Стр. 12 Задача № 10 Weakly directed -\>]]
+** TODO [[./Fitting_Mendelson.v::Proposition Ex_R_10_weakly_directed][Стр. 12 Задача № 10 Weakly directed \<-]]
