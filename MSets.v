@@ -161,6 +161,39 @@ Proof.
   - exact H1.
 Qed.
 
+Lemma not_conj1 (A B : Prop) : ~(A /\ B) -> A -> ~B.
+Proof.
+  unfold not.
+  intros HnA_B HA HB.
+  specialize (conj HA HB) as HA_B.
+  specialize (HnA_B HA_B) as HContra.
+  exact HContra.
+Qed.
+
+Lemma DeMogran_conj2 (A B : Prop) : ~A \/ ~B -> ~(A /\ B).
+Proof.
+  intro H.
+  unfold not in H.
+  unfold not.
+  intros [H1 H2].
+  destruct H.
+  - exact (H H1).
+  - exact (H H2).
+Qed.
+
+(* Lemma subset_equal {T : Type} {Set_obj Set_obj2 : TSet T} {Γ : Set_obj} {Δ : Set_obj2} : *)
+(*   Γ ⊆ Δ -> ~(Γ ⊊ Δ) -> Γ ≡ Δ. *)
+(* Proof. *)
+(*   intros H1 H2. *)
+(*   unfold set_eq. *)
+(*   intro a. *)
+(*   split ; intro H3. *)
+(*   - unfold subset in H1. *)
+(*     specialize (H1 a H3). *)
+(*     exact H1. *)
+(*   - unfold proper_extension in H2. *)
+(*     specialize (not_conj1 _ _ H2 H1) as H4. *)
+
 Lemma union_subset {T : Type} {Set_obj Set_obj2 : TSet T} {Γ : Set_obj} {Δ Σ : Set_obj2} :
   Δ ⊆ Γ -> Σ ⊆ Γ -> (Δ ∪ Σ) ⊆ Γ.
 Proof.
@@ -380,26 +413,6 @@ Proof.
       exact H2.
     + specialize (H3 H).
       exact H3.
-Qed.
-
-Lemma not_conj1 (A B : Prop) : ~(A /\ B) -> A -> ~B.
-Proof.
-  unfold not.
-  intros HnA_B HA HB.
-  specialize (conj HA HB) as HA_B.
-  specialize (HnA_B HA_B) as HContra.
-  exact HContra.
-Qed.
-
-Lemma DeMogran_conj2 (A B : Prop) : ~A \/ ~B -> ~(A /\ B).
-Proof.
-  intro H.
-  unfold not in H.
-  unfold not.
-  intros [H1 H2].
-  destruct H.
-  - exact (H H1).
-  - exact (H H2).
 Qed.
 
 End MSet.

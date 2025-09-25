@@ -999,9 +999,8 @@ Qed.
 (*
   Множество формул Γ называется максимально консистентным, если оно консистентно, и никакое его собственное расширение не является консистентным
 *)
-Definition max_consistent {atom : Set} {Set_obj1 : TSet (@formula atom)} {Set_obj2 : TSet (@formula atom)} (Γ : Set_obj1) : Prop :=
-  consistent Γ /\ forall Δ : Set_obj2, ~(proper_extension Γ Δ /\ consistent Δ).
-
+Definition max_consistent {atom : Set} {Set_obj1 : TSet (@formula atom)} (Set_obj2 : TSet (@formula atom)) (Γ : Set_obj1) : Prop :=
+  consistent Γ /\ forall Δ : Set_obj2, Γ ⊆ Δ -> consistent Δ -> Γ ≡ Δ.
 
 Lemma max_consistent_extend {atom : Set} {SetType : TSet (@formula atom)} (Γ : SetType) (X : @formula atom) (Δ : @List_Set (@formula atom) formula_eq) :
   let Γ_X := Γ ,, X in
@@ -1030,7 +1029,7 @@ Proof.
 Qed.
 
 Lemma max_consistent_elem {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) :
-  forall X : @formula atom, max_consistent Γ -> Γ |- X -> X ∈ Γ.
+  forall X : @formula atom, max_consistent Set_obj Γ -> Γ |- X -> X ∈ Γ.
 Proof.
   intros X H Γ_X.
   unfold max_consistent in H.
@@ -1040,7 +1039,7 @@ Proof.
   specialize (compactness Γ X Γ_X) as Hcompact.
   destruct Hcompact as [S2 S2_Γ S2_X].
 
-  assert (Hcons : consistent (Γ ,, X)).
+  assert (HCons : consistent (Γ ,, X)).
   {
     unfold consistent.
     intro HContra.
@@ -1112,14 +1111,15 @@ Proof.
   }
 
   specialize (subset_extend Γ X) as HSubset.
-  specialize (H2 (Γ,, X)).
-  unfold proper_extension in H2.
+  specialize (H2 HSubset).
+  specialize (H2 HCons).
+  unfold set_eq in H2.
 
-  unfold not in H2.
-  specialize (conj HSubset Hcons) as HContra.
-
-  destruct H
-  specialize (H2 HContra).
+  specialize (H2 X).
+  rewrite H2.
+  rewrite extend_correct.
+  left.
+  reflexivity.
 Qed.
 
 End Syntactic.
