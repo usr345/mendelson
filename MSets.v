@@ -128,6 +128,45 @@ Proof.
   assumption.
 Qed.
 
+Lemma subset_extend_exists {T : Type} (Heq_dec : forall x y : T, {x = y} + {x <> y}) {Set_obj Set_obj2 : TSet T} (Γ : Set_obj) (Δ Σ: Set_obj2) (A: T) :
+  Δ ⊆ Γ,, A -> A ∈ Δ -> exists Σ : Set_obj2, Δ ≡ Σ ,, A.
+Proof.
+  intros H1 H2.
+  exists (Δ ∖ A).
+  unfold set_eq.
+  intro B.
+  split ; intro H.
+  - rewrite extend_correct.
+    destruct (Heq_dec A B) as [Yes | No].
+    + left.
+      exact Yes.
+    + right.
+      rewrite subtract_elem_correct.
+      apply (conj No H).
+  - rewrite extend_correct in H.
+    destruct H.
+    + rewrite H in H2.
+      exact H2.
+    + rewrite subtract_elem_correct in H.
+      destruct H as [_ H].
+      exact H.
+Qed.
+
+Lemma extend_not_equal {T : Type} {Set_obj : TSet T} (Γ : Set_obj) (A : T) : ~ (A ∈ Γ) -> ~(Γ ≡ Γ,, A).
+Proof.
+  unfold not.
+  intros H Heq.
+  unfold set_eq in Heq.
+  specialize (Heq A).
+  unfold extend in Heq.
+  rewrite union_correct in Heq.
+  apply H.
+  rewrite Heq.
+  right.
+  rewrite sgt_correct.
+  reflexivity.
+Qed.
+
 Lemma subset_extend_not {T : Type} {Set_obj Set_obj2 : TSet T} (Γ : Set_obj) (Δ : Set_obj2) (A: T) :
   Δ ⊆ Γ,, A -> ~ A ∈ Δ -> Δ ⊆ Γ.
 Proof.

@@ -1045,7 +1045,7 @@ Qed.
   Множество формул Γ называется максимально консистентным, если оно консистентно, и никакое его собственное расширение не является консистентным
 *)
 Definition max_consistent {atom : Set} {Set_obj1 : TSet (@formula atom)} (Set_obj2 : TSet (@formula atom)) (Γ : Set_obj1) : Prop :=
-  consistent Γ /\ forall Δ : Set_obj2, Γ ⊆ Δ -> consistent Δ -> Γ ≡ Δ.
+  consistent Γ /\ forall Δ : Set_obj2, Γ ⊆ Δ -> (consistent Δ <-> Γ ≡ Δ).
 
 Lemma max_consistent_extend {atom : Set} {SetType : TSet (@formula atom)} (Γ : SetType) (X : @formula atom) (Δ : @List_Set (@formula atom) formula_eq) :
   let Γ_X := Γ ,, X in
@@ -1157,11 +1157,11 @@ Proof.
 
   specialize (subset_extend Γ X) as HSubset.
   specialize (H2 HSubset).
-  specialize (H2 HCons).
-  unfold set_eq in H2.
+  rewrite H2 in HCons.
+  unfold set_eq in HCons.
 
-  specialize (H2 X).
-  rewrite H2.
+  specialize (HCons X).
+  rewrite HCons.
   rewrite extend_correct.
   left.
   reflexivity.
@@ -1204,9 +1204,47 @@ Proposition max_consistent_disjunction {atom : Set} {Set_obj : TSet (@formula at
   max_consistent Set_obj Γ -> ($A \/ B$ ∈ Γ <-> A ∈ Γ \/ B ∈ Γ).
 Proof.
   intro HCons.
-  split ; intro H.
-  - admit.
-  - destruct H as [Γ_A | Γ_B].
+  split.
+  - apply meta_contraposition_rev.
+    intro H.
+    apply not_or_and in H.
+    destruct H as [H1 H2].
+    unfold max_consistent in HCons.
+    destruct HCons as [HCons HΔ].
+    specialize (HΔ (Γ,,A)) as H_ΓA.
+    specialize (subset_extend Γ A) as H3.
+    specialize (H_ΓA H3).
+    clear H3.
+    specialize (extend_not_equal Γ A) as H3.
+    specialize (H3 H1).
+    rewrite <-H_ΓA in H3.
+    unfold consistent in H3.
+    unfold not in H3.
+    unfold not.
+    intro H4.
+    apply H3.
+    intro H5.
+    unfold inconsistent in H5.
+    destruct H5 as [lst HSubset H5].
+
+    specialize (HΔ (Γ,,B)) as H_ΓB.
+    specialize (subset_extend Γ B) as H6.
+    specialize (H_ΓB H6).
+    clear H6.
+    specialize (extend_not_equal Γ B) as H6.
+    specialize (H6 H2).
+    rewrite <-H_ΓB in H6.
+    unfold consistent in H6.
+    unfold not in H6.
+    apply H6.
+    intro H7.
+    unfold inconsistent in H7.
+    destruct H7 as [lst1 HSubset1 H7].
+
+
+
+  - intro H.
+    destruct H as [Γ_A | Γ_B].
     + specialize (hypo Γ A Γ_A) as H1.
       specialize_axiom (disj_intro1 Γ A B) H2.
       specialize (obj_meta_impl Γ A $A \/ B$ H2 H1) as HDisj.
