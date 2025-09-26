@@ -916,6 +916,18 @@ Proposition E6_1_3_6 {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj)
 Proof.
 Admitted.
 
+Proposition ex_falso_any {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (f : @formula atom) :
+  f ∈ Γ -> $~ f$ ∈ Γ -> forall A : @formula atom, Γ |- A.
+Proof.
+  intros Γ_f Γ_nf A.
+  specialize_axiom (ex_falso Γ f A) H.
+  specialize (hypo Γ f Γ_f) as H1.
+  specialize (hypo Γ $~ f$ Γ_nf) as H2.
+  specialize (mp H H2) as H3.
+  specialize (mp H3 H1) as H4.
+  exact H4.
+Qed.
+
 (* (prod (Forall Γ l) & (let Γ' := (fun f => In f l) in forall f, Γ' |- f)) *)
 Definition inconsistent {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) : Type :=
   {lst : (List_Set (@formula atom) formula_eq) & (subset lst Γ) & forall F : (@formula atom), lst |- F}.
@@ -924,6 +936,39 @@ Definition inconsistent {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_o
 Definition consistent {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) : Prop :=
   (inconsistent Γ) -> False.
 
+Lemma no_contradiction_in_consistent {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (f : @formula atom) :
+  f ∈ Γ -> $~f$ ∈ Γ -> inconsistent Γ.
+Proof.
+  intros Γ_f Γ_nf.
+  unfold inconsistent.
+  exists [f; $~ f$].
+  - unfold subset.
+    intros A H.
+    unfold elem in H.
+    simpl in H.
+    destruct H as [H | [H | []]].
+    + rewrite H in Γ_f.
+      exact Γ_f.
+    + rewrite H in Γ_nf.
+      exact Γ_nf.
+  - assert (H1 : elem _ (List_Set (@formula atom) formula_eq) f [f; $~ f$]).
+    {
+      unfold elem.
+      simpl.
+      left.
+      reflexivity.
+    }
+
+    assert (H2 : elem _ (List_Set (@formula atom) formula_eq) $~ f$ [f; $~ f$]).
+    {
+      unfold elem.
+      simpl.
+      auto.
+    }
+
+    specialize (@ex_falso_any _ (List_Set (@formula atom) formula_eq) [f; $~ f$] f H1 H2) as H3.
+    exact H3.
+Qed.
 (*
 Lemma consistent_no_contradiction {atom : Set} (Γ: Prop_Set) (f : @formula atom):
   consistent Γ -> (Γ |- $f /\ ~f$) -> False.
@@ -1136,7 +1181,7 @@ Proof.
   exact H5.
 Qed.
 
-Lemma max_consistent_conjunction {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) (A B : @formula atom) :
+Proposition max_consistent_conjunction {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) (A B : @formula atom) :
   max_consistent Set_obj Γ -> ($A /\ B$ ∈ Γ <-> A ∈ Γ /\ B ∈ Γ).
 Proof.
   intro HCons.
@@ -1155,7 +1200,7 @@ Proof.
     exact Γ_Conj.
 Qed.
 
-Lemma max_consistent_disjunction {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) (A B : @formula atom) :
+Proposition max_consistent_disjunction {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) (A B : @formula atom) :
   max_consistent Set_obj Γ -> ($A \/ B$ ∈ Γ <-> A ∈ Γ \/ B ∈ Γ).
 Proof.
   intro HCons.
@@ -1173,6 +1218,9 @@ Proof.
       specialize (max_consistent_elem Γ $A \/ B$ HCons HDisj) as Γ_Disj.
       exact Γ_Disj.
 Qed.
+
+Proposition max_consistent_negation {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) (A B : @formula atom) :
+  max_consistent Set_obj Γ -> ($A \/ B$ ∈ Γ <-> A ∈ Γ \/ B ∈ Γ).
 
 End Syntactic.
 
