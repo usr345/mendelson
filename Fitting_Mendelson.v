@@ -1007,6 +1007,7 @@ Proof.
 Qed.
 *)
 
+(* Любое подмножество консистентного мнгожества консистентно *)
 Lemma consistent_subset {atom : Set} {Set_obj1 : TSet (@formula atom)} {Set_obj2 : TSet (@formula atom)} (Γ: Set_obj1) (Δ: Set_obj2):
   consistent Γ -> subset Δ Γ -> consistent Δ.
 Proof.
@@ -1026,6 +1027,7 @@ Proof.
     exact H.
 Qed.
 
+(* Любое надмножество неконсистентного мнгожества неконсистентно *)
 Lemma inconsistent_subset {atom : Set} {Set_obj1 : TSet (@formula atom)} {Set_obj2 : TSet (@formula atom)} (Γ: Set_obj1) (Δ: Set_obj2):
   inconsistent Γ -> subset Γ Δ -> inconsistent Δ.
 Proof.
@@ -1080,7 +1082,6 @@ Proof.
   unfold max_consistent in H.
   destruct H as [H1 H2].
   specialize (H2 (Γ ,, X)).
-  unfold proper_extension in H2.
   specialize (compactness Γ X Γ_X) as Hcompact.
   destruct Hcompact as [S2 S2_Γ S2_X].
 
