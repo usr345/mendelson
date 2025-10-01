@@ -1256,10 +1256,11 @@ Proof.
       specialize (obj_meta_impl Γ B $A \/ B$ H2 H1) as HDisj.
       specialize (max_consistent_elem Γ $A \/ B$ HCons HDisj) as Γ_Disj.
       exact Γ_Disj.
-Qed.
+Abort.
 
 Proposition max_consistent_negation {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) (A B : @formula atom) :
   max_consistent Set_obj Γ -> ($A \/ B$ ∈ Γ <-> A ∈ Γ \/ B ∈ Γ).
+Abort.
 
 End Syntactic.
 
@@ -3048,19 +3049,27 @@ End Goldblatt.
 
 Module CanonicalModels.
   Import Kripke.
+  Import Syntactic.
 
   Inductive atom : Set :=
   | P : atom
   | Q : atom.
 
-  Definition SWorlds := @formula atom -> Prop.
+(* Definition max_consistent {atom : Set} {Set_obj1 : TSet (@formula atom)} (Set_obj2 : TSet (@formula atom)) (Γ : Set_obj1) : Prop := *)
+(*   consistent Γ /\ forall Δ : Set_obj2, Γ ⊆ Δ -> consistent Δ -> Γ ≡ Δ. *)
+  Record MaxConsintentWorld {atom : Set} : Type := mkMaxConsintentWorld {
+    formulas: Prop_Set (@formula atom);
+    is_max: max_consistent (Prop_Set (@formula atom)) formulas;
+  }.
 
-  Definition R (w1 w2 : SWorlds) : Prop :=
-    forall F : @formula atom, (f_box F) ∈ w1 -> F ∈ w2.
+  Coercion MaxConsintentWorld_Type {atom : Set} (w : @MaxConsintentWorld atom): Prop_Set (@formula atom) := w.(formulas).
 
-  Definition SV (w : SWorlds) (a : atom) : Prop := (f_atom a) ∈ w.
+  Definition R (w1 w2 : @MaxConsintentWorld atom) : Prop :=
+    forall F : @formula atom, (f_box F) ∈ w1.(formulas) -> F ∈ w2.(formulas).
 
-  Lemma SWorlds_inhabited : inhabited SWorlds.
+  Definition SV (w : @MaxConsintentWorld atom) (a : atom) : Prop := (f_atom a) ∈ w.(formulas).
+
+  Lemma SWorlds_inhabited {atom : Set} : inhabited (@MaxConsintentWorld atom).
   Proof.
     apply (inhabits empty).
   Qed.

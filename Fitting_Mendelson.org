@@ -1,13 +1,13 @@
 #+STARTUP: overview
-* [0/11] Глава 2 Propositional axiomatics
-** IN-PROGRESS [[./Fitting_Mendelson.v::Proposition weaken][Proposition Monotonicity]]
-** IN-PROGRESS [[./Fitting_Mendelson.v::Proposition compactness][Proposition compactness]]
-** IN-PROGRESS inconsistent set of formulas
-** IN-PROGRESS consistent set of formulas
-** IN-PROGRESS maximal consistent set of formulas
-** IN-PROGRESS [[./Fitting_Mendelson.v::Proposition max_consistent_elem][Proposition 2.4.4]] (S - maximally consistent) -> S |- F -> F \in S
-** IN-PROGRESS [[./Fitting_Mendelson.v::Proposition max_consistent_theorem][Proposition 2.4.5]] (S - maximally consistent) -> theorem A -> A \in S
-** TODO Proposition 2.6.1 maximally consistent set - conjunction
+* [8/11] Глава 2 Propositional axiomatics
+** DONE [[./Fitting_Mendelson.v::Proposition weaken][Proposition Monotonicity]]
+** DONE [[./Fitting_Mendelson.v::Proposition compactness][Proposition compactness]]
+** DONE inconsistent set of formulas
+** DONE consistent set of formulas
+** DONE maximal consistent set of formulas
+** DONE [[./Fitting_Mendelson.v::Proposition max_consistent_elem][Proposition 2.4.4]] (S - maximally consistent) -> S |- F -> F \in S
+** DONE [[./Fitting_Mendelson.v::Proposition max_consistent_theorem][Proposition 2.4.5]] (S - maximally consistent) -> theorem A -> A \in S
+** DONE Proposition 2.6.1 maximally consistent set - conjunction
 ** TODO Proposition 2.6.2 maximally consistent set - disjunction
 ** TODO Proposition 2.6.3 maximally consistent set - negation
 ** TODO Proposition 2.6.4 maximally consistent set - implication
