@@ -1241,7 +1241,7 @@ Proof.
     intro H7.
     unfold inconsistent in H7.
     destruct H7 as [lst1 HSubset1 H7].
-
+    admit.
 
 
   - intro H.
@@ -3051,10 +3051,6 @@ Module CanonicalModels.
   Import Kripke.
   Import Syntactic.
 
-  Inductive atom : Set :=
-  | P : atom
-  | Q : atom.
-
 (* Definition max_consistent {atom : Set} {Set_obj1 : TSet (@formula atom)} (Set_obj2 : TSet (@formula atom)) (Γ : Set_obj1) : Prop := *)
 (*   consistent Γ /\ forall Δ : Set_obj2, Γ ⊆ Δ -> consistent Δ -> Γ ≡ Δ. *)
   Record MaxConsintentWorld {atom : Set} : Type := mkMaxConsintentWorld {
@@ -3064,30 +3060,60 @@ Module CanonicalModels.
 
   Coercion MaxConsintentWorld_Type {atom : Set} (w : @MaxConsintentWorld atom): Prop_Set (@formula atom) := w.(formulas).
 
-  Definition R (w1 w2 : @MaxConsintentWorld atom) : Prop :=
+  Definition R {atom : Set} (w1 w2 : @MaxConsintentWorld atom) : Prop :=
     forall F : @formula atom, (f_box F) ∈ w1.(formulas) -> F ∈ w2.(formulas).
 
-  Definition SV (w : @MaxConsintentWorld atom) (a : atom) : Prop := (f_atom a) ∈ w.(formulas).
+  Definition CanonicalV {atom : Set} (w : @MaxConsintentWorld atom) (a : atom) : Prop := (f_atom a) ∈ w.(formulas).
 
   Lemma SWorlds_inhabited {atom : Set} : inhabited (@MaxConsintentWorld atom).
   Proof.
-    apply (inhabits empty).
-  Qed.
+  Admitted.
 
-  Definition CanonicalFrame : Frame :=
+  Definition CanonicalFrame (atom : Set) : Frame :=
   {|
-    worlds := SWorlds;
+    worlds := @MaxConsintentWorld atom;
     worlds_inh := SWorlds_inhabited;
     accessible := R;
   |}.
 
-  Definition CanonicalModel : Model :=
+  Definition CanonicalModel (atom : Set) : Model :=
   {|
-    frame := CanonicalFrame;
-    valuation := SV
+    frame := CanonicalFrame atom;
+    valuation := CanonicalV
   |}.
 
-  Proposition Ex_R_1_reflexive :
+  Parameter atom : Set.
+  Parameter φ : @formula atom.
+  Check @MaxConsintentWorld atom.
+  forall (V : worlds -> atom -> Prop),
+    forall w, valid {| frame := Fr;
+                 valuation := V |} w f.
+
+  (* Parameter Fr: CanonicalFrame atom. *)
+  Lemma TruthLemma {atom : Set} : forall φ : @formula atom, valid_in_frame (CanonicalFrame atom) φ.
+
+
+  Inductive atom2 : Set :=
+  | P : atom
+  | Q : atom.
+
+  Proposition ReflexiveValid :
+    reflexive (@accessible CanonicalFrame) -> (forall φ : @formula atom, valid_in_frame CanonicalFrame $box φ -> φ$).
+  Proof.
+    intro H.
+    unfold reflexive in H.
+    intro φ.
+    hnf.
+    intros V Γ.
+    hnf.
+    intro H1.
+    specialize (H Γ).
+    hnf in H1.
+    specialize (H1 Γ H).
+    exact H1.
+  Qed.
+
+  Proposition ValidReflexive :
     (forall φ : @formula atom, valid_in_frame CanonicalFrame $box φ -> φ$) -> reflexive (@accessible CanonicalFrame).
   Proof.
     intro H.
@@ -3096,11 +3122,51 @@ Module CanonicalModels.
     unfold accessible.
     simpl.
     unfold R.
+    intros ψ Γ_box_ψ.
+    specialize (H ψ).
+    hnf in H.
+    set (V := fun (x : worlds) (_ : atom) =>
+                accessible Γ x
+        ).
+
+    specialize (H V Γ).
+    hnf in H.
+    assert (Hbox : valid {| frame := CanonicalFrame; valuation := V |} Γ $box ψ$).
+    {
+      simpl.
+      intros Δ Γ_R_Δ.
+      unfold R in Γ_R_Δ.
+      specialize (Γ_R_Δ ψ Γ_box_ψ).
+      unfold V.
+      unfold accessible.
+      simpl.
+      exact Γ_R_Δ.
+    }
+
+  specialize (H Hbox).
+  simpl in H.
+  unfold V in H.
+  exact H.
+
+
+    simpl.
+    unfold R.
     intros f Hbox.
     specialize (H f).
     hnf in H.
-    specialize (H SV Γ).
+    specialize (H CanonicalV Γ).
+    hnf in H.
+    assert (HValid : valid {| frame := CanonicalFrame; valuation := CanonicalV |} Γ $box f$).
+    {
+      unfold valid.
+      intro
+
+    simpl in H.
+    unfold worlds in Γ.
+    simpl in Γ.
+    specialize (H Γ).
     hnf in H.
     simpl in H.
+
 
 End CanonicalModels.
