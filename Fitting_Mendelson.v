@@ -220,7 +220,18 @@ Module Formula.
      eqb_eq := formula_beq_eq;
   }.
 
-  Lemma meta_contraposition_rev :  forall (P Q : Prop), (~Q -> ~P) -> (P -> Q) .
+  Lemma meta_contraposition : forall {P Q : Prop}, (P -> Q) -> (~Q -> ~P).
+  Proof.
+    intros P Q P_Q HnQ.
+    unfold not.
+    intro HP.
+    specialize (P_Q HP).
+    unfold not in HnQ.
+    specialize (HnQ P_Q).
+    exact HnQ.
+  Qed.
+
+  Lemma meta_contraposition_rev : forall (P Q : Prop), (~Q -> ~P) -> (P -> Q).
     unfold not.
     intros P Q.
     intros A B.
@@ -969,6 +980,21 @@ Proof.
     specialize (@ex_falso_any _ (List_Set (@formula atom) formula_eq) [f; $~ f$] f H1 H2) as H3.
     exact H3.
 Qed.
+
+Lemma consistent_no_contradiction {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (f : @formula atom):
+  consistent Γ -> ~(f ∈ Γ /\ $~f$ ∈ Γ).
+Proof.
+  intro H.
+  unfold not.
+  intro HContra.
+  unfold consistent in H.
+  destruct HContra as [H1 H2].
+  apply H.
+  specialize (no_contradiction_in_consistent Γ f) as H3.
+  specialize (H3 H1 H2).
+  exact H3.
+Qed.
+
 (*
 Lemma consistent_no_contradiction {atom : Set} (Γ: Prop_Set) (f : @formula atom):
   consistent Γ -> (Γ |- $f /\ ~f$) -> False.
@@ -993,18 +1019,6 @@ Proof.
     exact H8.
 Qed.
 
-Lemma meta_consistent_no_contradiction {atom : Set} (Γ : @formula atom -> Prop) (f : @formula atom):
-  consistent Γ -> Γ |- f -> Γ |- $~f$ -> False.
-Proof.
-  intros H Hf Hn_f.
-  unfold consistent in H.
-  apply H.
-  intro g.
-  specialize_axiom (ex_falso Γ f g) H1.
-  specialize (mp H1 Hn_f) as H2.
-  specialize (mp H2 Hf) as H3.
-  exact H3.
-Qed.
 *)
 
 (* Любое подмножество консистентного мнгожества консистентно *)
@@ -3069,28 +3083,30 @@ Module CanonicalModels.
   Proof.
   Admitted.
 
-  Definition CanonicalFrame (atom : Set) : Frame :=
+  Instance CanonicalFrame (atom : Set) : Frame :=
   {|
     worlds := @MaxConsintentWorld atom;
     worlds_inh := SWorlds_inhabited;
     accessible := R;
   |}.
 
-  Definition CanonicalModel (atom : Set) : Model :=
+  Instance CanonicalModel (atom : Set) : Model :=
   {|
     frame := CanonicalFrame atom;
     valuation := CanonicalV
   |}.
 
-  Parameter atom : Set.
-  Parameter φ : @formula atom.
-  Check @MaxConsintentWorld atom.
-  forall (V : worlds -> atom -> Prop),
-    forall w, valid {| frame := Fr;
-                 valuation := V |} w f.
-
-  (* Parameter Fr: CanonicalFrame atom. *)
-  Lemma TruthLemma {atom : Set} : forall φ : @formula atom, valid_in_frame (CanonicalFrame atom) φ.
+  (* Если формула φ общезначима в канонической модели в мире Γ, то она принадлежит Γ *)
+  Lemma TruthLemma {atom : Set} (Γ : MaxConsintentWorld) : forall φ : @formula atom, valid (CanonicalModel atom) Γ φ -> φ ∈ Γ.(formulas).
+  Proof.
+    intros φ Hvalid.
+    induction φ.
+    - simpl in Hvalid.
+      unfold CanonicalV in Hvalid.
+      exact Hvalid.
+    - simpl in Hvalid.
+      destruct Γ as [Γ Hmax].
+      specialize (meta_contraposition  (P -> Q) -> (~Q -> ~P) as HContra.
 
 
   Inductive atom2 : Set :=
