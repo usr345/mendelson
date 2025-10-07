@@ -2502,8 +2502,38 @@ Proof.
   exact H_AB.
 Qed.
 
-Lemma necessitation_valid {atom : Set} (F : Frame) : forall A B : @formula atom, valid_in_frame F $A -> B$ -> valid_in_frame F A -> valid_in_frame F B.
+Lemma necessitation_valid {atom : Set} (F : Frame) : forall A : @formula atom, valid_in_frame F A -> valid_in_frame F $box A$.
 Proof.
+  intros A H.
+  unfold valid_in_frame.
+  intros V Γ.
+  simpl.
+  intros Δ _.
+  unfold valid_in_frame in H.
+  specialize (H V Δ).
+  exact H.
+Qed.
+
+Theorem soundness {atom : Set} {Set_obj : TSet (@formula atom)} (A : @formula atom) (F : Frame) : ((empty _ Set_obj) |- A) -> valid_in_frame F A.
+Proof.
+  intro H.
+  induction H.
+  - apply no_elem_in_empty in e.
+    destruct e.
+  - apply A1_valid.
+  - apply A2_valid.
+  - apply f_conj_elim1_valid.
+  - apply f_conj_elim2_valid.
+  - apply f_conj_intro_valid.
+  - apply f_disj_intro1_valid.
+  - apply f_disj_intro2_valid.
+  - apply f_case_analysis_valid.
+  - apply f_ex_falso_valid.
+  - apply f_tertium_non_datur_valid.
+  - apply f_axiomK_valid.
+  - apply (mp_valid F A B IHentails1 IHentails2).
+  - apply (necessitation_valid F A IHentails).
+Qed.
 
 End AxiomsValid.
 
