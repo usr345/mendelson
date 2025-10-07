@@ -2338,6 +2338,174 @@ Qed.
 (*   | _ => true *)
 (*   end. *)
 End Kripke.
+Export Kripke.
+
+Module AxiomsValid.
+Import Syntactic.
+Import Kripke.
+Lemma A1_valid {atom : Set} (F : Frame) : forall A B : @formula atom, valid_in_frame F (f_axiom1 A B).
+Proof.
+  intros A B.
+  unfold valid_in_frame.
+  intros V w.
+  unfold f_axiom1.
+  hnf.
+  intro H1.
+  hnf.
+  intro H2.
+  exact H1.
+Qed.
+
+Lemma A2_valid {atom : Set} (F : Frame) : forall A B C : @formula atom, valid_in_frame F (f_axiom2 A B C).
+Proof.
+  intros A B C.
+  unfold valid_in_frame.
+  intros V w.
+  unfold f_axiom2.
+  hnf.
+  intro H1.
+  simpl in H1.
+  hnf.
+  intro H2.
+  simpl in H2.
+  hnf.
+  intro H3.
+  specialize (H1 H3).
+  specialize (H2 H3).
+  specialize (H1 H2).
+  exact H1.
+Qed.
+
+Lemma f_conj_elim1_valid {atom : Set} (F : Frame) : forall A B : @formula atom, valid_in_frame F (f_conj_elim1 A B).
+Proof.
+  intros A B.
+  unfold valid_in_frame.
+  intros V w.
+  unfold f_conj_elim1.
+  hnf.
+  intro H.
+  simpl in H.
+  destruct H as [H _].
+  exact H.
+Qed.
+
+Lemma f_conj_elim2_valid {atom : Set} (F : Frame) : forall A B : @formula atom, valid_in_frame F (f_conj_elim2 A B).
+Proof.
+  intros A B.
+  unfold valid_in_frame.
+  intros V w.
+  unfold f_conj_elim2.
+  hnf.
+  intro H.
+  simpl in H.
+  destruct H as [_ H].
+  exact H.
+Qed.
+
+Lemma f_conj_intro_valid {atom : Set} (F : Frame) : forall A B : @formula atom, valid_in_frame F (f_conj_intro A B).
+Proof.
+  intros A B.
+  unfold valid_in_frame.
+  intros V w.
+  unfold f_conj_intro.
+  simpl.
+  intros H1 H2.
+  exact (conj H1 H2).
+Qed.
+
+Lemma f_disj_intro1_valid {atom : Set} (F : Frame) : forall A B : @formula atom, valid_in_frame F (f_disj_intro1 A B).
+Proof.
+  intros A B.
+  unfold valid_in_frame.
+  intros V w.
+  unfold f_disj_intro1.
+  simpl.
+  intro H.
+  left.
+  exact H.
+Qed.
+
+Lemma f_disj_intro2_valid {atom : Set} (F : Frame) : forall A B : @formula atom, valid_in_frame F (f_disj_intro2 A B).
+Proof.
+  intros A B.
+  unfold valid_in_frame.
+  intros V w.
+  unfold f_disj_intro2.
+  simpl.
+  intro H.
+  right.
+  exact H.
+Qed.
+
+Lemma f_case_analysis_valid {atom : Set} (F : Frame) : forall A B C : @formula atom, valid_in_frame F (f_case_analysis A B C).
+Proof.
+  intros A B C.
+  unfold valid_in_frame.
+  intros V w.
+  unfold f_case_analysis.
+  simpl.
+  intros H1 H2 H3.
+  destruct H3 as [H_A | H_B].
+  - exact (H1 H_A).
+  - exact (H2 H_B).
+Qed.
+
+Lemma f_ex_falso_valid {atom : Set} (F : Frame) : forall A B : @formula atom, valid_in_frame F (f_ex_falso A B).
+Proof.
+  intros A B.
+  unfold valid_in_frame.
+  intros V w.
+  unfold f_ex_falso.
+  simpl.
+  intros H1 H2.
+  unfold not in H1.
+  specialize (H1 H2).
+  destruct H1.
+Qed.
+
+Lemma f_tertium_non_datur_valid {atom : Set} (F : Frame) : forall A : @formula atom, valid_in_frame F (f_tertium_non_datur A).
+Proof.
+  intros A.
+  unfold valid_in_frame.
+  intros V w.
+  unfold f_tertium_non_datur.
+  simpl.
+  apply classic.
+Qed.
+
+Lemma f_axiomK_valid {atom : Set} (F : Frame) : forall A B : @formula atom, valid_in_frame F (f_axiomK A B).
+Proof.
+  intros A B.
+  unfold valid_in_frame.
+  intros V w.
+  unfold f_ex_falso.
+  simpl.
+  intros H1 H2 w1 w_w1.
+  specialize (H2 w1).
+  specialize (H2 w_w1).
+  specialize (H1 w1).
+  specialize (H1 w_w1).
+  specialize (H1 H2).
+  exact H1.
+Qed.
+
+Lemma mp_valid {atom : Set} (F : Frame) : forall A B : @formula atom, valid_in_frame F $A -> B$ -> valid_in_frame F A -> valid_in_frame F B.
+Proof.
+  intros A B H_AB H_A.
+  unfold valid_in_frame.
+  intros V w.
+  unfold valid_in_frame in H_AB, H_A.
+  specialize (H_AB V w).
+  specialize (H_A V w).
+  simpl in H_AB.
+  specialize (H_AB H_A).
+  exact H_AB.
+Qed.
+
+Lemma necessitation_valid {atom : Set} (F : Frame) : forall A B : @formula atom, valid_in_frame F $A -> B$ -> valid_in_frame F A -> valid_in_frame F B.
+Proof.
+
+End AxiomsValid.
 
 Module Tableaus.
   Record node {atom : Set} := { world : nat; f : @formula atom; sign : bool }.
