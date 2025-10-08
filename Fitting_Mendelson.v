@@ -1294,6 +1294,17 @@ Proof.
   exact H1.
 Qed.
 
+Proposition max_consistent_negation_impl {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) : max_consistent Set_obj Γ -> forall φ : @formula atom, (φ ∈ Γ) <-> ~($~ φ$ ∈ Γ).
+Proof.
+  intros Hmax φ.
+  destruct Hmax as [Hcons Hmax].
+  split ; intro H.
+  - specialize (max_consistent_negation Γ Hmax) as H1.
+    specialize (H1 φ).
+    unfold not.
+    intro H_n.
+
+
 Proposition max_consistent_implication {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) (A B : @formula atom): max_consistent Set_obj Γ -> ($A -> B$ ∈ Γ <-> (A ∈ Γ -> B ∈ Γ)).
 Proof.
   intro Hmax.
@@ -3324,6 +3335,26 @@ Module CanonicalModels.
     frame := CanonicalFrame atom;
     valuation := CanonicalV
   |}.
+
+  (* Если формула φ принадлежит Γ, то общезначима в канонической модели в мире Γ *)
+  Lemma TruthLemma {atom : Set} (Γ : MaxConsintentWorld) : forall φ : @formula atom, valid (CanonicalModel atom) Γ φ <-> φ ∈ Γ.(formulas).
+  Proof.
+    intro φ.
+    split.
+    - induction φ.
+      + intro H.
+        simpl in H.
+        unfold CanonicalV in H.
+        exact H.
+      + intro H.
+        hnf in H.
+        destruct Γ as [Γ Hmax].
+        destruct Hmax as [HCons Hmax].
+
+        consistent_no_contradiction1 {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (f : @formula atom):
+  consistent Γ -> f ∈ Γ -> $~f$ ∈ Γ -> False.
+    - simpl.
+      intro H1.
 
   (* Если формула φ общезначима в канонической модели в мире Γ, то она принадлежит Γ *)
   Lemma TruthLemma {atom : Set} (Γ : MaxConsintentWorld) : forall φ : @formula atom, valid (CanonicalModel atom) Γ φ -> φ ∈ Γ.(formulas).
