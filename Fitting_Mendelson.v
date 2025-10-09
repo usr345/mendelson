@@ -1301,18 +1301,15 @@ Proof.
     + exact H.
 Qed.
 
-Proposition max_consistent_implication {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) (A B : @formula atom): max_consistent Set_obj Γ -> ($A -> B$ ∈ Γ <-> (A ∈ Γ -> B ∈ Γ)).
+Proposition max_consistent_MP {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) (A B : @formula atom): max_consistent Set_obj Γ -> $A -> B$ ∈ Γ -> A ∈ Γ -> B ∈ Γ.
 Proof.
-  intro Hmax.
-  split.
-  - intros H1 H2.
-    specialize (hypo Γ $A -> B$ H1) as H3.
-    specialize (hypo Γ A H2) as H4.
-    specialize (mp H3 H4) as H5.
-    specialize (max_consistent_elem Γ B Hmax H5) as H6.
-    exact H6.
-  - intro H.
-Admitted.
+  intros Hmax H1 H2.
+  specialize (hypo Γ $A -> B$ H1) as H3.
+  specialize (hypo Γ A H2) as H4.
+  specialize (mp H3 H4) as H5.
+  specialize (max_consistent_elem Γ B Hmax H5) as H6.
+  exact H6.
+Qed.
 
 End Syntactic.
 
@@ -3337,6 +3334,7 @@ Module CanonicalModels.
   Proof.
     intro φ.
     induction φ.
+    (* Atom *)
     - split.
       + intro H.
         simpl in H.
@@ -3346,6 +3344,7 @@ Module CanonicalModels.
         simpl.
         unfold CanonicalV.
         exact H.
+    (* Negation *)
     - split.
       + intro H.
         hnf in H.
@@ -3368,6 +3367,7 @@ Module CanonicalModels.
         unfold consistent in Hcons.
         apply Hcons in Hcontra.
         exact Hcontra.
+    (* Conjunction *)
     - destruct Γ as [Γ Hmax].
       simpl.
       simpl in IHφ1, IHφ2.
@@ -3385,7 +3385,35 @@ Module CanonicalModels.
         rewrite IHφ2.
         rewrite Heq in Γ_conj.
         exact Γ_conj.
-    -
+    (* Disjunction *)
+    - destruct Γ as [Γ Hmax].
+      simpl.
+      simpl in IHφ1, IHφ2.
+      specialize (max_consistent_disjunction Γ φ1 φ2 Hmax) as Heq.
+      simpl in Heq.
+      split.
+      + intro H.
+        rewrite Heq.
+        rewrite IHφ1 in H.
+        rewrite IHφ2 in H.
+        exact H.
+      + intro Γ_disj.
+        rewrite IHφ1.
+        rewrite IHφ2.
+        rewrite Heq in Γ_disj.
+        exact Γ_disj.
+    (* Implication *)
+    - destruct Γ as [Γ Hmax].
+      simpl.
+      simpl in IHφ1, IHφ2.
+      specialize (max_consistent_conjunction Γ φ1 φ2 Hmax) as Heq.
+      simpl in Heq.
+      split.
+      + intro H.
+        rewrite IHφ1 in H.
+        rewrite IHφ2 in H.
+         (max_consistent_implication1 Γ φ1 φ2 HmaxH).
+      max_consistent_implication1 {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) (A B : @formula atom): max_consistent Set_obj Γ -> ($A -> B$ ∈ Γ -> (A ∈ Γ -> B ∈ Γ)).
 
 
 
