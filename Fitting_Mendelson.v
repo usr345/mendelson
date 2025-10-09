@@ -995,43 +995,6 @@ Proof.
   exact H3.
 Qed.
 
-Lemma consistent_no_contradiction1 {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (f : @formula atom):
-  consistent Γ -> f ∈ Γ -> $~f$ ∈ Γ -> False.
-Proof.
-  intros H Γ_f.
-  unfold not.
-  intro Γ_nf.
-  specialize (conj Γ_f Γ_nf) as H1.
-  specialize (consistent_no_contradiction Γ f H H1) as Contra.
-  exact Contra.
-Qed.
-
-(*
-Lemma consistent_no_contradiction {atom : Set} (Γ: Prop_Set) (f : @formula atom):
-  consistent Γ -> (Γ |- $f /\ ~f$) -> False.
-Proof.
-  intro H.
-  unfold consistent in H.
-  intro H1.
-  apply H.
-  unfold inconsistent.
-  specialize_axiom (conj_elim1 Γ f $~f$) H2.
-  specialize (mp H2 H1) as H3.
-  specialize_axiom (conj_elim2 Γ f $~f$) H4.
-  specialize (mp H4 H1) as H5.
-  exists [].
-  - apply nil_subset_Prop.
-  - intro g.
-    specialize_axiom (ex_falso Γ f g) H6.
-    Check @weaken.
-    specialize (@weaken atom List_Set Prop_Set [] Γ g) as Hweak.
-    specialize (mp H6 H5) as H7.
-    specialize (mp H7 H3) as H8.
-    exact H8.
-Qed.
-
-*)
-
 (* Любое подмножество консистентного мнгожества консистентно *)
 Lemma consistent_subset {atom : Set} {Set_obj1 : TSet (@formula atom)} {Set_obj2 : TSet (@formula atom)} (Γ: Set_obj1) (Δ: Set_obj2):
   consistent Γ -> subset Δ Γ -> consistent Δ.
@@ -1292,6 +1255,50 @@ Proof.
   apply (max_consistent_elem Γ $φ \/ ~ φ$ Hmax) in H1.
   apply (max_consistent_disjunction Γ φ $~ φ$ Hmax) in H1.
   exact H1.
+Qed.
+
+Lemma max_consistent_no_contradiction1 {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj): max_consistent Set_obj Γ -> forall φ : @formula atom, φ ∈ Γ <-> ~ ($~φ$ ∈ Γ).
+Proof.
+  intro Hmax.
+  intro φ.
+  split.
+  - intro Γ_φ.
+    unfold not.
+    intro Γ_nφ.
+    specialize (conj Γ_φ Γ_nφ) as H1.
+    destruct Hmax as [Hcons _].
+    specialize (consistent_no_contradiction Γ φ Hcons) as Contra.
+    apply Contra in H1.
+    exact H1.
+  - intro Γ_nφ.
+    unfold not in Γ_nφ.
+    specialize (max_consistent_negation Γ Hmax φ) as H.
+    destruct H.
+    + exact H.
+    + specialize (Γ_nφ H).
+      destruct Γ_nφ.
+Qed.
+
+Lemma max_consistent_no_contradiction2 {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj): max_consistent Set_obj Γ -> forall φ : @formula atom, $~ φ$ ∈ Γ <-> ~ (φ ∈ Γ).
+Proof.
+  intro Hmax.
+  intro φ.
+  split.
+  - intro Γ_nφ.
+    unfold not.
+    intro Γ_φ.
+    specialize (conj Γ_φ Γ_nφ) as H1.
+    destruct Hmax as [Hcons _].
+    specialize (consistent_no_contradiction Γ φ Hcons) as Contra.
+    apply Contra in H1.
+    exact H1.
+  - intro neg_Γ_φ.
+    unfold not in neg_Γ_φ.
+    specialize (max_consistent_negation Γ Hmax φ) as H.
+    destruct H.
+    + specialize (neg_Γ_φ H).
+      destruct neg_Γ_φ.
+    + exact H.
 Qed.
 
 Proposition max_consistent_negation_impl {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) : max_consistent Set_obj Γ -> forall φ : @formula atom, (φ ∈ Γ) <-> ~($~ φ$ ∈ Γ).
