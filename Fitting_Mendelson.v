@@ -220,7 +220,7 @@ Module Formula.
      eqb_eq := formula_beq_eq;
   }.
 
-  Lemma meta_contraposition : forall {P Q : Prop}, (P -> Q) -> (~Q -> ~P).
+  Lemma contraposition : forall {P Q : Prop}, (P -> Q) -> (~Q -> ~P).
   Proof.
     intros P Q P_Q HnQ.
     unfold not.
@@ -1300,17 +1300,6 @@ Proof.
       destruct neg_Γ_φ.
     + exact H.
 Qed.
-
-Proposition max_consistent_negation_impl {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) : max_consistent Set_obj Γ -> forall φ : @formula atom, (φ ∈ Γ) <-> ~($~ φ$ ∈ Γ).
-Proof.
-  intros Hmax φ.
-  destruct Hmax as [Hcons Hmax].
-  split ; intro H.
-  - specialize (max_consistent_negation Γ Hmax) as H1.
-    specialize (H1 φ).
-    unfold not.
-    intro H_n.
-
 
 Proposition max_consistent_implication {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) (A B : @formula atom): max_consistent Set_obj Γ -> ($A -> B$ ∈ Γ <-> (A ∈ Γ -> B ∈ Γ)).
 Proof.
@@ -3347,21 +3336,58 @@ Module CanonicalModels.
   Lemma TruthLemma {atom : Set} (Γ : MaxConsintentWorld) : forall φ : @formula atom, valid (CanonicalModel atom) Γ φ <-> φ ∈ Γ.(formulas).
   Proof.
     intro φ.
-    split.
-    - induction φ.
+    induction φ.
+    - split.
       + intro H.
         simpl in H.
         unfold CanonicalV in H.
         exact H.
       + intro H.
+        simpl.
+        unfold CanonicalV.
+        exact H.
+    - split.
+      + intro H.
         hnf in H.
         destruct Γ as [Γ Hmax].
-        destruct Hmax as [HCons Hmax].
+        specialize (max_consistent_no_contradiction2 (formulas {| formulas := Γ; is_max := Hmax |}) Hmax φ) as H1.
+        rewrite H1.
+        unfold not.
+        intro Γ_φ.
+        rewrite <-IHφ in Γ_φ.
+        specialize (H Γ_φ).
+        exact H.
+      + intro Γ_nφ.
+        hnf.
+        intro Γ_φ.
+        rewrite IHφ in Γ_φ.
+        destruct Γ as [Γ Hmax].
+        destruct Hmax as [Hcons Hmax].
+        specialize (no_contradiction_in_consistent Γ φ) as Hcontra.
+        specialize (Hcontra Γ_φ Γ_nφ).
+        unfold consistent in Hcons.
+        apply Hcons in Hcontra.
+        exact Hcontra.
+    - destruct Γ as [Γ Hmax].
+      simpl.
+      simpl in IHφ1, IHφ2.
+      specialize (max_consistent_conjunction Γ φ1 φ2 Hmax) as Heq.
+      simpl in Heq.
+      split.
+      + intro H.
+        destruct H as [Γ_φ1 Γ_φ2].
+        rewrite IHφ1 in Γ_φ1.
+        rewrite IHφ2 in Γ_φ2.
+        rewrite Heq.
+        exact (conj Γ_φ1 Γ_φ2).
+      + intro Γ_conj.
+        rewrite IHφ1.
+        rewrite IHφ2.
+        rewrite Heq in Γ_conj.
+        exact Γ_conj.
+    -
 
-        consistent_no_contradiction1 {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (f : @formula atom):
-  consistent Γ -> f ∈ Γ -> $~f$ ∈ Γ -> False.
-    - simpl.
-      intro H1.
+
 
   (* Если формула φ общезначима в канонической модели в мире Γ, то она принадлежит Γ *)
   Lemma TruthLemma {atom : Set} (Γ : MaxConsintentWorld) : forall φ : @formula atom, valid (CanonicalModel atom) Γ φ -> φ ∈ Γ.(formulas).
