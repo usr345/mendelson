@@ -1346,6 +1346,8 @@ Definition valid_in_frame {atom : Set} `(Fr : Frame) (f : @formula atom) : Prop 
     forall w, valid {| frame := Fr;
                   valuation := V |} w f.
 
+Definition consequence {atom : Set} `(Fr : Frame) {Set_obj1 : TSet (@formula atom)} {Set_obj2 : TSet (@formula atom)} (G : Set_obj1) (L : Set_obj2) (f : @formula atom)
+
 Import Relation.
 
 (* Exercize 5.2.1 стр. 81 *)
