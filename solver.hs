@@ -1,3 +1,5 @@
+import Debug.Trace (trace)
+
 data Formula a =
   F_atom a
   | F_neg (Formula a)
@@ -22,11 +24,24 @@ process formula =
     F_neg (F_neg a) -> [[process a]])
 
 f1 :: Formula String
-f1 = F_neg (F_neg (F_atom "A"))
+f1 = (F_neg (F_neg (F_atom "A")))
 
 f2 :: Formula String
 f2 = F_neg (F_impl (F_atom "A") (F_impl (F_atom "B") (F_atom "A")))
 
-get_atoms :: Tree a -> [[Formula a]]
-get_atoms (Node f lst) = case f of
-   F_atom
+get_atoms :: Show a => Tree a -> [Formula a] -> [[Formula a]]
+get_atoms (Node f lst) accum =
+    trace ("lst = " ++ show lst ++ "\n") -- this will print during evaluation
+    (let
+        accum1 = (case f of
+            F_atom a -> (F_atom a) : accum
+            F_neg (F_atom a) -> (F_neg (F_atom a)) : accum
+            _ -> accum)
+    in
+    case lst of
+        [] -> trace ("[] = " ++ show accum1 ++ "\n") [accum1]
+        -- Дерево из 1-го узла
+        [h] -> trace ("subtree = " ++ show (h:t) ++ "\n") (get_atoms (h:t) accum1)
+        --[[subtree1], [subtree2]] -> (get_atoms subtree1 accum1) ++ (get_atoms subtree2 accum1)
+        _ -> [accum1]
+    )
