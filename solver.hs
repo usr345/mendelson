@@ -30,6 +30,29 @@ f1 = (F_neg (F_neg (F_atom "A")))
 f2 :: Formula String
 f2 = F_neg (F_impl (F_atom "A") (F_impl (F_atom "B") (F_atom "A")))
 
+f3_1 :: Formula String
+f3_1 = F_impl (F_atom "A") (F_impl (F_atom "B") (F_atom "C"))
+
+f3_2 :: Formula String
+f3_2 = (F_impl (F_impl (F_atom "A") (F_atom "B")) (F_impl (F_atom "A") (F_atom "C")))
+
+f3 :: Formula String
+f3 = F_neg (F_impl f3_1 f3_2)
+
+f4 :: Formula String
+f4 = F_neg (F_disj (F_atom "A") (F_neg (F_atom "A")))
+
+f5_1 :: Formula String
+f5_1 = F_impl (F_impl (F_atom "A") (F_atom "B")) (F_atom "C")
+
+f5_2 :: Formula String
+f5_2 = F_impl (F_impl (F_atom "B") (F_atom "A")) (F_atom "C")
+
+f5 :: Formula String
+f5 = F_impl (F_disj f5_1 f5_2) (F_atom "C")
+
+-- get_atoms (process f2) []
+
 get_atoms :: Show a => Tree a -> [Formula a] -> [[Formula a]]
 get_atoms (Node f lst) accum =
     let
@@ -44,5 +67,4 @@ get_atoms (Node f lst) accum =
         [[subtree]] -> (get_atoms subtree accum1)
         [[subtree1, subtree2]] -> [Data.List.concat ((get_atoms subtree1 accum1) ++ (get_atoms subtree2 accum1))]
         [[subtree1], [subtree2]] -> [Data.List.concat (get_atoms subtree1 accum1), Data.List.concat (get_atoms subtree2 accum1)]
-        --[[subtree1], [subtree2]] -> (get_atoms subtree1 accum1) ++ (get_atoms subtree2 accum1)
         _ -> [accum1]
