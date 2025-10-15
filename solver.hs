@@ -49,11 +49,26 @@ f5_2 :: Formula String
 f5_2 = F_impl (F_impl (F_atom "B") (F_atom "A")) (F_atom "C")
 
 f5 :: Formula String
-f5 = F_impl (F_disj f5_1 f5_2) (F_atom "C")
+f5 = F_neg (F_impl (F_disj f5_1 f5_2) (F_atom "C"))
 
 -- get_atoms (process f2) []
 
 get_atoms :: Show a => Tree a -> [Formula a] -> [[Formula a]]
+-- get_atoms (Node f lst) accum =
+--     let
+--         accum1 = (case f of
+--             F_atom a -> (F_atom a) : accum
+--             F_neg (F_atom a) -> (F_neg (F_atom a)) : accum
+--             _ -> accum)
+--     in
+--     case lst of
+--         [] -> [accum1]
+--         -- Дерево из 1-го узла
+--         [[subtree]] -> trace ("subtree = " ++ show (subtree)) (get_atoms subtree accum1)
+--         [[subtree1, subtree2]] -> trace ("subtree1 = " ++ show (subtree1) ++ "\nsubtree2 = " ++ show (subtree2)) [(Data.List.concat $ get_atoms subtree1 accum1) ++ (Data.List.concat $ get_atoms subtree2 accum1)]
+--         [[subtree1], [subtree2]] -> trace ("subtree1' = " ++ show (subtree1) ++ "\nsubtree2' = " ++ show (subtree2) ) [Data.List.concat (get_atoms subtree1 accum1), Data.List.concat (get_atoms subtree2 accum1)]
+--         _ -> trace ("??? = " ++ show (lst)) [accum1]
+
 get_atoms (Node f lst) accum =
     let
         accum1 = (case f of
@@ -64,7 +79,7 @@ get_atoms (Node f lst) accum =
     case lst of
         [] -> [accum1]
         -- Дерево из 1-го узла
-        [[subtree]] -> (get_atoms subtree accum1)
-        [[subtree1, subtree2]] -> [Data.List.concat ((get_atoms subtree1 accum1) ++ (get_atoms subtree2 accum1))]
+        [[subtree]] -> get_atoms subtree accum1
+        [[subtree1, subtree2]] -> [(Data.List.concat $ get_atoms subtree1 accum1) ++ (Data.List.concat $ get_atoms subtree2 accum1)]
         [[subtree1], [subtree2]] -> [Data.List.concat (get_atoms subtree1 accum1), Data.List.concat (get_atoms subtree2 accum1)]
         _ -> [accum1]
