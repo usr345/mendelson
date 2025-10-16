@@ -7,7 +7,16 @@ data Formula a =
   | F_impl (Formula a) (Formula a)
   | F_conj (Formula a) (Formula a)
   | F_disj (Formula a) (Formula a)
-  deriving Show
+
+instance (Show a) => Show (Formula a) where
+  show f =
+    case f of
+      F_atom a -> show a
+      F_neg f1 -> "¬" ++ show f1
+      F_impl f1 f2 -> "(" ++ (show f1) ++ " -> " ++ (show f2) ++ ") "
+      F_conj f1 f2 -> "(" ++ (show f1) ++ " /\\ " ++ (show f2) ++ ") "
+      F_disj f1 f2 -> "(" ++ (show f1) ++ " \\/ " ++ (show f2) ++ ") "
+
 
 data Tree a = Node (Formula a) [[Tree a]] deriving Show
 
@@ -23,6 +32,16 @@ process formula =
     F_disj a b -> [[process a], [process b]]
     F_neg (F_disj a b) -> [[process (F_neg a), process (F_neg b)]]
     F_neg (F_neg a) -> [[process a]])
+
+merge_lists :: [[a]] -> [[a]] -> [[a]]
+merge_lists lst1 lst2 = (++) <$> lst1 <*> lst2
+
+has_contradiction :: [Formula a] -> Bool
+has_contradiction lst =
+  case lst of
+    [] -> false
+    f:fs -> case f of
+
 
 f1 :: Formula String
 f1 = (F_neg (F_neg (F_atom "A")))
@@ -80,6 +99,6 @@ get_atoms (Node f lst) accum =
         [] -> [accum1]
         -- Дерево из 1-го узла
         [[subtree]] -> get_atoms subtree accum1
-        [[subtree1, subtree2]] -> [(Data.List.concat $ get_atoms subtree1 accum1) ++ (Data.List.concat $ get_atoms subtree2 accum1)]
-        [[subtree1], [subtree2]] -> [Data.List.concat (get_atoms subtree1 accum1), Data.List.concat (get_atoms subtree2 accum1)]
+        [[subtree1, subtree2]] -> merge_lists (get_atoms subtree1 accum1) (get_atoms subtree2 accum1)
+        [[subtree1], [subtree2]] -> (get_atoms subtree1 accum1) ++ (get_atoms subtree2 accum1)
         _ -> [accum1]
