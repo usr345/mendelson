@@ -137,3 +137,7 @@ get_atoms (Node f lst) accum =
         [[subtree1, subtree2]] -> merge_lists (get_atoms subtree1 accum1) (get_atoms subtree2 accum1)
         [[subtree1], [subtree2]] -> (get_atoms subtree1 accum1) ++ (get_atoms subtree2 accum1)
         _ -> [accum1]
+
+-- main :: IO ()
+-- main = do
+--     print $ formula_is_tautology f3
