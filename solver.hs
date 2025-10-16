@@ -60,6 +60,24 @@ has_contradiction lst =
             else
               has_contradiction hs
 
+all_lists_contradiction :: Eq a => [[(a, Bool)]] -> Maybe([(a, Bool)])
+all_lists_contradiction lst =
+  case lst of
+    [] -> Nothing
+    h:hs -> if (has_contradiction h) == True then
+              all_lists_contradiction hs
+            else
+              Just h
+
+-- Если формула тавтология - вернет Nothing или вернет контрпример
+-- при котором формула ложна
+formula_is_tautology :: Eq a => Formula a -> Maybe([(a, Bool)])
+formula_is_tautology f =
+  let
+    atoms = get_atoms (process $ F_neg f) []
+  in
+    all_lists_contradiction atoms
+
 f1 :: Formula String
 f1 = (F_neg (F_neg (F_atom "A")))
 
@@ -85,11 +103,11 @@ f5_2 :: Formula String
 f5_2 = F_impl (F_impl (F_atom "B") (F_atom "A")) (F_atom "C")
 
 f5 :: Formula String
-f5 = F_neg (F_impl (F_disj f5_1 f5_2) (F_atom "C"))
+f5 = F_impl (F_disj f5_1 f5_2) (F_atom "C")
 
 -- get_atoms (process f2) []
 
-get_atoms :: Show a => Tree a -> [(a, Bool)] -> [[(a, Bool)]]
+get_atoms :: Tree a -> [(a, Bool)] -> [[(a, Bool)]]
 -- get_atoms (Node f lst) accum =
 --     let
 --         accum1 = (case f of
