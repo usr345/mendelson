@@ -36,12 +36,29 @@ process formula =
 merge_lists :: [[a]] -> [[a]] -> [[a]]
 merge_lists lst1 lst2 = (++) <$> lst1 <*> lst2
 
-has_contradiction :: [Formula a] -> Bool
+has_contradiction_inner :: Eq a => [(a, Bool)] -> (a, Bool) -> Bool
+has_contradiction_inner lst a =
+  let (x, y) = a
+  in
+    case lst of
+    [] -> False
+    (b, mark):hs -> if x == b
+                    then if mark /= y then
+                           True
+                         else
+                           has_contradiction_inner hs a
+                    else
+                           has_contradiction_inner hs a
+
+
+has_contradiction :: Eq a => [(a, Bool)] -> Bool
 has_contradiction lst =
   case lst of
-    [] -> false
-    f:fs -> case f of
-
+    [] -> False
+    h:hs -> if (has_contradiction_inner hs h) == True then
+              True
+            else
+              has_contradiction hs
 
 f1 :: Formula String
 f1 = (F_neg (F_neg (F_atom "A")))
@@ -72,7 +89,7 @@ f5 = F_neg (F_impl (F_disj f5_1 f5_2) (F_atom "C"))
 
 -- get_atoms (process f2) []
 
-get_atoms :: Show a => Tree a -> [Formula a] -> [[Formula a]]
+get_atoms :: Show a => Tree a -> [(a, Bool)] -> [[(a, Bool)]]
 -- get_atoms (Node f lst) accum =
 --     let
 --         accum1 = (case f of
@@ -91,8 +108,8 @@ get_atoms :: Show a => Tree a -> [Formula a] -> [[Formula a]]
 get_atoms (Node f lst) accum =
     let
         accum1 = (case f of
-            F_atom a -> (F_atom a) : accum
-            F_neg (F_atom a) -> (F_neg (F_atom a)) : accum
+            F_atom a -> (a, True) : accum
+            F_neg (F_atom a) -> (a, False) : accum
             _ -> accum)
     in
     case lst of
