@@ -17,6 +17,15 @@ instance (Show a) => Show (Formula a) where
       F_conj f1 f2 -> "(" ++ (show f1) ++ " /\\ " ++ (show f2) ++ ") "
       F_disj f1 f2 -> "(" ++ (show f1) ++ " \\/ " ++ (show f2) ++ ") "
 
+show_latex :: Show a => Formula a -> String
+show_latex f =
+  case f of
+      F_atom a -> show a
+      F_neg f1 -> "\\neg " ++ show_latex f1
+      F_impl f1 f2 -> " " ++ (show_latex f1) ++ "  \\supset " ++ (show_latex f2) ++ " "
+      F_conj f1 f2 -> " " ++ (show_latex f1) ++ " \\land " ++ (show_latex f2) ++ " "
+      F_disj f1 f2 -> " " ++ (show_latex f1) ++ " \\lor " ++ (show_latex f2) ++ " "
+
 
 data Tree a = Node (Formula a) [[Tree a]] deriving Show
 
