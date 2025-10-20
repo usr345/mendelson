@@ -1,4 +1,5 @@
 import Debug.Trace (trace)
+import System.IO
 import qualified Data.List
 
 data Formula a =
@@ -8,14 +9,53 @@ data Formula a =
   | F_conj (Formula a) (Formula a)
   | F_disj (Formula a) (Formula a)
 
+-- 0 - наивысший приоритет
+priority :: Formula a -> Int
+priority f =
+  case f of
+      F_atom _ -> 0
+      F_neg _ -> 1
+      F_conj _ _ -> 2
+      F_disj _ _ -> 3
+      F_impl _ _ -> 4
+
+-- Вывести в строку формулу из 2-х подформул
+show_formula2 :: (Show a) => Formula a -> Formula a -> String -> Int -> Int -> Int -> String
+show_formula2 f1 f2 op p1 p2 p3 =
+  (if p2 < p1 then
+      (show f1)
+    else
+      "(" ++ (show f1) ++ ")")
+  ++ " " ++ op ++ " " ++
+  if p3 < p1 then
+    (show f2)
+  else
+    "(" ++ (show f2) ++ ")"
+
 instance (Show a) => Show (Formula a) where
   show f =
+    let p1 = priority f
+    in
     case f of
       F_atom a -> show a
-      F_neg f1 -> "¬" ++ show f1
-      F_impl f1 f2 -> "(" ++ (show f1) ++ " -> " ++ (show f2) ++ ") "
-      F_conj f1 f2 -> "(" ++ (show f1) ++ " /\\ " ++ (show f2) ++ ") "
-      F_disj f1 f2 -> "(" ++ (show f1) ++ " \\/ " ++ (show f2) ++ ") "
+      F_neg f1 -> let p2 = priority f1 in
+                    "¬" ++ if p2 <= p1 then
+                             (show f1)
+                           else
+                             "(" ++ (show f1) ++ ")"
+      F_impl f1 f2 -> let p2 = priority f1
+                          p3 = priority f2
+                      in
+                        show_formula2 f1 f2 "->" p1 p2 p3
+      F_conj f1 f2 -> let p2 = priority f1
+                          p3 = priority f2
+                      in
+                        show_formula2 f1 f2 "/\\" p1 p2 p3
+
+      F_disj f1 f2 -> let p2 = priority f1
+                          p3 = priority f2
+                      in
+                        show_formula2 f1 f2 "\\/" p1 p2 p3
 
 show_latex :: Show a => Formula a -> String
 show_latex f =
@@ -87,32 +127,40 @@ formula_is_tautology f =
   in
     all_lists_contradiction atoms
 
-f1 :: Formula String
-f1 = (F_neg (F_neg (F_atom "A")))
+newtype NoQuotes = NoQuotes String
+instance Show NoQuotes where show (NoQuotes str) = str
 
-f2 :: Formula String
-f2 = F_neg (F_impl (F_atom "A") (F_impl (F_atom "B") (F_atom "A")))
+atom_A :: NoQuotes
+atom_A = NoQuotes "A"
+atom_B = NoQuotes "B"
+atom_C = NoQuotes "C"
 
-f3_1 :: Formula String
-f3_1 = F_impl (F_atom "A") (F_impl (F_atom "B") (F_atom "C"))
+f1 :: Formula NoQuotes
+f1 = (F_neg (F_neg (F_atom atom_A)))
 
-f3_2 :: Formula String
-f3_2 = (F_impl (F_impl (F_atom "A") (F_atom "B")) (F_impl (F_atom "A") (F_atom "C")))
+f2 :: Formula NoQuotes
+f2 = F_neg (F_impl (F_atom atom_A) (F_impl (F_atom atom_B) (F_atom atom_C)))
 
-f3 :: Formula String
+f3_1 :: Formula NoQuotes
+f3_1 = F_impl (F_atom atom_A) (F_impl (F_atom atom_B) (F_atom atom_C))
+
+f3_2 :: Formula NoQuotes
+f3_2 = (F_impl (F_impl (F_atom atom_A) (F_atom atom_B)) (F_impl (F_atom atom_A) (F_atom atom_C)))
+
+f3 :: Formula NoQuotes
 f3 = F_neg (F_impl f3_1 f3_2)
 
-f4 :: Formula String
-f4 = F_neg (F_disj (F_atom "A") (F_neg (F_atom "A")))
+f4 :: Formula NoQuotes
+f4 = F_neg (F_disj (F_atom atom_A) (F_neg (F_atom atom_A)))
 
-f5_1 :: Formula String
-f5_1 = F_impl (F_impl (F_atom "A") (F_atom "B")) (F_atom "C")
+f5_1 :: Formula NoQuotes
+f5_1 = F_impl (F_impl (F_atom atom_A) (F_atom atom_B)) (F_atom atom_C)
 
-f5_2 :: Formula String
-f5_2 = F_impl (F_impl (F_atom "B") (F_atom "A")) (F_atom "C")
+f5_2 :: Formula NoQuotes
+f5_2 = F_impl (F_impl (F_atom atom_B) (F_atom atom_A)) (F_atom atom_C)
 
-f5 :: Formula String
-f5 = F_impl (F_disj f5_1 f5_2) (F_atom "C")
+f5 :: Formula NoQuotes
+f5 = F_impl (F_disj f5_1 f5_2) (F_neg (F_atom atom_C))
 
 -- get_atoms (process f2) []
 
