@@ -93,7 +93,13 @@ show_latex f =
       F_disj f1 f2 -> " " ++ (show_latex f1) ++ " \\lor " ++ (show_latex f2) ++ " "
 
 
-data Tree a = Node (Formula a) [[Tree a]] deriving Show
+data Tree a =
+  Closed_leaf (Formula a) (Formula a)
+  | Open_leaf (Formula a)
+  | One_child (Formula a) (Tree a)
+  | Sequence (Formula a) (Tree a) (Tree a)
+  | For (Formula a) (Tree a) (Tree a)
+  deriving Show
 
 process :: Formula a -> Tree a
 process formula =
@@ -107,6 +113,8 @@ process formula =
     F_disj a b -> [[process a], [process b]]
     F_neg (F_disj a b) -> [[process (F_neg a), process (F_neg b)]]
     F_neg (F_neg a) -> [[process a]])
+
+process_inner :: Formula a -> [(a, Bool)] -> Tree a
 
 merge_lists :: [[a]] -> [[a]] -> [[a]]
 merge_lists lst1 lst2 = (++) <$> lst1 <*> lst2
