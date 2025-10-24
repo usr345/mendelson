@@ -87,3 +87,9 @@ show_latex f =
       F_impl f1 f2 -> " " ++ (show_latex f1) ++ " \\supset " ++ (show_latex f2) ++ " "
       F_conj f1 f2 -> " " ++ (show_latex f1) ++ " \\land " ++ (show_latex f2) ++ " "
       F_disj f1 f2 -> " " ++ (show_latex f1) ++ " \\lor " ++ (show_latex f2) ++ " "
+
+
+newtype Bot a = Bot (Formula a)
+
+instance (Show a) => Show (Bot a) where
+  show (Bot f) = "&#8869;(" ++ (show_html f) ++ ", " ++ show_html (F_neg f) ++ ")"

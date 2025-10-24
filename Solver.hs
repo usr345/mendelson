@@ -5,7 +5,7 @@ module Solver where
 import Formula
 
 data Tree a =
-  Closed_leaf (Formula a) (Formula a)
+  Closed_leaf (Formula a) (Bot a)
   | Open_leaf (Formula a)
   | One_child (Formula a) (Tree a)
   | Fork (Formula a) (Tree a) (Tree a)
@@ -42,7 +42,7 @@ process_inner f atoms lst =
         case lst of
           [] -> case (has_contradiction atoms') of
                      Nothing -> (Open_leaf f, atoms')
-                     Just b -> (Closed_leaf f (F_atom b), atoms')
+                     Just b -> (Closed_leaf f (Bot (F_atom b)), atoms')
           f':fs -> let (subtree, atoms2) = (process_inner f' atoms' fs)
                    in
                      (One_child f subtree, atoms2)
@@ -51,7 +51,7 @@ process_inner f atoms lst =
         case lst of
           [] -> case (has_contradiction atoms') of
                   Nothing -> (Open_leaf f, atoms')
-                  Just b -> (Closed_leaf f (F_atom b), atoms')
+                  Just b -> (Closed_leaf f (Bot (F_atom b)), atoms')
           f':fs -> let (subtree, atoms2) = (process_inner f' atoms' fs)
                    in
                      (One_child f subtree, atoms2)
@@ -108,30 +108,52 @@ show_dot_inner tree accum num parent_num =
         Just parent_node -> parent_node ++ " -> " ++ str_num ++ "\n")
   in
   case tree of
-    Closed_leaf f1 f2 ->
-      let
-        node = str_num ++ "[label=\"" ++ (show_html f) ++ "\"]\n"
-        accum1 = accum ++ node ++ edge
     Open_leaf f ->
-    One_child f subtree ->
-    Fork f subtree1 subtree2 ->
-
-    Node f lst ->
       let
         node = str_num ++ "[label=\"" ++ (show_html f) ++ "\"]\n"
         accum1 = accum ++ node ++ edge
       in
-        case lst of
-          [] -> (accum1, num)
-          [[subtree]] -> show_dot_inner subtree accum1 (num + 1) (Just str_num)
-          [[subtree1, subtree2]] ->
-            let
-              (accum2, num2) = show_dot_inner subtree1 accum1 (num + 1) (Just str_num)
-            in
-              show_dot_inner subtree2 accum2 (num2 + 1) (Just $ "N" ++ (show num2))
-          [[subtree1], [subtree2]] ->
-            let
-              (accum2, num2) = show_dot_inner subtree1 accum1 (num + 1) (Just str_num)
-            in
-              show_dot_inner subtree2 accum2 (num2 + 1) (Just str_num)
-          _ -> (accum1, num)
+        (accum1, num)
+    Closed_leaf f1 f2 ->
+      let
+        str_num2 = "N" ++ (show $ num + 1)
+        node = str_num ++ "[label=\"" ++ (show_html f1) ++ "\"]\n" ++
+          str_num2 ++ "[label=\"" ++ (show f2) ++ "\"]\n"
+        edge1 = str_num ++ " -> " ++ str_num2 ++ "\n"
+        accum1 = accum ++ node ++ edge ++ edge1
+      in
+        (accum1, num + 1)
+    One_child f subtree ->
+      let
+        node = str_num ++ "[label=\"" ++ (show_html f) ++ "\"]\n"
+        accum1 = accum ++ node ++ edge
+        (accum2, num2) = show_dot_inner subtree accum1 (num + 1) (Just str_num)
+      in
+        (accum2, num2)
+    Fork f subtree1 subtree2 ->
+      let
+        node = str_num ++ "[label=\"" ++ (show_html f) ++ "\"]\n"
+        accum1 = accum ++ node ++ edge
+        (accum2, num2) = show_dot_inner subtree1 accum1 (num + 1) (Just str_num)
+        (accum3, num3) = show_dot_inner subtree2 accum2 (num2 + 1) (Just str_num)
+      in
+        (accum3, num3)
+--     Node f lst ->
+--       let
+--         node = str_num ++ "[label=\"" ++ (show_html f) ++ "\"]\n"
+--         accum1 = accum ++ node ++ edge
+--       in
+--         case lst of
+--           [] -> (accum1, num)
+--           [[subtree]] -> show_dot_inner subtree accum1 (num + 1) (Just str_num)
+--           [[subtree1, subtree2]] ->
+--             let
+--               (accum2, num2) = show_dot_inner subtree1 accum1 (num + 1) (Just str_num)
+--             in
+--               show_dot_inner subtree2 accum2 (num2 + 1) (Just $ "N" ++ (show num2))
+--           [[subtree1], [subtree2]] ->
+--             let
+--               (accum2, num2) = show_dot_inner subtree1 accum1 (num + 1) (Just str_num)
+--             in
+--               show_dot_inner subtree2 accum2 (num2 + 1) (Just str_num)
+--           _ -> (accum1, num)
