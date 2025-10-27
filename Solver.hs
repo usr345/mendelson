@@ -3,6 +3,7 @@ module Solver where
 -- import Debug.Trace (trace)
 -- import qualified Data.List
 import Formula
+import Queue
 
 data Tree a =
   Closed_leaf (Formula a) (Bot a)
@@ -33,6 +34,24 @@ has_contradiction lst =
       Nothing -> has_contradiction hs
       Just a -> Just a
 
+data Path a =
+  P_atom Bool
+  | P_one (Formula a)
+  | P_sequence (Formula a) (Formula a)
+  | P_fork (Formula a) (Formula a)
+
+analyze :: Formula a -> Path a
+analyze f =
+  case f of
+    F_atom a -> P_atom True
+    F_neg (F_atom a) -> P_atom False
+    F_neg (F_neg f') -> P_one f'
+    F_conj f1 f2 -> P_sequence f1 f2
+    F_neg (F_conj f1 f2) -> P_fork (F_neg f1) (F_neg f2)
+    F_disj f1 f2 -> P_fork f1 f2
+    F_neg (F_disj f1 f2) -> P_sequence (F_neg f1) (F_neg f2)
+    F_impl f1 f2 -> P_fork (F_neg f1) f2
+    F_neg (F_impl f1 f2) -> P_sequence f1 (F_neg f2)
 
 process_inner :: (Show a, Eq a) => Formula a -> [(a, Bool)] -> [Formula a] -> (Tree a, [(a, Bool)])
 process_inner f atoms lst =
