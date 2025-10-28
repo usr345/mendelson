@@ -57,8 +57,11 @@ process_inner :: (Show a, Eq a) => Formula a -> [(a, Bool)] -> Queue (Formula a)
 process_inner f atoms seq_queue fork_queue =
   let result = analyze f in
     case result of
-      P_atom a signum -> let atoms' = (a, signum):atoms in
-        let result2 = dequeue seq_queue in
+      P_atom a signum ->
+        let
+          atoms' = (a, signum):atoms
+          result2 = dequeue seq_queue
+        in
           case result2 of
             Nothing -> let result3 = dequeue fork_queue in
               case result3 of
@@ -70,11 +73,11 @@ process_inner f atoms seq_queue fork_queue =
                 -- fork очередь непуста
                 Just ((f1, f2), fork_queue') ->
                   let
-                    tree1 = (process_inner f1 atoms seq_queue fork_queue')
-                    tree2 = (process_inner f2 atoms seq_queue fork_queue')
+                    tree1 = (process_inner f1 atoms' seq_queue fork_queue')
+                    tree2 = (process_inner f2 atoms' seq_queue fork_queue')
                   in
                     Fork f tree1 tree2
-            Just (f', seq_queue') -> One_child f (process_inner f' atoms seq_queue' fork_queue)
+            Just (f', seq_queue') -> One_child f (process_inner f' atoms' seq_queue' fork_queue)
       P_one f' -> One_child f (process_inner f' atoms seq_queue fork_queue)
       P_sequence f1 f2 -> let seq_queue' = enqueue f2 seq_queue in
         One_child f (process_inner f1 atoms seq_queue' fork_queue)
