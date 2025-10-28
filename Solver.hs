@@ -35,7 +35,7 @@ has_contradiction lst =
       Just a -> Just a
 
 data Path a =
-  P_atom Bool
+  P_atom a Bool
   | P_one (Formula a)
   | P_sequence (Formula a) (Formula a)
   | P_fork (Formula a) (Formula a)
@@ -43,8 +43,8 @@ data Path a =
 analyze :: Formula a -> Path a
 analyze f =
   case f of
-    F_atom a -> P_atom True
-    F_neg (F_atom a) -> P_atom False
+    F_atom a -> P_atom a True
+    F_neg (F_atom a) -> P_atom a False
     F_neg (F_neg f') -> P_one f'
     F_conj f1 f2 -> P_sequence f1 f2
     F_neg (F_conj f1 f2) -> P_fork (F_neg f1) (F_neg f2)
@@ -53,64 +53,46 @@ analyze f =
     F_impl f1 f2 -> P_fork (F_neg f1) f2
     F_neg (F_impl f1 f2) -> P_sequence f1 (F_neg f2)
 
-process_inner :: (Show a, Eq a) => Formula a -> [(a, Bool)] -> [Formula a] -> (Tree a, [(a, Bool)])
-process_inner f atoms lst =
-  case f of
-    F_atom a ->
-      let atoms' = (a, True):atoms in
-        case lst of
-          [] -> case (has_contradiction atoms') of
-                     Nothing -> (Open_leaf f, atoms')
-                     Just b -> (Closed_leaf f (Bot (F_atom b)), atoms')
-          f':fs -> let (subtree, atoms2) = (process_inner f' atoms' fs)
-                   in
-                     (One_child f subtree, atoms2)
-    F_neg (F_atom a) ->
-      let atoms' = (a, False):atoms in
-        case lst of
-          [] -> case (has_contradiction atoms') of
-                  Nothing -> (Open_leaf f, atoms')
-                  Just b -> (Closed_leaf f (Bot (F_atom b)), atoms')
-          f':fs -> let (subtree, atoms2) = (process_inner f' atoms' fs)
-                   in
-                     (One_child f subtree, atoms2)
-    F_neg (F_neg f') ->
-      let (subtree, atoms2) = process_inner f' atoms lst in
-        (One_child f subtree, atoms2)
-    F_conj f1 f2 ->
-      let (subtree, atoms2) = process_inner f1 atoms (f2:lst)
-      in
-        (One_child f subtree, atoms2)
-    F_neg (F_conj f1 f2) ->
-      let (subtree1, _) = process_inner (F_neg f1) atoms lst
-          (subtree2, _) = process_inner (F_neg f2) atoms lst
-      in
-        (Fork f subtree1 subtree2, atoms)
-    F_disj f1 f2 ->
-      let (subtree1, _) = process_inner f1 atoms lst
-          (subtree2, _) = process_inner f2 atoms lst
-      in
-        (Fork f subtree1 subtree2, atoms)
-    F_neg (F_disj f1 f2) ->
-      let (subtree, atoms2) = process_inner (F_neg f1) atoms ((F_neg f2):lst)
-      in
-        (One_child f subtree, atoms2)
-    F_impl f1 f2 ->
-      let (subtree1, _) = process_inner (F_neg f1) atoms lst
-          (subtree2, _) = process_inner f2 atoms lst
-      in
-        (Fork f subtree1 subtree2, atoms)
-    F_neg (F_impl f1 f2) ->
-      let (subtree, atoms2) = process_inner f1 atoms ((F_neg f2):lst)
-      in
-        (One_child f subtree, atoms2)
-
+process_inner :: (Show a, Eq a) => Formula a -> [(a, Bool)] -> Queue (Formula a) -> Queue (Formula a, Formula a) -> Tree a
+process_inner f atoms seq_queue fork_queue =
+  let result = analyze f in
+    case result of
+      P_atom a signum -> let atoms' = (a, signum):atoms in
+        let result2 = dequeue seq_queue in
+          case result2 of
+            Nothing -> let result3 = dequeue fork_queue in
+              case result3 of
+                -- Обе очереди пусты
+                Nothing ->
+                  case (has_contradiction atoms') of
+                    Nothing -> Open_leaf f
+                    Just b -> Closed_leaf f (Bot (F_atom b))
+                -- fork очередь непуста
+                Just ((f1, f2), fork_queue') ->
+                  let
+                    tree1 = (process_inner f1 atoms seq_queue fork_queue')
+                    tree2 = (process_inner f2 atoms seq_queue fork_queue')
+                  in
+                    Fork f tree1 tree2
+            Just (f', seq_queue') -> One_child f (process_inner f' atoms seq_queue' fork_queue)
+      P_one f' -> One_child f (process_inner f' atoms seq_queue fork_queue)
+      P_sequence f1 f2 -> let seq_queue' = enqueue f2 seq_queue in
+        One_child f (process_inner f1 atoms seq_queue' fork_queue)
+      P_fork f1 f2 -> let result = dequeue seq_queue in
+        case result of
+          Nothing -> case (dequeue fork_queue) of
+            Nothing -> Fork f (process_inner f1 atoms seq_queue fork_queue) (process_inner f1 atoms seq_queue fork_queue)
+            Just ((f1', f2'), fork_queue') -> let fork_queue2 = enqueue (f1, f2) fork_queue in
+              Fork f (process_inner f1' atoms seq_queue fork_queue2) (process_inner f1' atoms seq_queue fork_queue2)
+          Just (f', seq_queue') -> let fork_queue2 = enqueue (f1, f2) fork_queue in
+            One_child f (process_inner f' atoms seq_queue' fork_queue2)
 
 process :: (Show a, Eq a) => Formula a -> Tree a
 process f =
-  let (tree, _) = process_inner f [] []
+  let
+    empty = Queue [] []
   in
-    tree
+    process_inner f [] empty empty
 
 show_dot :: Show a => Tree a -> String
 show_dot tree = let (body, _) = show_dot_inner tree "" 1 Nothing
