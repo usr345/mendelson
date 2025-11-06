@@ -2,12 +2,12 @@ Require Import List.
 Import ListNotations.
 Require Import EqDec.
 
+(* T - множество констант для атомарных типов *)
 Inductive ST_type (T : Type) : Type :=
 | ST_atom : T -> ST_type T
 | ST_arrow : ST_type T -> ST_type T -> ST_type T.
 
 (* V - множество переменных *)
-(* T - множество констант для атомарных типов *)
 Inductive ST_term (V : Type) `{EqDec V} : Type :=
 | T_var : V -> ST_term V
 | T_app : ST_term V -> ST_term V -> ST_term V
@@ -15,7 +15,7 @@ Inductive ST_term (V : Type) `{EqDec V} : Type :=
 
 Definition context (V T : Type) `{EqDec V} := list (V * ST_type T).
 
-(* Поиск типа для переменной V в контексте *)
+(* Поиск типа для переменной v в контексте *)
 Fixpoint lookup {V T : Type} `{EqDec V} (v : V) (ctx : context V T) {struct ctx} : option(ST_type T) :=
   match ctx with
   | nil => None
