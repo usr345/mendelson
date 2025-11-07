@@ -23,43 +23,43 @@ Fixpoint lookup {V T : Type} `{EqDec V} (v : V) (ctx : context V T) {struct ctx}
   end.
 
 (* When lookup returns Some t, the variable indeed has type t in the context. *)
-Theorem lookup_found {V T : Type} `{Heq: EqDec V} (v : V) (type : ST_type T) (ctx : context V T) : lookup v ctx = (Some type) <-> In (v, type) ctx.
+Theorem lookup_found {V T : Type} `{Heq: EqDec V} (v : V) (type : ST_type T) (ctx : context V T) : lookup v ctx = (Some type) -> In (v, type) ctx.
 Proof.
-  split.
-  - intro H.
-    induction ctx as [|(v1, t1) tl IH].
-    + simpl in H.
-      discriminate H.
-    + simpl in H.
+  intro H.
+  induction ctx as [|(v1, t1) tl IH].
+  - simpl in H.
+    discriminate H.
+  - simpl in H.
       simpl.
       destruct (eqb v v1) as [TRUE | FALSE] eqn:Heq1.
-      * injection H as H1.
-        left.
-        rewrite H1.
-        rewrite eqb_eq in Heq1.
-        rewrite Heq1.
-        reflexivity.
-      * right.
-        apply IH.
-        apply H.
-  - intro H.
-    induction ctx as [|(v1, t1) tl IH].
-    + simpl in H.
-      destruct H.
-    + simpl.
-      simpl in H.
-      destruct H.
-      * rewrite pair_equal_spec in H.
-        destruct H as [H1 H2].
-        rewrite H1.
-        rewrite eqb_reflexive.
-        rewrite H2.
-        reflexivity.
-      * specialize (IH H).
-        destruct (eqb v v1) eqn:Heq1.
-        ** (* v != v1 h *)
-          admit.
-        ** apply IH.
+    + injection H as H1.
+      left.
+      rewrite H1.
+      rewrite eqb_eq in Heq1.
+      rewrite Heq1.
+      reflexivity.
+    + right.
+      apply IH.
+      apply H.
+Qed.
+  (* - intro H. *)
+  (*   induction ctx as [|(v1, t1) tl IH]. *)
+  (*   + simpl in H. *)
+  (*     destruct H. *)
+  (*   + simpl. *)
+  (*     simpl in H. *)
+  (*     destruct H. *)
+  (*     * rewrite pair_equal_spec in H. *)
+  (*       destruct H as [H1 H2]. *)
+  (*       rewrite H1. *)
+  (*       rewrite eqb_reflexive. *)
+  (*       rewrite H2. *)
+  (*       reflexivity. *)
+  (*     * specialize (IH H). *)
+  (*       destruct (eqb v v1) eqn:Heq1. *)
+  (*       ** (* v != v1 h *) *)
+  (*         admit. *)
+  (*       ** apply IH. *)
 
 
 
