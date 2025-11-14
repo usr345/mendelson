@@ -60,33 +60,30 @@ process_inner f atoms seq_queue fork_queue =
       P_atom a signum ->
         let
           atoms' = (a, signum):atoms
-          result2 = dequeue seq_queue
         in
-          case result2 of
-            Nothing -> let result3 = dequeue fork_queue in
-              case result3 of
-                -- Обе очереди пусты
-                Nothing ->
-                  case (has_contradiction atoms') of
-                    Nothing -> Open_leaf f
-                    Just b -> Closed_leaf f (Bot (F_atom b))
-                -- fork очередь непуста
+          case (has_contradiction atoms') of
+            -- найдено противоречие - больше ничего не делаем
+            Just b -> Closed_leaf f (Bot (F_atom b))
+            Nothing -> case (dequeue seq_queue) of
+              -- seq очередь не пуста
+              Just (f', seq_queue') -> One_child f (process_inner f' atoms' seq_queue' fork_queue)
+              -- seq очередь пуста
+              Nothing -> case (dequeue fork_queue) of
+                -- fork очередь не пуста
                 Just ((f1, f2), fork_queue') ->
                   let
                     tree1 = (process_inner f1 atoms' seq_queue fork_queue')
                     tree2 = (process_inner f2 atoms' seq_queue fork_queue')
                   in
                     Fork f tree1 tree2
-            Just (f', seq_queue') -> One_child f (process_inner f' atoms' seq_queue' fork_queue)
+                -- fork очередь пуста
+                Nothing -> Open_leaf f
+
       P_one f' -> One_child f (process_inner f' atoms seq_queue fork_queue)
       P_sequence f1 f2 -> let seq_queue' = enqueue f2 seq_queue in
         One_child f (process_inner f1 atoms seq_queue' fork_queue)
-      P_fork f1 f2 -> let result = dequeue seq_queue in
-        case result of
-          Nothing -> case (dequeue fork_queue) of
-            Nothing -> Fork f (process_inner f1 atoms seq_queue fork_queue) (process_inner f1 atoms seq_queue fork_queue)
-            Just ((f1', f2'), fork_queue') -> let fork_queue2 = enqueue (f1, f2) fork_queue in
-              Fork f (process_inner f1' atoms seq_queue fork_queue2) (process_inner f1' atoms seq_queue fork_queue2)
+      P_fork f1 f2 -> case (dequeue seq_queue) of
+          Nothing -> Fork f (process_inner f1 atoms seq_queue fork_queue) (process_inner f2 atoms seq_queue fork_queue)
           Just (f', seq_queue') -> let fork_queue2 = enqueue (f1, f2) fork_queue in
             One_child f (process_inner f' atoms seq_queue' fork_queue2)
 
