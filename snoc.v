@@ -12,6 +12,7 @@ Arguments snoc {_} (_) (_).
 Definition lst1 : snoc_list nat := snoc snil 1.
 Definition lst2 : snoc_list nat := snoc (snoc (snoc snil 1) 2) 3.
 
+
 Fixpoint snoc_to_cons {A : Type} (lst : snoc_list A) : list A :=
   match lst with
   | snil => nil
@@ -37,3 +38,46 @@ Fixpoint cons_to_snoc {A : Type} (lst : list A) : snoc_list A :=
   cons_to_snoc_int lst snil.
 
 Compute cons_to_snoc [1; 2; 3].
+
+(* Exercise 1: Define a function length_snoc that computes the length of a SNOC list. *)
+Fixpoint length_snoc {A : Type} (lst : snoc_list A) : nat :=
+  match lst with
+  | snil => 0
+  | snoc xs x => S (length_snoc xs)
+  end.
+
+(* Exercise 2: Prove that converting a SNOC list to a list preserves length: *)
+Lemma snoc_list_to_list_length : forall {A : Type} (lst : snoc_list A),
+  length_snoc lst = length (snoc_to_cons lst).
+Proof.
+  intros A lst.
+  induction lst as [|xs IH x].
+  - unfold length_snoc.
+    unfold snoc_to_cons.
+    simpl.
+    reflexivity.
+  - simpl.
+    rewrite length_app.
+    simpl.
+    rewrite IH.
+    rewrite <-plus_n_Sm.
+    rewrite <-plus_n_O.
+    reflexivity.
+Qed.
+
+(* Exercise 3: Define a function append_snoc that concatenates two SNOC lists. *)
+Fixpoint append_snoc {A : Type} (l1 l2 : snoc_list A) : snoc_list A :=
+  match l2 with
+  | snil => l1
+  | snoc xs x => snoc (append_snoc l1 xs) x
+  end.
+
+Definition lst3 : snoc_list nat := snoc (snoc snil 4) 5.
+Compute append_snoc lst2 lst3.
+
+(* Exercise 4: Prove that converting concatenated SNOC lists to a list is the same as concatenating their list representations: *)
+Lemma append_snoc_correct : forall {A} (l1 l2 : snoc_list A),
+  snoc_list_to_list (append_snoc l1 l2) = snoc_list_to_list l1 ++ snoc_list_to_list l2.
+Proof.
+  (* your proof here *)
+Admitted.
