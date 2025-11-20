@@ -75,9 +75,17 @@ Fixpoint append_snoc {A : Type} (l1 l2 : snoc_list A) : snoc_list A :=
 Definition lst3 : snoc_list nat := snoc (snoc snil 4) 5.
 Compute append_snoc lst2 lst3.
 
-(* Exercise 4: Prove that converting concatenated SNOC lists to a list is the same as concatenating their list representations: *)
-Lemma append_snoc_correct : forall {A} (l1 l2 : snoc_list A),
-  snoc_list_to_list (append_snoc l1 l2) = snoc_list_to_list l1 ++ snoc_list_to_list l2.
+(* Exercise 4: Prove that converting concatenated SNOC lists to a list is the same as concatenating their list representations *)
+Lemma append_snoc_correct : forall {A : Type} (l1 l2 : snoc_list A),
+  snoc_to_cons (append_snoc l1 l2) = snoc_to_cons l1 ++ snoc_to_cons l2.
 Proof.
-  (* your proof here *)
-Admitted.
+  intros.
+  induction l2 as [|xs IH x].
+  - simpl.
+    rewrite app_nil_r.
+    reflexivity.
+  - simpl.
+    rewrite IH.
+    rewrite <-app_assoc.
+    reflexivity.
+Qed.
