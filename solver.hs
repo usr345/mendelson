@@ -98,7 +98,7 @@ data Tree a =
   | Open_leaf (Formula a)
   | One_child (Formula a) (Tree a)
   | Sequence (Formula a) (Tree a) (Tree a)
-  | For (Formula a) (Tree a) (Tree a)
+  | Fork (Formula a) (Tree a) (Tree a)
   deriving Show
 
 process :: Formula a -> Tree a
