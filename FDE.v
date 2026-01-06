@@ -11,83 +11,100 @@ Inductive formula {atom : Type} : Type :=
 | f_disj  : formula -> formula -> formula
 | f_imp  : formula -> formula -> formula.
 
-Definition TruthRelation {atom : Type} {worlds : Set} : Type := 
-              atom -> worlds -> bool -> Prop.
+Class Model (atom : Type) :=
+{
+  worlds : Type;
+  worlds_inh : inhabited worlds;
+  ρ : atom -> worlds -> bool -> Prop;
+}.
 
-Inductive FormulaTruth {atom : Type} {worlds : Set} (ρ : @TruthRelation atom worlds): 
-            (@formula atom) -> worlds -> bool -> Prop :=
-| ft_atom : forall (A : atom) (w : worlds) (b : bool), ρ A w b -> FormulaTruth ρ (f_atom A) w b
-| ft_neg : forall (f : @formula atom) (w : worlds) (b : bool), FormulaTruth ρ f w (negb b) -> FormulaTruth ρ (f_not f) w b
-| ft_conj_true : forall (f g : @formula atom) (w : worlds), 
-    FormulaTruth ρ f w true -> 
-    FormulaTruth ρ g w true -> 
-    FormulaTruth ρ (f_conj f g) w true
-| ft_conj_false1 : forall (f g : @formula atom) (w : worlds), 
-    FormulaTruth ρ f w false -> 
-    FormulaTruth ρ (f_conj f g) w false
-| ft_conj_false2 : forall (f g : @formula atom) (w : worlds), 
-    FormulaTruth ρ g w false -> 
-    FormulaTruth ρ (f_conj f g) w false
-| ft_disj_true1 : forall (f g : @formula atom) (w : worlds), 
-    FormulaTruth ρ f w true -> 
-    FormulaTruth ρ (f_disj f g) w true
-| ft_disj_true2 : forall (f g : @formula atom) (w : worlds), 
-    FormulaTruth ρ g w true -> 
-    FormulaTruth ρ (f_disj f g) w false
-| ft_disj_false : forall (f g : @formula atom) (w : worlds), 
-    FormulaTruth ρ f w false -> 
-    FormulaTruth ρ g w false -> 
-    FormulaTruth ρ (f_disj f g) w false
-| ft_impl_true : forall (f g : @formula atom) (w : worlds), 
-    (forall w : worlds, FormulaTruth ρ f w true /\ FormulaTruth ρ g w true) ->
-    FormulaTruth ρ (f_imp f g) w true
-| ft_impl_false : forall (f g : @formula atom) (w : worlds), 
-    (exists w : worlds, FormulaTruth ρ f w true /\ FormulaTruth ρ g w false) ->
-    FormulaTruth ρ (f_imp f g) w false.
+
+Fixpoint FormulaTruth
+  {atom : Type}
+  (M: Model atom)
+  (f : formula)
+  (w : M.(worlds))
+  (b : bool)
+  : Prop :=
+  match f with
+  | f_atom A => M.(ρ) A w b
+  | f_not f' => FormulaTruth M f' w (negb b)
+  | f_conj f g =>
+    match b with
+    | true => FormulaTruth M f w true /\ FormulaTruth M g w true
+    | false => FormulaTruth M f w false \/ FormulaTruth M g w false
+    end
+  | f_disj f g =>
+      match b with
+      | true => FormulaTruth M f w true \/ FormulaTruth M g w true
+      | false =>
+          FormulaTruth M f w false /\ FormulaTruth M g w false
+      end
+  | f_imp f g =>
+      match b with
+      | true =>
+          forall w' : worlds,
+            FormulaTruth M f w' true -> FormulaTruth M g w' true
+      | false =>
+          exists w' : worlds,
+            FormulaTruth M f w' true /\ FormulaTruth M g w' false
+      end
+  end.
+
 
 Variant atom2 : Set := P | Q.
 Variant worlds2 : Set := Γ | Δ.
 
-Definition truth_relation1 : @TruthRelation atom2 worlds2 := 
+Lemma worlds2_inhabited : inhabited worlds2.
+Proof.
+  apply (inhabits Γ).
+Qed.
+
+Definition truth_relation1 : atom2 -> worlds2 -> bool -> Prop :=
   fun (a : atom2) (w : worlds2) (b : bool) =>
    match w, a, b with
     | Γ, P, true => True
     | Γ, P, false => True
     | Γ, Q, true => True
-    | Γ, Q, false => True
     | _, _, _ => False
     end.
 
-Theorem T1 : FormulaTruth truth_relation1 (f_conj (f_atom P) (f_atom Q)) Γ true.
+Definition M1 : Model atom2 :=
+  {|
+    worlds := worlds2;
+    worlds_inh := worlds2_inhabited;
+    ρ := truth_relation1;
+  |}.
+
+Theorem T1 : FormulaTruth M1 (f_conj (f_atom P) (f_atom Q)) Γ true.
 Proof.
-  apply ft_conj_true.
-  - apply ft_atom.
-    unfold truth_relation1.
-    apply I.
-  - apply ft_atom.
-    unfold truth_relation1.
-    apply I.
+  unfold FormulaTruth.
+  split.
+  - (* f_atom P *)
+    simpl.
+    exact I.
+  - (* f_atom Q *)
+    simpl.
+    exact I.
 Qed.
 
-Theorem T2 : FormulaTruth truth_relation1 (f_conj (f_atom P) (f_atom Q)) Γ false.
+Theorem T2 : FormulaTruth M1 (f_conj (f_atom P) (f_atom Q)) Γ false.
 Proof.
-  apply ft_conj_false1.
-  apply ft_atom.
-  unfold truth_relation1.
+  unfold FormulaTruth.
+  simpl.
+  left.
   apply I.
 Qed.
 
-Theorem T3 : FormulaTruth truth_relation1 (f_imp (f_atom P) (f_atom Q)) Γ false.
+Theorem T3 : FormulaTruth M1 (f_imp (f_atom P) (f_atom Q)) Γ true.
 Proof.
-  apply ft_impl_false.
-  exists Γ.
-  split.
-  - apply ft_atom.
-    unfold truth_relation1.
-    apply I.
-  - apply ft_atom.
-    unfold truth_relation1.
-    apply I.
+  unfold FormulaTruth.
+  intros w H.
+  destruct w.
+  - simpl.
+    exact I.
+  - simpl.
+    destruct H.
 Qed.
 
 Variant V4 := empty | false | true | both.
@@ -143,9 +160,7 @@ Fixpoint eval {atom : Type} {worlds: Set} (w : worlds) (lst : list worlds) (non_
   | f_not f' => neg4 (eval w f' ro val)
   | f_conj f1 f2 => and4 (eval w f1 ro val) (eval w f2 ro val)
   | f_disj f1 f2 => or4 (eval w f1 ro val) (eval w f2 ro val)
-  | f_imp f1 f2 => (forall_worlds lst 
+  | f_imp f1 f2 => (forall_worlds lst
   end
   (* Возвращает true, если для всех миров списка формула f вычисляется в val *)
   with forall_worlds (lst : list worlds) (f : formula) (ro : worlds -> atom -> bool -> bool) : Bool :=
-  
-
