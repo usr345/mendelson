@@ -5,7 +5,7 @@ Require Import Lists.List.
 Import ListNotations.
 
 Module Formula1 <: TFormula.
-(* Синтаксис формулы K4 *)
+  (* Синтаксис формулы K4 *)
   Inductive formula {atom : Type} : Type :=
   | f_atom : atom -> formula
   | f_not  : formula -> formula
@@ -41,29 +41,31 @@ Module K4.
     | f_not f' => FormulaTruth M f' w (negb b)
     | f_conj f g =>
         match b with
-    | true => FormulaTruth M f w true /\ FormulaTruth M g w true
-    | false => FormulaTruth M f w false \/ FormulaTruth M g w false
-    end
-  | f_disj f g =>
-      match b with
-      | true => FormulaTruth M f w true \/ FormulaTruth M g w true
-      | false => FormulaTruth M f w false /\ FormulaTruth M g w false
-      end
-  | f_imp f g =>
-      match b with
-      | true =>
-          forall w' : M.(worlds),
-            FormulaTruth M f w' true -> FormulaTruth M g w' true
-      | false =>
-          exists w' : M.(worlds),
-            FormulaTruth M f w' true /\ FormulaTruth M g w' false
-      end
+        | true => FormulaTruth M f w true /\ FormulaTruth M g w true
+        | false => FormulaTruth M f w false \/ FormulaTruth M g w false
+        end
+    | f_disj f g =>
+        match b with
+        | true => FormulaTruth M f w true \/ FormulaTruth M g w true
+        | false => FormulaTruth M f w false /\ FormulaTruth M g w false
+        end
+    | f_imp f g =>
+        match b with
+        | true =>
+            forall w' : M.(worlds),
+              FormulaTruth M f w' true -> FormulaTruth M g w' true
+        | false =>
+            exists w' : M.(worlds),
+              FormulaTruth M f w' true /\ FormulaTruth M g w' false
+        end
   end.
 
   Definition valid {atom : Type} (f : formula) : Prop := forall (M : Model atom) (w : M.(worlds)), FormulaTruth M f w true.
 
+  Notation "|= f" := (valid f) (at level 90).
+
   Definition holds_all {atom : Type} `(M : Model atom) (w : M.(worlds))
-    (Γ : list formula) : Prop := forall f, In f Γ -> FormulaTruth M f w true.
+    (Γ : list formula) : Prop := forall f : @formula atom, In f Γ -> FormulaTruth M f w true.
 
   Definition consequence {atom : Type} (Γ : list (@formula atom))
     (f : @formula atom) : Prop :=
@@ -108,13 +110,14 @@ Module K4_excersizes.
     simpl.
     intros w' H1.
     specialize (H $A -> B$) as H2.
+
     assert (H3 : In $A -> B$
                    [$A -> B$; $B -> C$]).
     {
       unfold In.
       left.
       reflexivity.
-    }.
+    }
 
     specialize (H2 H3).
     clear H3.
@@ -130,7 +133,7 @@ Module K4_excersizes.
       right.
       left.
       reflexivity.
-    }.
+    }
 
     specialize (H H1).
     cbn in H.
@@ -315,8 +318,7 @@ Module K4_excersizes.
     unfold valid.
     intros M w.
     cbn.
-    intro w'.
-    intro H.
+    intros _ H.
     destruct H as [H_AB H_AC].
     intros w0 H_A.
     specialize (H_AB w0 H_A).
@@ -330,7 +332,7 @@ Module K4_excersizes.
     unfold valid.
     intros M w.
     cbn.
-    intros w' H.
+    intros _ H.
     destruct H as [H_AC H_BC].
     intros w0 H1.
     destruct H1 as [H_A | H_B].
@@ -407,6 +409,7 @@ Module K4_excersizes.
     intros w' H_A.
     cbn in H_AB.
     specialize (H_AB w' H_A).
+    rename H_AB into H_B.
 
     assert (H1 : In $B -> C$
                    [$A -> B$; $B -> C$]).
@@ -418,7 +421,7 @@ Module K4_excersizes.
     specialize (H $B -> C$ H1) as H_BC.
     clear H1.
     cbn in H_BC.
-    specialize (H_BC w' H_AB).
+    specialize (H_BC w' H_B).
     exact H_BC.
   Qed.
 
