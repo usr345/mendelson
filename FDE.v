@@ -435,9 +435,9 @@ Module K4_excersizes.
 
   Coercion f: atom3 >-> formula.
 
-  Variant worlds2 : Set := Γ | Δ.
+  Variant worlds1 : Set := Γ.
 
-  Lemma worlds2_inhabited : inhabited worlds2.
+  Lemma worlds1_inhabited : inhabited worlds1.
   Proof.
     apply (inhabits Γ).
   Qed.
@@ -452,33 +452,33 @@ Module K4_excersizes.
     (* Конструируем контрмодель *)
     pose (
         ρ1 :=
-          fun (a : atom3) (w: worlds2) (val : bool) =>
+          fun (a : atom3) (w: worlds1) (val : bool) =>
             match w, a, val with
-            | Δ, P, _ => True
+            | Γ, P, _ => True
             | _, _, _ => False
             end
       ).
 
     pose (M1 := {|
-                worlds := worlds2;
-                worlds_inh := worlds2_inhabited;
+                worlds := worlds1;
+                worlds_inh := worlds1_inhabited;
                 ρ := ρ1;
                |}).
 
-    specialize (H M1 Δ).
+    specialize (H M1 Γ).
     hnf in H.
-    specialize (H Δ).
-    assert (H1 : FormulaTruth M1 $P /\ (~ P \/ Q)$ Δ true).
+    specialize (H Γ).
+    assert (H1 : FormulaTruth M1 $P /\ (~ P \/ Q)$ Γ true).
     {
       hnf.
       split.
-      - change (FormulaTruth M1 (f_atom P) Δ true).
+      - change (FormulaTruth M1 (f_atom P) Γ true).
         cbn [FormulaTruth].
         hnf.
         exact I.
       - hnf.
         left.
-        change (FormulaTruth M1 (f_not (f_atom P)) Δ true).
+        change (FormulaTruth M1 (f_not (f_atom P)) Γ true).
         cbn [FormulaTruth].
         cbn [negb].
         hnf.
@@ -500,21 +500,21 @@ Module K4_excersizes.
     (* Конструируем контрмодель *)
     pose (
         ρ1 :=
-          fun (a : atom3) (w: worlds2) (val : bool) =>
+          fun (a : atom3) (w: worlds1) (val : bool) =>
             match w, a, val with
-            | Δ, P, true => True
+            | Γ, P, true => True
             | _, _, _ => False
             end
       ).
 
     pose (M1 := {|
-                worlds := worlds2;
-                worlds_inh := worlds2_inhabited;
+                worlds := worlds1;
+                worlds_inh := worlds1_inhabited;
                 ρ := ρ1;
                |}).
 
-    specialize (H M1 Δ).
-    assert (H1 : holds_all M1 Δ [$P /\ Q -> R$]).
+    specialize (H M1 Γ).
+    assert (H1 : holds_all M1 Γ [$P /\ Q -> R$]).
     {
       unfold holds_all.
       intros f H1.
@@ -525,28 +525,20 @@ Module K4_excersizes.
       intros w' H2.
       change (FormulaTruth M1 (f_atom R) w' true).
       destruct w' eqn:Heq.
-      - cbn [FormulaTruth].
-        hnf.
-        hnf in H2.
-        destruct H2 as [H_P _].
-        change (FormulaTruth M1 (f_atom P) Γ true) in H_P.
-        cbn [FormulaTruth] in H_P.
-        hnf in H_P.
-        exact H_P.
-      - cbn [FormulaTruth].
-        hnf.
-        destruct H2 as [_ H_Q].
-        change (FormulaTruth M1 (f_atom Q) Δ true) in H_Q.
-        cbn [FormulaTruth] in H_Q.
-        hnf in H_Q.
-        exact H_Q.
+      cbn [FormulaTruth].
+      hnf.
+      destruct H2 as [_ H_Q].
+      change (FormulaTruth M1 (f_atom Q) Γ true) in H_Q.
+      cbn [FormulaTruth] in H_Q.
+      hnf in H_Q.
+      exact H_Q.
     }
 
     specialize (H H1).
     clear H1.
     hnf in H.
-    specialize (H Δ).
-    assert (H1 : FormulaTruth M1 P Δ true).
+    specialize (H Γ).
+    assert (H1 : FormulaTruth M1 P Γ true).
     {
       simpl.
       exact I.
@@ -571,23 +563,23 @@ Module K4_excersizes.
     (* Конструируем контрмодель *)
     pose (
         ρ1 :=
-          fun (a : atom3) (w: worlds2) (val : bool) =>
+          fun (a : atom3) (w: worlds1) (val : bool) =>
             match w, a, val with
-            | Δ, P, true => True
+            | Γ, P, true => True
             | _, _, _ => False
             end
       ).
 
     pose (M1 := {|
-                worlds := worlds2;
-                worlds_inh := worlds2_inhabited;
+                worlds := worlds1;
+                worlds_inh := worlds1_inhabited;
                 ρ := ρ1;
                |}).
 
-    specialize (H M1 Δ).
+    specialize (H M1 Γ).
     hnf in H.
-    specialize (H Δ).
-    assert (H1 : FormulaTruth M1 P Δ true).
+    specialize (H Γ).
+    assert (H1 : FormulaTruth M1 P Γ true).
     {
       simpl.
       exact I.
@@ -602,6 +594,108 @@ Module K4_excersizes.
       exact H.
   Qed.
 
+  Theorem T4_neg : ~ forall P Q : @formula atom3, |= $(P /\ ~P) -> Q$.
+  Proof.
+    unfold not.
+    intro H.
+    specialize (H (f_atom P) (f_atom Q)).
+    change (|= $(P /\ ~P) -> Q$) in H.
+    unfold valid in H.
+    (* Конструируем контрмодель *)
+    pose (
+        ρ1 :=
+          fun (a : atom3) (w: worlds1) (val : bool) =>
+            match w, a, val with
+            | Γ, P, true => True
+            | Γ, P, false => True
+            | _, _, _ => False
+            end
+      ).
+
+    pose (M1 := {|
+                worlds := worlds1;
+                worlds_inh := worlds1_inhabited;
+                ρ := ρ1;
+               |}).
+
+    specialize (H M1 Γ).
+    hnf in H.
+    specialize (H Γ).
+    assert (H1 : FormulaTruth M1 $P /\ ~ P$ Γ true).
+    {
+      hnf.
+      change (FormulaTruth M1 (f_atom P) Γ true /\ FormulaTruth M1 (f_not (f_atom P)) Γ true).
+      cbn [FormulaTruth].
+      cbn [negb].
+      simpl.
+      exact (conj I I).
+    }
+
+    specialize (H H1).
+    clear H1.
+    change (FormulaTruth M1 (f_atom Q) Γ true) in H.
+    cbn [FormulaTruth] in H.
+    hnf in H.
+    exact H.
+  Qed.
+
+  Theorem T5_neg : ~ forall P Q : @formula atom3, |= $(P -> Q) -> (~Q -> ~P)$.
+  Proof.
+    unfold not.
+    intro H.
+    specialize (H (f_atom P) (f_atom Q)).
+    change (|= $(P -> Q) -> (~Q -> ~P)$) in H.
+    unfold valid in H.
+    (* Конструируем контрмодель *)
+    pose (
+        ρ1 :=
+          fun (a : atom3) (w: worlds1) (val : bool) =>
+            match w, a, val with
+            | Γ, Q, false => True
+            | _, _, _ => False
+            end
+      ).
+
+    pose (M1 := {|
+                worlds := worlds1;
+                worlds_inh := worlds1_inhabited;
+                ρ := ρ1;
+               |}).
+
+    specialize (H M1 Γ).
+    hnf in H.
+    specialize (H Γ).
+    assert (H1 : FormulaTruth M1 $P -> Q$ Γ true).
+    {
+      hnf.
+      intro w.
+      destruct w eqn:Heq.
+      change (FormulaTruth M1 (f_atom P) Γ true -> FormulaTruth M1 (f_atom Q) Γ true).
+      cbn [FormulaTruth].
+      intro H1.
+      exact H1.
+    }
+
+    specialize (H H1).
+    clear H1.
+    hnf in H.
+    specialize (H Γ).
+    assert (H1 : FormulaTruth M1 $~ Q$ Γ true).
+    {
+      change (FormulaTruth M1 (f_not (f_atom Q)) Γ true).
+      cbn [FormulaTruth].
+      cbn [negb].
+      hnf.
+      exact I.
+    }
+
+    specialize (H H1).
+    change (FormulaTruth M1 (f_not (f_atom P)) Γ true) in H.
+    cbn [FormulaTruth] in H.
+    cbn [negb] in H.
+    hnf in H.
+    exact H.
+  Qed.
 
 End K4_excersizes.
 
