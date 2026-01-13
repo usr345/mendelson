@@ -2,9 +2,10 @@ From Mendelson Require Import FSignature.
 From Mendelson Require Import MSets.
 Require Import Lists.List.
 Import ListNotations.
+Set Implicit Arguments.
+Generalizable All Variables.
 
 Module Formula1 <: TFormula.
-  (* Синтаксис формулы K4 *)
   Inductive formula {atom : Type} : Type :=
   | f_atom : atom -> formula
   | f_not  : formula -> formula
@@ -24,17 +25,17 @@ Module K4.
   Import Formula1.
   Module F1:= Make_Formula(Formula1).
 
-  Class Model (atom : Type) :=
+  Record Model (atom : Type) :=
   {
     worlds : Type;
     worlds_inh : inhabited worlds;
     ρ : atom -> worlds -> bool -> Prop;
   }.
 
-  Fixpoint FormulaTruth {atom : Type} `(M: Model atom) (f : formula)
-    (w : M.(worlds)) (b : bool) : Prop :=
+  Fixpoint FormulaTruth {atom : Type} (M: Model atom) (f : formula)
+    (w : worlds M) (b : bool) : Prop :=
     match f with
-    | f_atom A => M.(ρ) A w b
+    | f_atom A => ρ M A w b
     | f_not f' => FormulaTruth M f' w (negb b)
     | f_conj f g =>
         match b with
@@ -50,24 +51,24 @@ Module K4.
         match b with
         (* Implication is evaluated globally over all worlds *)
         | true =>
-            forall w' : M.(worlds),
+            forall w' : (worlds M),
               FormulaTruth M f w' true -> FormulaTruth M g w' true
         | false =>
-            exists w' : M.(worlds),
+            exists w' : (worlds M),
               FormulaTruth M f w' true /\ FormulaTruth M g w' false
         end
   end.
 
-  Definition valid {atom : Type} (f : formula) : Prop := forall (M : Model atom) (w : M.(worlds)), FormulaTruth M f w true.
+  Definition valid {atom : Type} (f : formula) : Prop := forall (M : Model atom) (w : worlds M), FormulaTruth M f w true.
 
   #[global] Notation "|= f" := (valid f) (at level 90).
 
-  Definition holds_all {atom : Type} `(M : Model atom) (w : M.(worlds))
+  Definition holds_all {atom : Type} (M : Model atom) (w : worlds M)
     (Γ : list formula) : Prop := forall f : @formula atom, In f Γ -> FormulaTruth M f w true.
 
   Definition consequence {atom : Type} (Γ : list (@formula atom))
     (f : @formula atom) : Prop :=
-    forall (M : Model atom) (w : M.(worlds)),
+    forall (M : Model atom) (w : worlds M),
       holds_all M w Γ -> FormulaTruth M f w true.
 
   #[global] Notation "Γ |= f" := (consequence Γ f) (at level 90).
@@ -94,3 +95,71 @@ Module K4.
       destruct H1.
   Qed.
 End K4.
+
+Module N4.
+  Import Formula1.
+  Module F1:= Make_Formula(Formula1).
+
+  Record Model (atom : Type) :=
+  {
+    worlds : Type;
+    worlds_inh : inhabited worlds;
+    is_normal : worlds -> bool;
+    ρ : atom -> worlds -> bool -> Prop;
+    (* Implication valuation at non-normal worlds *)
+    ρ_imp : (@formula atom) -> (@formula atom) -> worlds -> bool -> Prop;
+  }.
+
+  Fixpoint FormulaTruth {atom : Type} (M: N4.Model atom) (f : formula)
+    (w : worlds M) (b : bool) : Prop :=
+    match f with
+    | f_atom A => ρ M A w b
+    | f_not f' => FormulaTruth M f' w (negb b)
+    | f_conj f g =>
+        match b with
+        | true => FormulaTruth M f w true /\ FormulaTruth M g w true
+        | false => FormulaTruth M f w false \/ FormulaTruth M g w false
+        end
+    | f_disj f g =>
+        match b with
+        | true => FormulaTruth M f w true \/ FormulaTruth M g w true
+        | false => FormulaTruth M f w false /\ FormulaTruth M g w false
+        end
+    | f_imp f g =>
+      match is_normal M w with
+      | true =>
+          (* K4-style global implication *)
+          match b with
+          | true =>
+              forall w' : (worlds M),
+                FormulaTruth M f w' true ->
+                FormulaTruth M g w' true
+          | false =>
+              exists w' : (worlds M),
+                FormulaTruth M f w' true /\
+                FormulaTruth M g w' false
+          end
+      | false =>
+          (* Non-normal: implication is atomic *)
+          ρ_imp M f g w b
+      end
+    end.
+
+  Definition K4_to_N4
+    {atom : Type}
+    (M : K4.Model atom)
+    : N4.Model atom :=
+    {|
+      N4.worlds := K4.worlds M;
+      N4.worlds_inh := K4.worlds_inh M;
+      N4.is_normal := fun _ => true;
+      N4.ρ := K4.ρ M;
+      N4.ρ_imp := fun _ _ _ _ => False;
+    |}.
+
+Lemma K4_to_N4_preserves_truth :
+  forall atom (M : K4.Model atom) f w b,
+    K4.FormulaTruth M f w b <->
+    N4.FormulaTruth (K4_to_N4 M) f w b.
+
+End N4.
