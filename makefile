@@ -37,5 +37,11 @@ Meta.vo : Meta.v Syntactic.vo Semantic.vo EqDec.vo
 L1_Hilbert_Accerman.vo : L1_Hilbert_Accerman.v Sets.vo FSignature.vo
 	$(COQC) L1_Hilbert_Accerman.v
 
+K4.vo : K4.v FSignature.vo MSets.vo
+	$(COQC) K4.v
+
+K4_excersizes.vo : K4_excersizes.v K4.vo FSignature.vo MSets.vo
+	$(COQC) K4_excersizes.v
+
 clean:
 	rm -f *.vo *.vok *.vos *.glob

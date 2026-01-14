@@ -158,8 +158,155 @@ Module N4.
     |}.
 
 Lemma K4_to_N4_preserves_truth :
-  forall atom (M : K4.Model atom) f w b,
+  forall (atom : Type) (M : K4.Model atom) f w b,
     K4.FormulaTruth M f w b <->
     N4.FormulaTruth (K4_to_N4 M) f w b.
-
+Proof.
+  intros atom M f w b.
+  revert b.
+  revert w.
+  induction f ; intros w b ; split ; intro H.
+  (* atom -> *)
+  - cbn [FormulaTruth].
+    cbn [K4.FormulaTruth] in H.
+    unfold K4_to_N4.
+    cbn [ρ].
+    exact H.
+  (* atom <- *)
+  - cbn [FormulaTruth] in H.
+    cbn [K4.FormulaTruth].
+    unfold K4_to_N4 in H.
+    cbn [ρ] in H.
+    exact H.
+  (* not -> *)
+  - cbn [K4.FormulaTruth].
+    cbn [FormulaTruth] in H.
+    specialize (IHf w (negb b)).
+    apply IHf.
+    exact H.
+  (* not <- *)
+  - cbn [FormulaTruth] in H.
+    cbn [K4.FormulaTruth].
+    specialize (IHf w (negb b)).
+    apply IHf.
+    exact H.
+  (* conj -> *)
+  - cbn [FormulaTruth].
+    cbn [K4.FormulaTruth] in H.
+    specialize (IHf1 w b).
+    specialize (IHf2 w b).
+    destruct b.
+    + destruct H as [H1 H2].
+      rewrite IHf1 in H1.
+      rewrite IHf2 in H2.
+      exact (conj H1 H2).
+    + destruct H as [H | H].
+      * rewrite IHf1 in H.
+         left.
+         exact H.
+      * rewrite IHf2 in H.
+         right.
+         exact H.
+  (* conj -> *)
+  - cbn [FormulaTruth] in H.
+    cbn [K4.FormulaTruth].
+    specialize (IHf1 w b).
+    specialize (IHf2 w b).
+    destruct b.
+    + destruct H as [H1 H2].
+      rewrite <-IHf1 in H1.
+      rewrite <-IHf2 in H2.
+      exact (conj H1 H2).
+    + destruct H as [H | H].
+      * rewrite <-IHf1 in H.
+         left.
+         exact H.
+      * rewrite <-IHf2 in H.
+         right.
+         exact H.
+  (* disj -> *)
+  - cbn [FormulaTruth].
+    cbn [K4.FormulaTruth] in H.
+    specialize (IHf1 w b).
+    specialize (IHf2 w b).
+    destruct b.
+    + destruct H as [H | H].
+      * rewrite IHf1 in H.
+        left.
+        exact H.
+      * rewrite IHf2 in H.
+        right.
+        exact H.
+    + destruct H as [H1 H2].
+      rewrite IHf1 in H1.
+      rewrite IHf2 in H2.
+      exact (conj H1 H2).
+  (* disj <- *)
+  - cbn [FormulaTruth] in H.
+    cbn [K4.FormulaTruth].
+    specialize (IHf1 w b).
+    specialize (IHf2 w b).
+    destruct b.
+    + destruct H as [H | H].
+      * rewrite <-IHf1 in H.
+        left.
+        exact H.
+      * rewrite <-IHf2 in H.
+        right.
+        exact H.
+    + destruct H as [H1 H2].
+      rewrite <-IHf1 in H1.
+      rewrite <-IHf2 in H2.
+      exact (conj H1 H2).
+  (* impl -> *)
+  - cbn [FormulaTruth].
+    cbn [K4.FormulaTruth] in H.
+    destruct (is_normal (K4_to_N4 M)) eqn:HNormal.
+    + destruct b.
+      * intros w' H1.
+        unfold K4_to_N4 in w'.
+        cbn [worlds] in w'.
+        specialize (IHf2 w' true).
+        specialize (H w').
+        apply IHf2.
+        apply H.
+        specialize (IHf1 w' true).
+        rewrite <-IHf1 in H1.
+        exact H1.
+      * destruct H as [w' H].
+        exists w'.
+        destruct H as [H1 H2].
+        specialize (IHf1 w' true).
+        specialize (IHf2 w' false).
+        rewrite IHf1 in H1.
+        rewrite IHf2 in H2.
+        exact (conj H1 H2).
+    + unfold K4_to_N4 in HNormal.
+      cbn [is_normal] in HNormal.
+      discriminate HNormal.
+  (* impl <- *)
+  - cbn [FormulaTruth] in H.
+    cbn [K4.FormulaTruth].
+    destruct (is_normal (K4_to_N4 M)) eqn:HNormal.
+    + destruct b.
+      * intros w' H1.
+        specialize (IHf2 w' true).
+        rewrite IHf2.
+        specialize (H w').
+        apply H.
+        specialize (IHf1 w' true).
+        rewrite IHf1 in H1.
+        exact H1.
+      * destruct H as [w' H].
+        exists w'.
+        destruct H as [H1 H2].
+        specialize (IHf1 w' true).
+        specialize (IHf2 w' false).
+        rewrite <-IHf1 in H1.
+        rewrite <-IHf2 in H2.
+        exact (conj H1 H2).
+    + unfold K4_to_N4 in HNormal.
+      cbn [is_normal] in HNormal.
+      discriminate HNormal.
+Qed.
 End N4.
