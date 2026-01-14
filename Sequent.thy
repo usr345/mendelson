@@ -23,6 +23,12 @@ lemma double_neg : "A \<turnstile> \<not>\<not> A"
   apply (rule basic)
   done
 
+lemma ExcludedMiddle: "\<turnstile> A \<or> \<not>A"
+  apply (rule disjR)
+  apply (rule notR)
+  apply (rule basic)
+  done
+
 lemma MP: "A \<longrightarrow> B, A \<turnstile> B"
   apply (rule impL)
   subgoal
@@ -99,6 +105,20 @@ lemma DeMorganConj: "\<not>(A \<and> B) \<turnstile> \<not>A \<or> \<not>B"
     done
   done
 
+lemma DeMorganConjBack: "\<not>(\<not>A \<and> \<not>B) \<turnstile> A \<or> B"
+  apply (rule disjR)
+  apply (rule notL)
+  apply (rule conjR)
+  subgoal
+    apply (rule notR)
+    apply (rule basic)
+    done
+  subgoal
+    apply (rule notR)
+    apply (rule basic)
+    done
+  done
+
 lemma Distributivity : "A \<and> (B \<or> C) \<turnstile> (A \<and> B) \<or> (A \<and> C)"
   apply (rule conjL)
   apply (rule disjR)
@@ -127,6 +147,18 @@ lemma Distributivity : "A \<and> (B \<or> C) \<turnstile> (A \<and> B) \<or> (A 
        apply (rule basic)
        apply (rule basic)
       done
+    done
+  done
+
+lemma Pierce: "\<turnstile> ((P \<longrightarrow> Q) \<longrightarrow> P) \<longrightarrow> P"
+  apply (rule impR)
+  apply (rule impL)
+  subgoal
+    apply (rule impR)
+    apply (rule basic)
+    done
+  subgoal
+    apply (rule basic)
     done
   done
 
