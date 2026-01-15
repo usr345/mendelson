@@ -299,4 +299,22 @@ lemma QB7 : "\<exists> x . P(x) \<turnstile> \<exists> x . (P(x) \<or> Q(x))"
   apply (rule basic)
   done
 
+lemma QB13 : "\<exists> x . \<forall> y . R(x, y) \<turnstile> \<forall> y . \<exists> x . R(x, y)"
+  apply (rule exL)
+  apply (rule allR)
+  apply (rule_tac x="x" in exR)
+  apply (rule_tac x="xa" in allL)
+  apply (rule basic)
+  done
+
+lemma QB14 : "\<forall> x . P(x) \<longrightarrow> Q(x), \<exists> x . \<not> Q(x) \<turnstile> \<exists> x . \<not> P(x)"
+  apply (rule exL)
+  apply (rule_tac x="x" in exR)
+  apply (rule_tac x="x" in allL)
+  apply (rule notR)
+  apply (rule notL)
+  apply (rule impL)
+   apply (rule basic)
+  apply (rule basic)
+  done
 end
