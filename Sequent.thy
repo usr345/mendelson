@@ -162,6 +162,26 @@ lemma Pierce: "\<turnstile> ((P \<longrightarrow> Q) \<longrightarrow> P) \<long
     done
   done
 
+lemma Pierce_cut: "\<turnstile> ((P \<longrightarrow> Q) \<longrightarrow> P) \<longrightarrow> P"
+  apply (rule impR)
+  apply (rule_tac P="P" in cut)
+  subgoal
+    (* P is False *)
+    apply (rule impL)
+    subgoal
+      apply (rule impR)
+      apply (rule basic)
+      done
+    subgoal
+      apply (rule basic)
+      done
+    done
+  subgoal
+    (* P is True *)
+    apply (rule basic)
+    done
+  done
+
 lemma A1: "\<turnstile> A \<longrightarrow> B \<longrightarrow> A"
   apply (rule impR)
   apply (rule impR)
@@ -188,5 +208,18 @@ lemma A2: "\<turnstile> (A \<longrightarrow> (B \<longrightarrow> C)) \<longrigh
       done
     done
 done
+
+lemma ExcludedMiddle_cut: "\<turnstile> A \<or> \<not> A"
+  apply (rule_tac P="A" in cut)
+  subgoal
+    apply (rule disjR)
+    apply (rule notR)
+    apply (rule basic)
+    done
+  subgoal
+    apply (rule disjR)
+    apply (rule basic)
+    done
+  done
 
 end

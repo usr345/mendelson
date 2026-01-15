@@ -8,7 +8,7 @@ endif
 
 COQC := $(COQC) -R . Mendelson
 
-all: Meta.vo
+all: Meta.vo K4_excersizes.vo
 
 FSignature.vo : FSignature.v
 	$(COQC) FSignature.v
