@@ -12,6 +12,7 @@ Import K4.F1.
 *)
 
 Module K4_excersizes.
+  Open Scope K4_scope.
   Theorem T0_trans {atom : Type} : forall A B C : @formula atom, [$A -> B$; $B -> C$] |= $A -> C$.
   Proof.
     intros A B C.
@@ -52,7 +53,7 @@ Module K4_excersizes.
     exact H.
   Qed.
 
-  Theorem T1_imply_self {atom : Type} : forall A : @formula atom, valid $A -> A$.
+  Theorem T1_imply_self {atom : Type} : forall A : @formula atom, |= $A -> A$.
   Proof.
     intro A.
     unfold valid.
@@ -62,7 +63,7 @@ Module K4_excersizes.
     exact H.
   Qed.
 
-  Theorem T2_A_nnA {atom : Type} : forall A : @formula atom, valid $A <-> ~ ~A$.
+  Theorem T2_A_nnA {atom : Type} : forall A : @formula atom, |= $A <-> ~ ~A$.
   Proof.
     intro A.
     unfold valid.
@@ -76,7 +77,7 @@ Module K4_excersizes.
       exact H.
   Qed.
 
-  Theorem T3_conj1 {atom : Type} : forall A B : @formula atom, valid $(A /\ B) -> A$.
+  Theorem T3_conj1 {atom : Type} : forall A B : @formula atom, |= $(A /\ B) -> A$.
   Proof.
     intros A B.
     unfold valid.
@@ -87,7 +88,7 @@ Module K4_excersizes.
     exact H.
   Qed.
 
-  Theorem T4_disj1 {atom : Type} : forall A B : @formula atom, valid $A -> (A \/ B)$.
+  Theorem T4_disj1 {atom : Type} : forall A B : @formula atom, |= $A -> (A \/ B)$.
   Proof.
     intros A B.
     unfold valid.
@@ -98,7 +99,7 @@ Module K4_excersizes.
     exact H.
   Qed.
 
-  Theorem T5_distr {atom : Type} : forall A B C : @formula atom, valid $(A /\ (B \/ C)) <-> ((A /\ B) \/ (A /\ C))$.
+  Theorem T5_distr {atom : Type} : forall A B C : @formula atom, |= $(A /\ (B \/ C)) <-> ((A /\ B) \/ (A /\ C))$.
   Proof.
     intros A B C.
     unfold valid.
@@ -223,7 +224,7 @@ Module K4_excersizes.
     exact H_AC.
   Qed.
 
-  Theorem T9 {atom : Type} : forall A B C : @formula atom, valid $((A -> B) /\ (A -> C)) -> (A -> (B /\ C))$.
+  Theorem T9 {atom : Type} : forall A B C : @formula atom, |= $((A -> B) /\ (A -> C)) -> (A -> (B /\ C))$.
   Proof.
     intros A B C.
     unfold valid.
@@ -237,7 +238,7 @@ Module K4_excersizes.
     exact (conj H_AB H_AC).
   Qed.
 
-  Theorem T10 {atom : Type} : forall A B C : @formula atom, valid $((A -> C) /\ (B -> C)) -> ((A \/ B) -> C)$.
+  Theorem T10 {atom : Type} : forall A B C : @formula atom, |= $((A -> C) /\ (B -> C)) -> ((A \/ B) -> C)$.
   Proof.
     intros A B C.
     unfold valid.
@@ -368,9 +369,9 @@ Module K4_excersizes.
       ).
 
     pose (M1 := {|
-                worlds := worlds1;
-                worlds_inh := worlds1_inhabited;
-                ρ := ρ1;
+                 worlds := worlds1;
+                 worlds_inh := worlds1_inhabited;
+                 ρ := ρ1;
                |}).
 
     specialize (H M1 Γ).

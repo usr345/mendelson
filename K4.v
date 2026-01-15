@@ -61,7 +61,9 @@ Module K4.
 
   Definition valid {atom : Type} (f : formula) : Prop := forall (M : Model atom) (w : worlds M), FormulaTruth M f w true.
 
-  #[global] Notation "|= f" := (valid f) (at level 90).
+  Declare Scope K4_scope.
+  Delimit Scope K4_scope with K4.
+  Notation "|= f" := (valid f) (at level 90) : K4_scope.
 
   Definition holds_all {atom : Type} (M : Model atom) (w : worlds M)
     (Γ : list formula) : Prop := forall f : @formula atom, In f Γ -> FormulaTruth M f w true.
@@ -71,7 +73,7 @@ Module K4.
     forall (M : Model atom) (w : worlds M),
       holds_all M w Γ -> FormulaTruth M f w true.
 
-  #[global] Notation "Γ |= f" := (consequence Γ f) (at level 90).
+  Notation "Γ |= f" := (consequence Γ f) (at level 90) : K4_scope.
 
   Lemma valid_as_consequence {atom : Type} (f : @formula atom) :
     valid f <-> consequence [] f.
@@ -144,6 +146,24 @@ Module N4.
           ρ_imp M f g w b
       end
     end.
+
+  Definition valid {atom : Type} (f : formula) : Prop := forall (M : Model atom) (w : worlds M), FormulaTruth M f w true.
+
+  Declare Scope N4_scope.
+  Delimit Scope N4_scope with N4.
+
+  Notation "|= f" := (valid f) (at level 90).
+
+  Definition holds_all {atom : Type} (M : Model atom) (w : worlds M)
+    (Γ : list formula) : Prop := forall f : @formula atom, In f Γ -> FormulaTruth M f w true.
+
+  Definition consequence {atom : Type} (Γ : list (@formula atom))
+    (f : @formula atom) : Prop :=
+    forall (M : Model atom) (w : worlds M),
+      holds_all M w Γ -> FormulaTruth M f w true.
+
+  #[global] Notation "Γ |= f" := (consequence Γ f) (at level 90).
+
 
   Definition K4_to_N4
     {atom : Type}
