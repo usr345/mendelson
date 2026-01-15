@@ -317,4 +317,24 @@ lemma QB14 : "\<forall> x . P(x) \<longrightarrow> Q(x), \<exists> x . \<not> Q(
    apply (rule basic)
   apply (rule basic)
   done
+
+lemma QB28 : "(\<exists> x . P(x)) \<and> (\<forall> y . P(y) \<longrightarrow> Q(y)) \<turnstile> \<exists> z . Q(z)"
+  apply (rule conjL)
+  apply (rule exL)
+  apply (rename_tac a)
+  apply (rule_tac x="a" in exR)
+  apply (rule_tac x="a" in allL)
+  apply (rule impL)
+   apply (rule basic)
+  apply (rule basic)
+  done
+
+lemma QB29 : "\<forall> x . P(a) \<longrightarrow> Q(x), P(a) \<turnstile> \<forall> x . Q(x)"
+  apply (rule allR)
+  apply (rule_tac x="x" in allL)
+  apply (rule impL)
+   apply (rule basic)
+  apply (rule basic)
+  done
+
 end
