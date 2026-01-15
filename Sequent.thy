@@ -280,4 +280,23 @@ lemma B20_2 : "a \<longrightarrow> b \<longrightarrow> c \<turnstile> a \<and> b
     apply (rule basic)
   apply (rule basic)
   done
+
+lemma QB1 : "P(a) \<turnstile> \<exists> x . P(x)"
+  apply (rule_tac x="a" in exR)
+  apply (rule basic)
+  done
+
+lemma QB2 : "\<forall> x . P(x) \<turnstile> \<forall> y . P(y)"
+  apply (rule allR)
+  apply (rule_tac x="x" in allL)
+  apply (rule basic)
+  done
+
+lemma QB7 : "\<exists> x . P(x) \<turnstile> \<exists> x . (P(x) \<or> Q(x))"
+  apply (rule exL)
+  apply (rule_tac x="x" in exR)
+  apply (rule disjR)
+  apply (rule basic)
+  done
+
 end
