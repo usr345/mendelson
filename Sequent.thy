@@ -222,4 +222,62 @@ lemma ExcludedMiddle_cut: "\<turnstile> A \<or> \<not> A"
     done
   done
 
+(* 1.0.2 *)
+lemma B2_1 : "\<not> a \<longrightarrow> \<not> b \<turnstile> b \<longrightarrow> a"
+  apply (rule impR)
+  apply (rule impL)
+  subgoal
+    apply (rule exchR)
+    apply (rule notR)
+    apply (rule thinL)
+    apply (rule basic)
+    done
+  subgoal
+    apply (rule notL)
+    apply (rule thinR)
+    apply (rule basic)
+    done
+  done
+
+lemma B2_2 : "b \<longrightarrow> a \<turnstile> \<not> a \<longrightarrow> \<not> b"
+  apply (rule impR)
+  apply (rule impL)
+  subgoal
+    apply (rule notR)
+    apply (rule thinL)
+    apply (rule basic)
+    done
+  subgoal
+    apply (rule exchL)
+    apply (rule notL)
+    apply (rule thinR)
+    apply (rule basic)
+    done
+  done
+
+lemma B20_1 : "a \<and> b \<longrightarrow> c \<turnstile> a \<longrightarrow> b \<longrightarrow> c"
+  apply (rule impR)
+  apply (rule impR)
+  apply (rule impL)
+  subgoal
+    apply (rule thinR)
+    apply (rule conjR)
+     apply (rule basic)
+    apply (rule basic)
+    done
+  subgoal
+    apply (rule basic)
+    done
+  done
+
+lemma B20_2 : "a \<longrightarrow> b \<longrightarrow> c \<turnstile> a \<and> b \<longrightarrow> c"
+  apply (rule impR)
+  apply (rule exchL)
+  apply (rule conjL)
+  apply (rule impL)
+    apply (rule basic)
+  apply (rule impL)
+    apply (rule basic)
+  apply (rule basic)
+  done
 end
