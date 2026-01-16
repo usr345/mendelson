@@ -155,7 +155,7 @@ Module N4.
   Notation "|= f" := (valid f) (at level 90).
 
   Definition holds_all {atom : Type} (M : Model atom) (w : worlds M)
-    (Γ : list formula) : Prop := forall f : @formula atom, In f Γ -> FormulaTruth M f w true.
+    (Γ : list formula) : Prop := (is_normal M w = true) -> forall f : @formula atom, In f Γ -> FormulaTruth M f w true.
 
   Definition consequence {atom : Type} (Γ : list (@formula atom))
     (f : @formula atom) : Prop :=
