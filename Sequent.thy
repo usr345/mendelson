@@ -337,4 +337,24 @@ lemma QB29 : "\<forall> x . P(a) \<longrightarrow> Q(x), P(a) \<turnstile> \<for
   apply (rule basic)
   done
 
+lemma QB30 : "P(a) \<longrightarrow> (\<forall> x .  Q(x)) \<turnstile> \<forall> x . P(a) \<longrightarrow> Q(x)"
+  apply (rule allR)
+  apply (rule impR)
+  apply (rule impL)
+   apply (rule basic)
+  apply (rule_tac x="x" in allL)
+  apply (rule basic)
+  done
+
+lemma QB31 : "\<not> (\<exists> x . S(x)) \<turnstile> \<not> (\<exists> x . S(x) \<and> P(x))"
+  apply (rule notL)
+  apply (rule notR)
+  apply (rule exL)
+  apply (rule conjL)
+  apply (rule_tac x="x" in exR)
+  apply (rule basic)
+  done
+
+
+lemma QB32 : "\<forall> x . P(a) \<longrightarrow> Q(x), P(a) \<turnstile> \<forall> x . Q(x)"
 end
