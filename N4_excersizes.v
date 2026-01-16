@@ -22,43 +22,17 @@ Module N4_excersizes.
     apply (inhabits Γ).
   Qed.
 
-  Theorem T1_imply_self_neg {atom : Type} : ~ forall A : @formula atom3, |= $A -> A$.
+  Theorem T1_imply_self {atom : Type} : forall A : @formula atom3, |= $A -> A$.
   Proof.
-    unfold not.
-    intro H.
-    specialize (H (f_atom P)).
-
-    (* Конструируем контрмодель *)
-    pose (
-        ρ1 :=
-          fun (a : atom3) (w: worlds1) (val : bool) =>
-            match w, a, val with
-            | _, _, _ => False
-            end
-      ).
-
-    pose (M1 := {|
-                 worlds := worlds1;
-                 worlds_inh := worlds1_inhabited;
-                 ρ := ρ1;
-                 is_normal := fun (w : worlds1) =>
-                                match w with
-                                | _ => false
-                                end;
-                 ρ_imp := fun (f1 f2 : @formula atom3) (w: worlds1) (val : bool) =>
-                            match f1, f2, w, val with
-                            | _, _, _, _ => False
-                            end
-               |}).
-
-    unfold valid in H.
-    specialize (H M1 Γ).
-    unfold implication in H.
-    cbn [FormulaTruth] in H.
-    unfold M1 at 1 in H.
-    cbn [is_normal] in H.
-    cbn [ρ_imp] in H.
-    exact H.
+    intro A.
+    unfold valid.
+    intros M w Hnormal.
+    hnf.
+    destruct (is_normal M w) eqn:Heq.
+    - intros w' H1.
+      exact H1.
+    - discriminate Hnormal.
   Qed.
+
 
 End N4_excersizes.

@@ -147,7 +147,7 @@ Module N4.
       end
     end.
 
-  Definition valid {atom : Type} (f : formula) : Prop := forall (M : Model atom) (w : worlds M), FormulaTruth M f w true.
+  Definition valid {atom : Type} (f : formula) : Prop := forall (M : Model atom) (w : worlds M), (is_normal M w = true) -> FormulaTruth M f w true.
 
   Declare Scope N4_scope.
   Delimit Scope N4_scope with N4.
@@ -160,7 +160,7 @@ Module N4.
   Definition consequence {atom : Type} (Γ : list (@formula atom))
     (f : @formula atom) : Prop :=
     forall (M : Model atom) (w : worlds M),
-      holds_all M w Γ -> FormulaTruth M f w true.
+      (is_normal M w = true) -> holds_all M w Γ -> FormulaTruth M f w true.
 
   #[global] Notation "Γ |= f" := (consequence Γ f) (at level 90).
 
