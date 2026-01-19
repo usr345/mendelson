@@ -152,18 +152,17 @@ Module N4.
   Declare Scope N4_scope.
   Delimit Scope N4_scope with N4.
 
-  Notation "|= f" := (valid f) (at level 90).
+  Notation "|= f" := (valid f) (at level 90) : N4_scope.
 
   Definition holds_all {atom : Type} (M : Model atom) (w : worlds M)
-    (Γ : list formula) : Prop := (is_normal M w = true) -> forall f : @formula atom, In f Γ -> FormulaTruth M f w true.
+    (Γ : list formula) : Prop := forall f : @formula atom, In f Γ -> FormulaTruth M f w true.
 
   Definition consequence {atom : Type} (Γ : list (@formula atom))
     (f : @formula atom) : Prop :=
     forall (M : Model atom) (w : worlds M),
       (is_normal M w = true) -> holds_all M w Γ -> FormulaTruth M f w true.
 
-  #[global] Notation "Γ |= f" := (consequence Γ f) (at level 90).
-
+  #[global] Notation "Γ |= f" := (consequence Γ f) (at level 90) : N4_scope.
 
   Definition K4_to_N4
     {atom : Type}
@@ -199,14 +198,14 @@ Proof.
     cbn [ρ] in H.
     exact H.
   (* not -> *)
-  - cbn [K4.FormulaTruth].
-    cbn [FormulaTruth] in H.
+  - cbn [K4.FormulaTruth] in H.
+    cbn [N4.FormulaTruth].
     specialize (IHf w (negb b)).
     apply IHf.
     exact H.
   (* not <- *)
-  - cbn [FormulaTruth] in H.
-    cbn [K4.FormulaTruth].
+  - cbn [K4.FormulaTruth].
+    cbn [N4.FormulaTruth] in H.
     specialize (IHf w (negb b)).
     apply IHf.
     exact H.
@@ -227,7 +226,7 @@ Proof.
       * rewrite IHf2 in H.
          right.
          exact H.
-  (* conj -> *)
+  (* conj <- *)
   - cbn [FormulaTruth] in H.
     cbn [K4.FormulaTruth].
     specialize (IHf1 w b).
@@ -281,7 +280,7 @@ Proof.
   (* impl -> *)
   - cbn [FormulaTruth].
     cbn [K4.FormulaTruth] in H.
-    destruct (is_normal (K4_to_N4 M)) eqn:HNormal.
+    destruct (is_normal (K4_to_N4 M) w) eqn:HNormal.
     + destruct b.
       * intros w' H1.
         unfold K4_to_N4 in w'.

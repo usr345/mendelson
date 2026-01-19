@@ -17,6 +17,8 @@ my %table = (
     '\<exists>' => '∃',
     '\<forall>' => '∀',
 );
+
+my $i = 1;
 while (my $line = <$fh>)
 {
     if ($line =~ /(lemma.*?)"(.*)"/)
@@ -27,7 +29,8 @@ while (my $line = <$fh>)
             $formula =~ s/\Q$key\E/$value/g;
         }
 
-        print qq{$1"$formula"\n};
+        print qq{$i $1"$formula"\n};
+		$i++;
     }
 }
 close($fh);

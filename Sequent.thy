@@ -23,6 +23,12 @@ lemma double_neg : "A \<turnstile> \<not>\<not> A"
   apply (rule basic)
   done
 
+lemma double_neg' : "\<not>\<not> A \<turnstile> A"
+  apply (rule notL)
+  apply (rule notR)
+  apply (rule basic)
+  done
+
 lemma ExcludedMiddle: "\<turnstile> A \<or> \<not>A"
   apply (rule disjR)
   apply (rule notR)
@@ -299,7 +305,7 @@ lemma QB7 : "\<exists> x . P(x) \<turnstile> \<exists> x . (P(x) \<or> Q(x))"
   apply (rule basic)
   done
 
-lemma QB13 : "\<exists> x . \<forall> y . R(x, y) \<turnstile> \<forall> y . \<exists> x . R(x, y)"
+lemma My13 : "\<exists> x . \<forall> y . R(x, y) \<turnstile> \<forall> y . \<exists> x . R(x, y)"
   apply (rule exL)
   apply (rule allR)
   apply (rule_tac x="x" in exR)
@@ -307,6 +313,16 @@ lemma QB13 : "\<exists> x . \<forall> y . R(x, y) \<turnstile> \<forall> y . \<e
   apply (rule basic)
   done
 
+lemma B13 : "\<forall> x . \<forall> y . R(x, y) \<turnstile> \<forall> y . \<forall> x . R(x, y)"
+  apply (rule allR)
+  apply (rename_tac y)
+  apply (rule allR)
+  apply (rename_tac x)
+  apply (rule_tac x="x" in allL)
+  apply (rule_tac x="y" in allL)
+  apply (rule basic)
+  done
+  
 lemma QB14 : "\<forall> x . P(x) \<longrightarrow> Q(x), \<exists> x . \<not> Q(x) \<turnstile> \<exists> x . \<not> P(x)"
   apply (rule exL)
   apply (rule_tac x="x" in exR)
@@ -325,7 +341,9 @@ lemma QB28 : "(\<exists> x . P(x)) \<and> (\<forall> y . P(y) \<longrightarrow> 
   apply (rule_tac x="a" in exR)
   apply (rule_tac x="a" in allL)
   apply (rule impL)
-   apply (rule basic)
+  subgoal
+    apply (rule basic)
+    done
   apply (rule basic)
   done
 
@@ -361,10 +379,93 @@ lemma QB32 : "\<exists> x . S(x) \<turnstile> (\<forall> x . S(x) \<longrightarr
   apply (rule_tac x="x" in allL)
   apply (rule_tac x="x" in exR)
   apply (rule conjR)
-   apply (rule basic)
-  apply (rule impL)
-   apply (rule basic)
-  apply (rule basic)
+  subgoal
+    apply (rule exchL)
+    apply (rule thinL)
+    apply (rule exchL)
+    apply (rule thinL)
+    apply (rule exchR)
+    apply (rule thinR)
+    apply (rule basic)
+    done
+  subgoal
+    apply (rule impL)
+    subgoal
+      apply (rule thinR)
+      apply (rule thinR)
+      apply (rule exchL)
+      apply (rule thinL)
+      apply (rule basic)
+      done
+    subgoal
+      apply (rule thinL)
+      apply (rule exchL)
+      apply (rule thinL)
+      apply (rule exchR)
+      apply (rule thinR)
+      apply (rule basic)
+      done
+    done
   done
-    
+
+lemma QB33 : "\<exists> x . S(x) \<turnstile> (\<forall> x . S(x) \<longrightarrow> P(x)) \<longrightarrow> \<not> (\<forall> x . S(x) \<longrightarrow> \<not> P(x))"
+  apply (rule exL)
+  apply (rule impR)
+  apply (rule notR)
+  apply (rule exchL)
+  apply (rule_tac x="x" in allL)
+  apply (rule_tac x="x" in allL)
+  apply (rule impL)
+  subgoal
+    apply (rule basic)
+    done
+  subgoal
+    apply (rule impL)
+    subgoal
+      apply (rule basic)
+      done
+    subgoal
+      apply (rule notL)
+      apply (rule basic)
+      done
+    done
+  done
+
+lemma QB34 : "\<exists> x . S(x) \<turnstile> \<not> (\<exists> x . S(x) \<and> P(x)) \<longrightarrow> (\<exists> x . S(x) \<and> \<not> P(x))"
+  apply (rule exL)
+  apply (rule impR)
+  apply (rule notL)
+  apply (rule_tac x="x" in exR)
+  apply (rule_tac x="x" in exR)
+  apply (rule conjR)
+  subgoal
+    apply (rule basic)
+    done
+  subgoal
+    apply (rule conjR)
+    subgoal 
+      apply (rule basic)
+      done
+    subgoal
+      apply (rule notR)
+      apply (rule basic)
+      done
+    done
+  done
+
+lemma QM1 : "\<exists> x . A \<longrightarrow> B(x) \<turnstile> A \<longrightarrow> (\<exists> x . B(x))"
+  apply (rule exL)
+  apply (rule impR)
+  apply (rule_tac x="x" in exR)
+  apply (rule exchR)
+  apply (rule thinR)
+  apply (rule impL)
+  subgoal
+    apply (rule basic)
+    done
+  subgoal
+    apply (rule basic)
+    done
+  done
+
 end

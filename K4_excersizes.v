@@ -337,6 +337,28 @@ Module K4_excersizes.
     exact H_BC.
   Qed.
 
+  Theorem TA1 {atom : Type} : forall A B : @formula atom, |= $A -> (B -> B)$.
+  Proof.
+    intros A B.
+    unfold valid.
+    intros M w.
+    hnf.
+    intros w1 _.
+    apply T1_imply_self.
+  Qed.
+
+  Theorem TA2 {atom : Type} : forall A B : @formula atom, |= B -> |= $A -> B$.
+  Proof.
+    intros A B H.
+    unfold valid.
+    intros M w.
+    unfold valid in H.
+    hnf.
+    intros w' _.
+    specialize (H M w').
+    exact H.
+  Qed.
+
   Variant atom3 : Set := P | Q | R.
 
   Definition f (a: atom3) : @formula atom3 :=
@@ -582,7 +604,9 @@ Module K4_excersizes.
       change (FormulaTruth M1 (f_atom P) Γ true -> FormulaTruth M1 (f_atom Q) Γ true).
       cbn [FormulaTruth].
       intro H1.
-      exact H1.
+      cbn in H1.
+      cbn.
+      apply H1.
     }
 
     specialize (H H1).
