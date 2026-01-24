@@ -14,7 +14,7 @@ Module Formula1 <: TFormula.
   Definition negation {atom : Type} := @f_not atom.
   Definition conjunction {atom : Type} := @f_conj atom.
   Definition disjunction {atom : Type} := @f_disj atom.
-  Definition implication {atom : Type} (A B: @formula atom) := 
+  Definition implication {atom : Type} (A B: @formula atom) :=
     disjunction (negation A) B.
   Definition equivalence {atom : Type} (A B: @formula atom) : formula := conjunction (implication A B) (implication B A).
 End Formula1.
@@ -257,7 +257,7 @@ Module FDE_excersizes.
 
     unfold implication in H.
     unfold implication.
-    
+
     hnf in H.
     hnf.
     destruct H as [H | H].
@@ -369,24 +369,25 @@ End FDE_excersizes.
 
 Module Syntactic.
   Import Formula1.
-  Module F1:= Make_Formula(Formula1).
+  Module F1 := Make_Formula(Formula1).
+  Import F1.
 
   Reserved Notation "A ~> B" (at level 98).
   Inductive entails {atom : Set} : @formula atom -> @formula atom -> Type :=
-    | axiom1 : forall A B , (f_conj A B) ~> A
-    | axiom2 : forall A B , (f_conj A B) ~> B
-    | axiom3 : forall A B , A ~> (f_disj A B)
-    | axiom4 : forall A B , B ~> (f_disj A B)
+    | axiom1 : forall A B , $A /\ B$ ~> A
+    | axiom2 : forall A B , $A /\ B$ ~> B
+    | axiom3 : forall A B , A ~> $A \/ B$
+    | axiom4 : forall A B , B ~> $A \/ B$
     | axiom5 : forall A B C, (f_conj A (f_disj B C)) ~> (f_disj (f_conj A B) C)
-    | axiom6 : forall A, A ~> (f_not (f_not A))
-    | axiom7 : forall A, (f_not (f_not A)) ~> A
-    | trans : forall {A B C}, entails A B -> entails B C -> entails A C (* композиция / cut *)
-    | conj_intro : forall {A B C}, entails A B -> entails A C -> entails A (f_conj B C) (* из A ⊢ B и A ⊢ C выводим A ⊢ B ∧ C *) 
-    | disj_elim : forall {A B C}, entails A C -> entails B C -> entails (f_disj A B) C (* из A ⊢ C и B ⊢ C выводим A ∨ B ⊢ C *)
-    | contrapos : forall {A B}, entails A B -> entails (f_not B) (f_not A)
+    | axiom6 : forall A, A ~> $~ ~A$
+    | axiom7 : forall A, $~ ~A$ ~> A
+    | trans : forall {A B C}, A ~> B -> B ~> C -> A ~> C
+    | conj_intro : forall {A B C}, A ~> B -> A ~> C -> A ~> $B /\ C$
+    | disj_elim : forall {A B C}, A ~> C -> B ~> C -> $A \/ B$ ~> C
+    | contrapos : forall {A B}, A ~> B -> $~ B$ ~> $~ A$
   where "A ~> B" := (entails A B).
 
-Lemma imply_self {atom : Set} (Γ : @formula atom -> Prop) (A : @formula atom) : 
+Lemma imply_self {atom : Set} (Γ : @formula atom -> Prop) (A : @formula atom) :
   A ~> A.
 Proof.
   specialize (axiom6 A) as H1.
@@ -395,12 +396,11 @@ Proof.
   exact H3.
 Qed.
 
-Compute (1 + 2):nat.
-Lemma DeMorganConj {atom : Set} (Γ : @formula atom -> Prop) (A B : @formula atom) : 
+Lemma DeMorganConj {atom : Set} (Γ : @formula atom -> Prop) (A B : @formula atom) :
   (f_not (f_conj A B)) ~> (f_disj (f_not A) (f_not B)).
 Proof.
   assert (H1 : f_not A ~> f_not (f_conj A B)).
-  { 
+  {
     apply contrapos.
     apply axiom1.
   }
@@ -417,7 +417,7 @@ Proof.
   pose proof (trans H5 H4) as H6.
 
   eapply trans.
-  - 
+  -
  with (B := (f_not (f_not (f_disj (f_not A) (f_not B))))).
 
   (* теперь H_disj_to_notC : X ~> f_not C *)
