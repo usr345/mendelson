@@ -1,4 +1,3 @@
-
 From Mendelson Require Import FSignature.
 From Mendelson Require Import Sets.
 Require Import Lists.List.
@@ -245,23 +244,23 @@ Module FDE_excersizes.
 
   Lemma conj_dist : forall P Q R : Prop, P /\ (Q \/ R) <-> (P /\ Q) \/ (P /\ R).
   Proof.
-  intros P Q R. 
+  intros P Q R.
   split.
   -
     intros [HP [HQ | HR]].
-    + left. 
+    + left.
       exact (conj HP HQ).
-    + right. 
+    + right.
       exact (conj HP HR).
   -
     intros [[HP HQ] | [HP HR]].
-    + split. 
-      * apply HP. 
-      * left. 
+    + split.
+      * apply HP.
+      * left.
         apply HQ.
-    + split. 
-      * apply HP. 
-      * right. 
+    + split.
+      * apply HP.
+      * right.
         apply HR.
   Qed.
 
@@ -325,11 +324,11 @@ Module FDE_excersizes.
 
   Coercion f: atom3 >-> formula.
 
-  Theorem T11_neg : ~ forall P Q : @formula atom3, [P; $~(P /\ ~Q)$] |= Q.
+  Theorem T11_neg : ~ forall (atom : Type) (P Q : @formula atom), [P; $~(P /\ ~Q)$] |= Q.
   Proof.
     unfold not.
     intro H.
-    specialize (H P Q).
+    specialize (H atom3 P Q).
     unfold consequence in H.
     (* Конструируем контрмодель *)
     pose (
@@ -641,7 +640,7 @@ Module Meta.
     exact H.
   Qed.
 
-  Proposition trans_tautology {atom : Set} (A B C: @formula atom) : 
+  Proposition trans_tautology {atom : Set} (A B C: @formula atom) :
     [A] |= B -> [B] |= C -> [A] |= C.
   Proof.
     intros H1 H2.
@@ -656,7 +655,7 @@ Module Meta.
 
     unfold consequence in H1.
     specialize (H1 M).
-    
+
     assert (H4 : holds_all M [A]).
     {
       unfold holds_all.
@@ -688,7 +687,7 @@ Module Meta.
     exact H2.
   Qed.
 
-  Proposition conj_intro_tautology {atom : Set} (A B C: @formula atom) : 
+  Proposition conj_intro_tautology {atom : Set} (A B C: @formula atom) :
     [A] |= B -> [A] |= C -> [A] |= $B /\ C$.
   Proof.
     intros H1 H2.
@@ -724,7 +723,7 @@ Module Meta.
     exact (conj H1 H2).
   Qed.
 
-  Proposition case_analysis_tautology {atom : Set} (A B C: @formula atom) : 
+  Proposition case_analysis_tautology {atom : Set} (A B C: @formula atom) :
     [A] |= C -> [B] |= C -> [$A \/ B$] |= C.
   Proof.
     intros H1 H2.
@@ -772,15 +771,15 @@ Module Meta.
   Qed.
 
 (*
-  Proposition neg_contrapos_tautology {atom : Set} (A B: @formula atom) : 
+  Proposition neg_contrapos_tautology {atom : Set} (A B: @formula atom) :
     ([A] |= B -> [$~B$] |= $~A$) -> False.
   Proof.
     intro H.
     unfold consequence in H.
-    
+
 *)
 
-  Proposition contrapos_tautology {atom : Set} (A B: @formula atom) : 
+  Proposition contrapos_tautology {atom : Set} (A B: @formula atom) :
     [A] |= B -> [$~B$] |= $~A$.
   Proof.
     intro H1.

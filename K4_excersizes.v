@@ -373,11 +373,11 @@ Module K4_excersizes.
     apply (inhabits Γ).
   Qed.
 
-  Theorem T1_neg : ~ forall P Q : @formula atom3, |= $P /\ (~ P \/ Q) -> Q$.
+  Theorem T1_neg : ~ forall (atom : Type) (P Q : @formula atom), |= $P /\ (~ P \/ Q) -> Q$.
   Proof.
     unfold not.
     intro H.
-    specialize (H (f_atom P) (f_atom Q)).
+    specialize (H atom3 (f_atom P) (f_atom Q)).
     change (|= $P /\ (~ P \/ Q) -> Q$) in H.
     unfold valid in H.
     (* Конструируем контрмодель *)
@@ -421,11 +421,11 @@ Module K4_excersizes.
     exact H.
   Qed.
 
-  Theorem T2_neg : ~ forall P Q R : @formula atom3, [$(P /\ Q) -> R$] |= $P -> (~Q \/ R)$.
+  Theorem T2_neg : ~ forall (atom : Type) (P Q R : @formula atom), [$(P /\ Q) -> R$] |= $P -> (~Q \/ R)$.
   Proof.
     unfold not.
     intro H.
-    specialize (H (f_atom P) (f_atom Q) (f_atom R)).
+    specialize (H atom3 (f_atom P) (f_atom Q) (f_atom R)).
     change ([$(P /\ Q) -> R$] |= $P -> (~Q \/ R)$) in H.
     unfold consequence in H.
     (* Конструируем контрмодель *)
@@ -484,11 +484,11 @@ Module K4_excersizes.
       exact H.
   Qed.
 
-  Theorem T3_neg : ~ forall P Q : @formula atom3, |= $P -> (Q \/ ~ Q)$.
+  Theorem T3_neg : ~ forall (atom : Type) (P Q : @formula atom3), |= $P -> (Q \/ ~ Q)$.
   Proof.
     unfold not.
     intro H.
-    specialize (H (f_atom P) (f_atom Q)).
+    specialize (H atom3 (f_atom P) (f_atom Q)).
     change (|= $P -> (Q \/ ~ Q)$) in H.
     unfold valid in H.
     (* Конструируем контрмодель *)
@@ -525,11 +525,11 @@ Module K4_excersizes.
       exact H.
   Qed.
 
-  Theorem T4_neg : ~ forall P Q : @formula atom3, |= $(P /\ ~P) -> Q$.
+  Theorem T4_neg : ~ forall (atom : Type) (P Q : @formula atom), |= $(P /\ ~P) -> Q$.
   Proof.
     unfold not.
     intro H.
-    specialize (H (f_atom P) (f_atom Q)).
+    specialize (H atom3 (f_atom P) (f_atom Q)).
     change (|= $(P /\ ~P) -> Q$) in H.
     unfold valid in H.
     (* Конструируем контрмодель *)
@@ -570,11 +570,11 @@ Module K4_excersizes.
     exact H.
   Qed.
 
-  Theorem T5_neg : ~ forall P Q : @formula atom3, |= $(P -> Q) -> (~Q -> ~P)$.
+  Theorem T5_neg : ~ forall (atom : Type) (P Q : @formula atom), |= $(P -> Q) -> (~Q -> ~P)$.
   Proof.
     unfold not.
     intro H.
-    specialize (H (f_atom P) (f_atom Q)).
+    specialize (H atom3 (f_atom P) (f_atom Q)).
     change (|= $(P -> Q) -> (~Q -> ~P)$) in H.
     unfold valid in H.
     (* Конструируем контрмодель *)
