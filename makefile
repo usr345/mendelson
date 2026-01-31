@@ -37,10 +37,16 @@ Meta.vo : Meta.v Syntactic.vo Semantic.vo EqDec.vo
 L1_Hilbert_Accerman.vo : L1_Hilbert_Accerman.v Sets.vo FSignature.vo
 	$(COQC) L1_Hilbert_Accerman.v
 
+FDE.vo : FDE.v FSignature.vo Sets.vo
+	$(COQC) FDE.v
+
+FDE_excersizes.vo : FDE_excersizes.v FDE.vo
+	$(COQC) FDE_excersizes.v
+
 K4.vo : K4.v FSignature.vo MSets.vo
 	$(COQC) K4.v
 
-K4_excersizes.vo : K4_excersizes.v K4.vo FSignature.vo MSets.vo
+K4_excersizes.vo : K4_excersizes.v K4.vo
 	$(COQC) K4_excersizes.v
 
 clean:
