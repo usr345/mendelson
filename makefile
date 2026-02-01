@@ -8,7 +8,7 @@ endif
 
 COQC := $(COQC) -R . Mendelson
 
-all: Meta.vo K4_excersizes.vo
+all: Meta.vo FDE_excercises.vo K4_excercises.vo
 
 FSignature.vo : FSignature.v
 	$(COQC) FSignature.v
@@ -40,14 +40,14 @@ L1_Hilbert_Accerman.vo : L1_Hilbert_Accerman.v Sets.vo FSignature.vo
 FDE.vo : FDE.v FSignature.vo Sets.vo
 	$(COQC) FDE.v
 
-FDE_excersizes.vo : FDE_excersizes.v FDE.vo
-	$(COQC) FDE_excersizes.v
+FDE_excercises.vo : FDE_excercises.v FDE.vo
+	$(COQC) FDE_excercises.v
 
 K4.vo : K4.v FSignature.vo MSets.vo
 	$(COQC) K4.v
 
-K4_excersizes.vo : K4_excersizes.v K4.vo
-	$(COQC) K4_excersizes.v
+K4_excercises.vo : K4_excercises.v K4.vo
+	$(COQC) K4_excercises.v
 
 clean:
 	rm -f *.vo *.vok *.vos *.glob

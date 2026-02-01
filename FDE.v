@@ -18,9 +18,9 @@ Module Formula1 <: TFormula.
     disjunction (negation A) B.
   Definition equivalence {atom : Type} (A B: @formula atom) : formula := conjunction (implication A B) (implication B A).
 End Formula1.
+Import Formula1.
 
 Module RelSemantic.
-  Import Formula1.
   Module F1:= Make_Formula(Formula1).
 
   (*
@@ -34,7 +34,7 @@ Module RelSemantic.
   Fixpoint eval {atom : Type} (M: Model atom) (f : formula) (b : bool) : bool :=
     match f with
     | f_atom A => ρ atom M A b
-    | f_not f' => negb (eval M f' b)
+    | f_not f' => eval M f' (negb b)
     | f_conj f g =>
         match b with
         | true => (eval M f true) && (eval M g true)
@@ -81,7 +81,6 @@ Module RelSemantic.
 End RelSemantic.
 
 Module StarSemantic.
-  Import Formula1.
   Module F1:= Make_Formula(Formula1).
   Import F1.
 
@@ -134,55 +133,359 @@ Module StarSemantic.
       exact H.
   Qed.
 
-  Definition convert1 {atom : Set} (M : @StarSemantic.Model atom) : RelSemantic.Model atom :=
+  Definition convert1 {atom : Type} (M : @StarSemantic.Model atom) (w : M.(worlds)) : RelSemantic.Model atom :=
       let ρ1 :=
             fun (a : atom) (val : bool) =>
               match val with
-              | true => (M.(v) a M.(w0))
-              | false => negb (M.(v) a (M.(star) M.(w0)))
+              | true => (M.(v) a w)
+              | false => negb (M.(v) a (M.(star) w))
               end
       in
         RelSemantic.Build_Model atom ρ1.
 
-  (*
-  Definition convert2 {atom : Set} (M : Semantic.Model atom) : @StarSemantic.Model atom :=
-      let ρ1 :=
-            fun (a : atom) (val : bool) =>
-              match val with
-              | true => (M.(v) a M.(w0)) = true
-              | false => (M.(v) a (M.(star) M.(w0))) = false
+  Variant TrueWorlds : Type := TrueWorld | TrueWorld'.
+
+  Definition true_star (w : TrueWorlds) : TrueWorlds :=
+  match w with
+  | TrueWorld => TrueWorld'
+  | TrueWorld' => TrueWorld
+  end.
+
+  Lemma true_star_involutive : forall w : TrueWorlds, true_star (true_star w) = w.
+  Proof.
+    intro w.
+    destruct w.
+    - simpl.
+      reflexivity.
+    - simpl.
+      reflexivity.
+  Qed.
+
+  Definition convert2 {atom : Type} (M : RelSemantic.Model atom) : @StarSemantic.Model atom :=
+      let v :=
+            fun (a : atom) (w : TrueWorlds) =>
+              match w with
+              | TrueWorld => RelSemantic.ρ atom M a true
+              | TrueWorld' => negb (RelSemantic.ρ atom M a false)
               end
       in
-        Semantic.Build_Model atom ρ1.
+        StarSemantic.Build_Model atom TrueWorlds TrueWorld true_star true_star_involutive v.
+
+  Variant atom3 : Set := P | Q | R.
+
+  Definition f (a: atom3) : @formula atom3 :=
+    f_atom a.
+
+  Coercion f: atom3 >-> formula.
+
+  Definition ρ1 (a : atom3) (val : bool) :=
+    match a, val with
+    | P, _ => true
+    | _, _ => false
+    end.
+
+  Definition M1 := RelSemantic.Build_Model atom3 ρ1.
+
+  Example Test1 : (v (convert2 M1) P TrueWorld) = true.
+  Proof.
+    simpl.
+    reflexivity.
+  Qed.
+
+  Example Test2 : (v (convert2 M1) P TrueWorld') = false.
+  Proof.
+    simpl.
+    reflexivity.
+  Qed.
+
+  Example Test3 : forall A : atom3, ~(A = P) -> (v (convert2 M1) A TrueWorld) = false.
+  Proof.
+    intros A H.
+    destruct A.
+    - contradiction.
+    - simpl.
+      reflexivity.
+    - simpl.
+      reflexivity.
+  Qed.
+
+  Example Test4 : forall A : atom3, ~(A = P) -> (v (convert2 M1) A TrueWorld') = true.
+  Proof.
+    intros A H.
+    destruct A.
+    - contradiction.
+    - simpl.
+      reflexivity.
+    - simpl.
+      reflexivity.
+  Qed.
+
+  Example Test5 : (RelSemantic.ρ atom3 (convert1 (convert2 M1) TrueWorld) P true) = true.
+  Proof.
+    simpl.
+    reflexivity.
+  Qed.
+
+  Example Test6 : (RelSemantic.ρ atom3 (convert1 (convert2 M1) TrueWorld) P false) = true.
+  Proof.
+    simpl.
+    reflexivity.
+  Qed.
+
+  Example Test7 : forall (A : atom3) (b : bool), ~(A = P) -> (RelSemantic.ρ atom3 (convert1 (convert2 M1) TrueWorld) A b) = false.
+  Proof.
+    intros A b H.
+    destruct A.
+    - contradiction.
+    - destruct b ; simpl ; reflexivity.
+    - destruct b ; simpl ; reflexivity.
+  Qed.
+
+  Lemma ρ_eq {atom : Type} (M : RelSemantic.Model atom) :
+    let
+      StarM := (convert2 M)
+    in
+      forall (A : atom) (b : bool),
+      RelSemantic.ρ atom M A b = RelSemantic.ρ atom (convert1 StarM TrueWorld) A b.
+  Proof.
+    intros StarM A b.
+    simpl.
+    rewrite Bool.negb_involutive.
+    destruct b ; reflexivity.
+  Qed.
+
+  Lemma eval_eq {atom : Type} (M1 M2 : RelSemantic.Model atom)
+  (f : formula) (b : bool)
+  (Hρ : forall A b, RelSemantic.ρ atom M1 A b =
+                    RelSemantic.ρ atom M2 A b) :
+  RelSemantic.eval M1 f b = RelSemantic.eval M2 f b.
+Proof.
+  induction f; simpl; try rewrite IHf1; try rewrite IHf2; auto.
+Qed.
 
 
-  Record Model (atom : Type) :=
-  {
-    ρ : atom -> bool -> Prop;
-  }.
+  Lemma eval_invariant1 {atom : Type} (f : @formula atom) (M : RelSemantic.Model atom) :
+    (RelSemantic.eval M f true = true) -> StarSemantic.eval (convert2 M) f TrueWorld = true
+  with eval_invariant2 {atom : Type} (f : @formula atom) (M : RelSemantic.Model atom) :
+    (RelSemantic.eval M f false = true) -> StarSemantic.eval (convert2 M) f TrueWorld' = false.
+  Proof.
+  - intro H.
+    specialize (eval_invariant1 atom).
+    specialize (eval_invariant2 atom).
+    induction f.
+    + simpl.
+      simpl in H.
+      exact H.
+    + simpl.
+      rewrite Bool.negb_true_iff.
+      simpl in H.
+      specialize (eval_invariant2 f0 M).
+      specialize (eval_invariant2 H).
+      exact eval_invariant2.
+    + simpl.
+      rewrite Bool.andb_true_iff.
+      simpl in H.
+      rewrite Bool.andb_true_iff in H.
+      destruct H as [H1 H2].
+      specialize (IHf1 H1).
+      specialize (IHf2 H2).
+      exact (conj IHf1 IHf2).
+    + simpl.
+      rewrite Bool.orb_true_iff.
+      simpl in H.
+      rewrite Bool.orb_true_iff in H.
+      destruct H as [H | H].
+      * specialize (IHf1 H).
+        left.
+        exact IHf1.
+      * specialize (IHf2 H).
+        right.
+        exact IHf2.
+  - intro H.
+    specialize (eval_invariant1 atom).
+    specialize (eval_invariant2 atom).
+    induction f.
+    + simpl.
+      rewrite Bool.negb_false_iff.
+      simpl in H.
+      exact H.
+    + simpl.
+      rewrite Bool.negb_false_iff.
+      simpl in H.
+      specialize (eval_invariant1 f0 M).
+      specialize (eval_invariant1 H).
+      exact eval_invariant1.
+    + simpl.
+      rewrite Bool.andb_false_iff.
+      simpl in H.
+      rewrite Bool.orb_true_iff in H.
+      destruct H as [H | H].
+      * specialize (IHf1 H).
+        left.
+        exact IHf1.
+      * specialize (IHf2 H).
+        right.
+        exact IHf2.
+    + simpl.
+      rewrite Bool.orb_false_iff.
+      simpl in H.
+      rewrite Bool.andb_true_iff in H.
+      destruct H as [H1 H2].
+      specialize (IHf1 H1).
+      specialize (IHf2 H2).
+      exact (conj IHf1 IHf2).
+  Qed.
 
-  Record Model {atom : Type} :=
-  {
-    worlds : Type;
-    w0 : worlds;
-    star : worlds -> worlds;
-    star_involutive : forall w : worlds, star (star w) = w;
-    v : atom -> worlds -> bool;
-  }.
+  Lemma eval_invariant3 {atom : Type} (f : @formula atom) (M : @StarSemantic.Model atom) :
+    StarSemantic.eval M f M.(w0) = true -> RelSemantic.eval (convert1 M M.(w0)) f true = true
+  with eval_invariant4 {atom : Type} (f : @formula atom) (M : @StarSemantic.Model atom) :
+    StarSemantic.eval M f (M.(star) M.(w0)) = false -> RelSemantic.eval (convert1 M M.(w0)) f false = true.
+  Proof.
+  - intro H.
+    specialize (eval_invariant3 atom).
+    specialize (eval_invariant4 atom).
+    induction f.
+    + simpl.
+      simpl in H.
+      exact H.
+    + simpl.
+      simpl in H.
+      rewrite Bool.negb_true_iff in H.
+      specialize (eval_invariant4 f0 M).
+      specialize (eval_invariant4 H).
+      exact eval_invariant4.
+    + simpl.
+      rewrite Bool.andb_true_iff.
+      simpl in H.
+      rewrite Bool.andb_true_iff in H.
+      destruct H as [H1 H2].
+      specialize (IHf1 H1).
+      specialize (IHf2 H2).
+      exact (conj IHf1 IHf2).
+    + simpl.
+      rewrite Bool.orb_true_iff.
+      simpl in H.
+      rewrite Bool.orb_true_iff in H.
+      destruct H as [H | H].
+      * specialize (IHf1 H).
+        left.
+        exact IHf1.
+      * specialize (IHf2 H).
+        right.
+        exact IHf2.
+  - intro H.
+    specialize (eval_invariant3 atom).
+    specialize (eval_invariant4 atom).
+    induction f.
+    + simpl.
+      rewrite Bool.negb_true_iff.
+      simpl in H.
+      exact H.
+    + simpl.
+      simpl in H.
+      rewrite star_involutive in H.
+      rewrite Bool.negb_false_iff in H.
+      specialize (eval_invariant3 f0 M).
+      specialize (eval_invariant3 H).
+      exact eval_invariant3.
+    + simpl.
+      rewrite Bool.orb_true_iff.
+      simpl in H.
+      rewrite Bool.andb_false_iff in H.
+      destruct H as [H | H].
+      * specialize (IHf1 H).
+        left.
+        exact IHf1.
+      * specialize (IHf2 H).
+        right.
+        exact IHf2.
+    + simpl.
+      rewrite Bool.andb_true_iff.
+      simpl in H.
+      rewrite Bool.orb_false_iff in H.
+      destruct H as [H1 H2].
+      specialize (IHf1 H1).
+      specialize (IHf2 H2).
+      exact (conj IHf1 IHf2).
+  Qed.
 
+  Lemma holds_all_invariant {atom : Type} (Gamma : list (@formula atom)) (M : RelSemantic.Model atom) :
+    RelSemantic.holds_all M Gamma -> StarSemantic.holds_all (convert2 M) Gamma TrueWorld.
+  Proof.
+    intro H.
+    induction Gamma as [|f fs IH].
+    - unfold RelSemantic.holds_all in H.
+      unfold StarSemantic.holds_all.
+      intros f H1.
+      simpl in H1.
+      destruct H1.
+    - unfold RelSemantic.holds_all in H.
+      unfold StarSemantic.holds_all.
+      intros f1 H1.
+      simpl in H1.
+      destruct H1 as [H1 | H1].
+      + specialize (H f).
+        rewrite <-H1.
+        specialize (in_eq f fs) as H2.
+        specialize (H H2).
+        clear H2.
+        apply (eval_invariant1 f M) in H.
+        exact H.
+      + specialize (H f1).
+        specialize (in_cons f f1 fs H1) as H2.
+        specialize (H H2).
+        apply (eval_invariant1 f1 M) in H.
+        exact H.
+  Qed.
 
-  Theorem convert_rel_star {atom : Set} (A: @formula atom) (Gamma : list (@formula atom)) :
-    StarSemantic.consequence Gamma A -> Semantic.consequence Gamma A.
+  Theorem convert_star_rel {atom : Type} (A: @formula atom) (Gamma : list (@formula atom)) :
+    StarSemantic.consequence Gamma A -> RelSemantic.consequence Gamma A.
   Proof.
     intro H.
     unfold StarSemantic.consequence in H.
-    unfold Semantic.consequence.
+    unfold RelSemantic.consequence.
     intros M H1.
-    unfold Semantic.holds_all in H1.
 
-    pose (convert :
+    set (StarM := convert2 M).
+    specialize (H StarM).
+    specialize (H TrueWorld).
+    apply holds_all_invariant in H1.
+    specialize (H H1).
+    clear H1.
+    induction A.
+    - apply eval_invariant3 in H.
+      unfold StarM in H.
+      simpl in H.
+      simpl.
+      exact H.
+    - simpl.
+      simpl in H.
+      rewrite Bool.negb_true_iff in H.
+      apply eval_invariant4 in H.
+      unfold StarM in H.
+      simpl in H.
+      admit.
+    - simpl.
+      simpl in H.
+      rewrite Bool.andb_true_iff in H.
+      destruct H as [H1 H2].
+      specialize (IHA1 H1).
+      specialize (IHA2 H2).
+      rewrite Bool.andb_true_iff.
+      exact (conj IHA1 IHA2).
+    - simpl.
+      simpl in H.
+      rewrite Bool.orb_true_iff.
+      rewrite Bool.orb_true_iff in H.
+      destruct H as [H | H].
+      + specialize (IHA1 H).
+        left.
+        exact IHA1.
+      + specialize (IHA2 H).
+        right.
+        exact IHA2.
 
-*)
+
 
 End StarSemantic.
 
@@ -437,7 +740,6 @@ Module Meta.
     clear H1.
 
     simpl.
-    rewrite Bool.negb_involutive.
     exact H.
   Qed.
 
@@ -453,7 +755,6 @@ Module Meta.
     clear H1.
 
     simpl in H.
-    rewrite Bool.negb_involutive in H.
     exact H.
   Qed.
 
@@ -547,37 +848,22 @@ Module Meta.
     intro H1.
     unfold consequence.
     intros M H2.
-    unfold holds_all in H2.
-    specialize (H2 $~B$).
-    specialize (in_eq $~B$ nil) as H3.
-    specialize (H2 H3).
-    clear H3.
 
-    hnf in H2.
-    cbn [negb] in H2.
+    rewrite HoldsAll1 in H2.
+
+    simpl in H2.
     unfold consequence in H1.
     specialize (H1 M).
 
     simpl.
-    rewrite Bool.negb_true_iff.
-    simpl in H2.
-    rewrite Bool.negb_true_iff in H2.
-    destruct (eval M A true) eqn:Heq.
-    - assert (H3 : holds_all M [A]).
-      {
-        unfold holds_all.
-        intros f H3.
-        unfold In in H3.
-        destruct H3 as [H3 | []].
-        rewrite <-H3.
-        exact Heq.
-      }
-
-      specialize (H1 H3).
+    destruct (eval M A false) eqn:Heq.
+    - reflexivity.
+    - Abort.
+    (* rewrite <-HoldsAll1 in Heq.
+      specialize (H1 Heq).
       rewrite H1 in H2.
       exact H2.
-    - reflexivity.
-  Qed.
+  Qed. *)
 
   (* Theorem soundness {atom : Set} : forall (f : ) *)
 

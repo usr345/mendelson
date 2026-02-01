@@ -3,7 +3,7 @@ From Mendelson Require Import FDE.
 Require Import Lists.List.
 Import ListNotations.
 Import Formula1.      (* To use the formula type *)
-Import FDE.
+Import RelSemantic.
 
 (* A set of worlds is divided into 2 subsets: a set of normal and non-normal worlds.
 Нам нужно 2 $\ro$: одно для связи пропозициональных переменных с мирами и значениями истинности.
@@ -11,8 +11,6 @@ Import FDE.
 *)
 
 Module RelExcersizes.
-  Import Formula1.
-  Import RelSemantic.
   Import RelSemantic.F1.
   Open Scope rel_scope.
 
@@ -34,15 +32,12 @@ Module RelExcersizes.
     rewrite Bool.andb_true_iff in H.
     destruct H as [H _].
 
-    rewrite Bool.negb_true_iff in H.
-    rewrite Bool.andb_false_iff in H.
+    rewrite Bool.orb_true_iff in H.
     rewrite Bool.orb_true_iff.
     destruct H as [H | H].
     - left.
-      rewrite Bool.negb_true_iff.
       exact H.
     - right.
-      rewrite Bool.negb_false_iff in H.
       exact H.
   Qed.
 
@@ -122,7 +117,6 @@ Module RelExcersizes.
     clear H1.
 
     simpl.
-    rewrite Bool.negb_involutive.
     exact H.
   Qed.
 
@@ -146,22 +140,17 @@ Module RelExcersizes.
     simpl.
     rewrite Bool.orb_true_iff.
     destruct H as [H | H].
-    - rewrite Bool.negb_true_iff in H.
-      rewrite Bool.andb_false_iff in H.
+    - rewrite Bool.orb_true_iff in H.
       destruct H as [H | H].
       + left.
-        rewrite Bool.negb_true_iff.
-        rewrite Bool.andb_false_iff.
+        rewrite Bool.orb_true_iff.
         left.
         exact H.
       + right.
-        rewrite Bool.negb_true_iff.
         exact H.
     - left.
-      rewrite Bool.negb_true_iff.
-      rewrite Bool.andb_false_iff.
+      rewrite Bool.orb_true_iff.
       right.
-      rewrite Bool.negb_false_iff.
       exact H.
   Qed.
 
@@ -185,43 +174,18 @@ Module RelExcersizes.
     rewrite Bool.orb_true_iff.
 
     destruct H as [H | H].
-    - rewrite Bool.negb_true_iff in H.
-      rewrite Bool.andb_false_iff in H.
+    - rewrite Bool.orb_true_iff in H.
       destruct H as [H | H].
       + left.
-        rewrite Bool.negb_true_iff.
         exact H.
       + right.
         rewrite Bool.orb_true_iff.
         left.
-        rewrite Bool.negb_true_iff.
         exact H.
     - right.
       rewrite Bool.orb_true_iff.
       right.
       exact H.
-  Qed.
-
-  Lemma conj_dist : forall P Q R : Prop, P /\ (Q \/ R) <-> (P /\ Q) \/ (P /\ R).
-  Proof.
-  intros P Q R.
-  split.
-  -
-    intros [HP [HQ | HR]].
-    + left.
-      exact (conj HP HQ).
-    + right.
-      exact (conj HP HR).
-  -
-    intros [[HP HQ] | [HP HR]].
-    + split.
-      * apply HP.
-      * left.
-        apply HQ.
-    + split.
-      * apply HP.
-      * right.
-        apply HR.
   Qed.
 
   Lemma disj_dist : forall P Q R : Prop, P \/ (Q /\ R) <-> (P \/ Q) /\ (P \/ R).
@@ -253,30 +217,6 @@ Module RelExcersizes.
 *)
 
 
-  Theorem FDE_5 {atom : Type} : forall A B C : @formula atom, [$A /\ (B \/ C)$] |= $(A /\ B) \/ C$.
-  Proof.
-    intros A B C.
-    unfold consequence.
-    intros M H.
-    unfold holds_all in H.
-
-    specialize (in_eq $A /\ (B \/ C)$ nil) as H1.
-    specialize (H $A /\ (B \/ C)$).
-    specialize (H H1).
-    clear H1.
-
-    hnf.
-    hnf in H.
-    destruct H as [H1 H2].
-    destruct H2 as [H2 | H2].
-    - left.
-      hnf.
-      exact (conj H1 H2).
-    - right.
-      exact H2.
-  Qed.
-
-
   Variant atom3 : Set := P | Q | R.
 
   Definition f (a: atom3) : @formula atom3 :=
@@ -294,9 +234,9 @@ Module RelExcersizes.
     pose (
         ρ1 :=
           fun (a : atom3) (val : bool) =>
-            match a with
-            | P => True
-            | _ => False
+            match a, val with
+            | P, _ => true
+            | _, _ => false
             end
       ).
 
@@ -305,7 +245,6 @@ Module RelExcersizes.
                |}).
 
     specialize (H M1).
-    hnf in H.
 
     assert (H1 : holds_all M1 [(f_atom P); $~ (P /\ ~ Q)$]).
     {
@@ -314,28 +253,72 @@ Module RelExcersizes.
       unfold In in Hin.
       destruct Hin as [Hin | [Hin | []]].
       - rewrite <-Hin.
-        cbn [FormulaTruth].
-        hnf.
-        exact I.
+        cbn [eval].
+        unfold M1.
+        cbn [ρ].
+        cbn [ρ1].
+        reflexivity.
       - rewrite <-Hin.
-        hnf.
+        change (eval M1 (f_not (f_conj (f_atom P) (f_not (f_atom Q)))) true = true).
+        cbn [eval].
+        cbn [negb].
+        rewrite Bool.orb_true_iff.
         left.
-        cbn [FormulaTruth].
-        hnf.
-        exact I.
+        unfold M1.
+        cbn [ρ].
+        cbn [ρ1].
+        reflexivity.
     }
 
     specialize (H H1).
     clear H1.
-    change (FormulaTruth M1 (f_atom Q) true) in H.
-    cbn [FormulaTruth] in H.
-    hnf in H.
-    exact H.
+    change (eval M1 (f_atom Q) true = true) in H.
+    cbn [eval] in H.
+    unfold M1 in H.
+    cbn [ρ] in H.
+    cbn [ρ1] in H.
+    discriminate H.
   Qed.
 
+  Proposition exfalso_false : ~ (forall {atom : Type} (A B: @formula atom), [$A /\ ~A$] |= B).
+  Proof.
+    unfold not.
+    intro H.
+    specialize (H atom3 P Q).
+
+    (* Конструируем контрмодель *)
+    pose (
+        ρ1 :=
+          fun (a : atom3) (val : bool) =>
+            match a, val with
+            | P, _ => true
+            | _, _ => false
+            end
+      ).
+
+    pose (M1 := {|
+                ρ := ρ1;
+               |}).
+
+    specialize (H M1).
+    rewrite HoldsAll1 in H.
+    assert (H1 : eval M1 $P /\ ~ P$ true = true).
+    {
+      simpl.
+      reflexivity.
+    }
+
+    specialize (H H1).
+    simpl in H.
+    discriminate H.
+Qed.
 End RelExcersizes.
 
+Import StarSemantic.
 Module StarExcersizes.
+  Import StarSemantic.F1.
+  Open Scope star_scope.
+
   Variant atom3 : Set := S | P | Q | R.
 
   Definition f (a: atom3) : @formula atom3 :=
