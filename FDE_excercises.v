@@ -564,7 +564,7 @@ Module StarExcersizes.
       auto.
   Qed.
 
-    Theorem T11_neg : ~ forall (atom : Type) (P Q : @formula atom), [P; $~(P /\ ~Q)$] |= Q.
+  Theorem T11_neg : ~ forall (atom : Type) (P Q : @formula atom), [P; $~(P /\ ~Q)$] |= Q.
   Proof.
     unfold not.
     intro H.
