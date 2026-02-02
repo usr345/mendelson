@@ -255,13 +255,33 @@ Module StarSemantic.
   Qed.
 
   Lemma eval_eq {atom : Type} (M1 M2 : RelSemantic.Model atom)
-  (f : formula) (b : bool)
-  (Hρ : forall A b, RelSemantic.ρ atom M1 A b =
-                    RelSemantic.ρ atom M2 A b) :
-  RelSemantic.eval M1 f b = RelSemantic.eval M2 f b.
-Proof.
-  induction f; simpl; try rewrite IHf1; try rewrite IHf2; auto.
-Qed.
+    (f : formula) (b : bool) (Hρ : forall A b, RelSemantic.ρ atom M1 A b =
+                                         RelSemantic.ρ atom M2 A b) :
+    RelSemantic.eval M1 f b = RelSemantic.eval M2 f b.
+  Proof.
+    induction f.
+    - simpl.
+      specialize (Hρ a b).
+      exact Hρ.
+    - simpl.
+      admit.
+    - simpl.
+      destruct b.
+      + rewrite IHf1.
+        rewrite IHf2.
+        reflexivity.
+      + rewrite IHf1.
+        rewrite IHf2.
+        reflexivity.
+    - simpl.
+      destruct b.
+      + rewrite IHf1.
+        rewrite IHf2.
+        reflexivity.
+      + rewrite IHf1.
+        rewrite IHf2.
+        reflexivity.
+  Qed.
 
 
   Lemma eval_invariant1 {atom : Type} (f : @formula atom) (M : RelSemantic.Model atom) :
