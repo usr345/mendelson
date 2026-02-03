@@ -1,5 +1,5 @@
 From Mendelson Require Import FSignature.
-From Mendelson Require Import FDE.
+From Mendelson Require Import FDE_semantics.
 Import Formula1.
 Import RelSemantic.
 Import RelSemantic.F1.

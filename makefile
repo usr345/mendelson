@@ -39,21 +39,21 @@ Meta.vo: Meta.v Syntactic.vo Semantic.vo EqDec.vo
 L1_Hilbert_Accerman.vo: L1_Hilbert_Accerman.v Sets.vo FSignature.vo
 	$(COQC) L1_Hilbert_Accerman.v
 
-# K4
+# FDE
 
-FDE.vo: FDE.v FSignature.vo Sets.vo
-	$(COQC) FDE.v
+FDE_semantics.vo: FDE_semantics.v FSignature.vo Sets.vo
+	$(COQC) FDE_semantics.v
 
-FDE_semantic_equiv.vo: FDE_semantic_equiv.v FDE.vo
+FDE_semantic_equiv.vo: FDE_semantic_equiv.v FDE_semantics.vo
 	$(COQC) FDE_semantic_equiv.v
 
-FDE_exercises.vo: FDE_exercises.v FDE.vo
+FDE_exercises.vo: FDE_exercises.v FDE_semantics.vo
 	$(COQC) FDE_exercises.v
 
-FDE_syntactic.vo: FDE_syntactic.v FDE.vo FSignature.vo
+FDE_syntactic.vo: FDE_syntactic.v FDE_semantics.vo FSignature.vo
 	$(COQC) FDE_syntactic.v
 
-FDE_meta.vo: FDE_meta.v FDE_semantic_equiv.vo FDE_syntactic.vo FDE.vo FSignature.vo
+FDE_meta.vo: FDE_meta.v FDE_semantic_equiv.vo FDE_syntactic.vo FDE_semantics.vo FSignature.vo
 	$(COQC) FDE_meta.v
 
 # K4

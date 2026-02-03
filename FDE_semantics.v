@@ -22,7 +22,7 @@ Import Formula1.
 
 Module RelSemantic.
   Module F1:= Make_Formula(Formula1).
-
+  Import F1.
   (*
     Возвращает true, если данное булево значение привязано к атому
   *)

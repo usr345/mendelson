@@ -1,9 +1,8 @@
 From Mendelson Require Import FSignature.
-From Mendelson Require Import FDE.
+From Mendelson Require Import FDE_semantics.
 Import Formula1.      (* To use the formula type *)
 
 Module Syntactic.
-  Import Formula1.
   Module F1 := Make_Formula(Formula1).
   Import F1.
 
