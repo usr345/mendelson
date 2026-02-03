@@ -267,3 +267,7 @@ Module StarSemantic.
   Qed.
 
 End StarSemantic.
+
+Module FourValuedSemantic.
+
+End FourValuedSemantic.
