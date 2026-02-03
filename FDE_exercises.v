@@ -1,8 +1,10 @@
 From Mendelson Require Import FSignature.
+From Mendelson Require Import FDE_formula.
 From Mendelson Require Import FDE_semantics.
 From Stdlib Require Import Lists.List.
 Import ListNotations.
-Import Formula1.      (* To use the formula type *)
+Import FDE_FormulaDef.
+Import FDE_Formula.
 Import RelSemantic.
 
 (* A set of worlds is divided into 2 subsets: a set of normal and non-normal worlds.
@@ -11,7 +13,6 @@ Import RelSemantic.
 *)
 
 Module RelExcersizes.
-  Import RelSemantic.F1.
   Open Scope rel_scope.
 
   Theorem T_836 {atom : Type} : forall A B C D : @formula atom, [$~(B /\ ~C) /\ A$] |= $(~B \/ C) \/ D$.
@@ -316,7 +317,6 @@ End RelExcersizes.
 
 Import StarSemantic.
 Module StarExcersizes.
-  Import StarSemantic.F1.
   Open Scope star_scope.
 
   Variant atom3 : Set := S | P | Q | R.

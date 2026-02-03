@@ -1,8 +1,8 @@
-From Mendelson Require Import FSignature.
+From Mendelson Require Import FDE_formula.
 From Mendelson Require Import FDE_semantics.
-Import Formula1.
+Import FDE_FormulaDef.
+Import FDE_Formula.
 Import RelSemantic.
-Import RelSemantic.F1.
 Import StarSemantic.
 
 Module RelStarEquiv.

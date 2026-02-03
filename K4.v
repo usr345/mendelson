@@ -5,7 +5,7 @@ Import ListNotations.
 Set Implicit Arguments.
 Generalizable All Variables.
 
-Module Formula1 <: TFormula.
+Module K4_FormulaDef <: TFormula.
   Inductive formula {atom : Type} : Type :=
   | f_atom : atom -> formula
   | f_not  : formula -> formula
@@ -19,12 +19,12 @@ Module Formula1 <: TFormula.
   Definition disjunction {atom : Type} := @f_disj atom.
   Definition implication {atom : Type} := @f_imp atom.
   Definition equivalence {atom : Type} (A B: @formula atom) : formula := conjunction (implication A B) (implication B A).
-End Formula1.
+End K4_FormulaDef.
+
+Import K4_FormulaDef.
+Module K4_Formula := Make_Formula(K4_FormulaDef).
 
 Module K4.
-  Import Formula1.
-  Module F1:= Make_Formula(Formula1).
-
   Record Model (atom : Type) :=
   {
     worlds : Type;
@@ -99,9 +99,6 @@ Module K4.
 End K4.
 
 Module N4.
-  Import Formula1.
-  Module F1:= Make_Formula(Formula1).
-
   Record Model (atom : Type) :=
   {
     worlds : Type;

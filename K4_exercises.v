@@ -2,9 +2,9 @@ From Mendelson Require Import FSignature.
 From Mendelson Require Import K4.
 From Stdlib Require Import Lists.List.
 Import ListNotations.
-Import Formula1.      (* To use the formula type *)
+Import K4_FormulaDef.
+Import K4_Formula.
 Import K4.
-Import K4.F1.
 
 (* A set of worlds is divided into 2 subsets: a set of normal and non-normal worlds.
 Нам нужно 2 $\ro$: одно для связи пропозициональных переменных с мирами и значениями истинности.

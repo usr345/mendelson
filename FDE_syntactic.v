@@ -1,11 +1,10 @@
 From Mendelson Require Import FSignature.
+From Mendelson Require Import FDE_formula.
 From Mendelson Require Import FDE_semantics.
-Import Formula1.      (* To use the formula type *)
+Import FDE_FormulaDef.
+Import FDE_Formula.
 
 Module Syntactic.
-  Module F1 := Make_Formula(Formula1).
-  Import F1.
-
   Reserved Notation "A |- B" (at level 98).
   Inductive entails {atom : Set} : @formula atom -> @formula atom -> Type :=
     | axiom1 : forall A B , $A /\ B$ |- A

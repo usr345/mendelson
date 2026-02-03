@@ -1,28 +1,12 @@
 From Mendelson Require Import FSignature.
 From Mendelson Require Import Sets.
+From Mendelson Require Import FDE_formula.
 From Stdlib Require Import Lists.List.
 Import ListNotations.
-
-Module Formula1 <: TFormula.
-  Inductive formula {atom : Type} : Type :=
-  | f_atom : atom -> formula
-  | f_not  : formula -> formula
-  | f_conj  : formula -> formula -> formula
-  | f_disj  : formula -> formula -> formula.
-
-  Definition t {atom : Type} := @formula atom.
-  Definition negation {atom : Type} := @f_not atom.
-  Definition conjunction {atom : Type} := @f_conj atom.
-  Definition disjunction {atom : Type} := @f_disj atom.
-  Definition implication {atom : Type} (A B: @formula atom) :=
-    disjunction (negation A) B.
-  Definition equivalence {atom : Type} (A B: @formula atom) : formula := conjunction (implication A B) (implication B A).
-End Formula1.
-Import Formula1.
+Import FDE_FormulaDef.
+Import FDE_Formula.
 
 Module RelSemantic.
-  Module F1:= Make_Formula(Formula1).
-  Import F1.
   (*
     Возвращает true, если данное булево значение привязано к атому
   *)
@@ -81,9 +65,6 @@ Module RelSemantic.
 End RelSemantic.
 
 Module StarSemantic.
-  Module F1:= Make_Formula(Formula1).
-  Import F1.
-
   Record Model {atom : Type} :=
   {
     worlds : Type;

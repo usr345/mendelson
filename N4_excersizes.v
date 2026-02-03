@@ -2,8 +2,8 @@ From Mendelson Require Import FSignature.
 From Mendelson Require Import K4.
 From Stdlib Require Import Lists.List.
 Import ListNotations.
-Import Formula1.      (* To use the formula type *)
-Import K4.F1.
+Import K4_FormulaDef.
+Import K4_Formula.
 Import N4.
 
 Module N4_excersizes.
@@ -136,7 +136,6 @@ Module N4_excersizes.
     unfold consequence.
     intros M w Hnormal Hall.
     unfold holds_all in Hall.
-    specialize (Hall Hnormal).
     assert (H1 : In $A -> B$
                  [$A -> B$; $A -> C$]).
     {
@@ -173,6 +172,7 @@ Module N4_excersizes.
   Theorem T7 {atom : Type} : forall A B C : @formula atom, [$A -> C$; $B -> C$] |= $(A \/ B) -> C$.
   Proof.
     intros A B C.
+    Abort.
 
   Theorem TA2_neg : ~ forall A B : @formula atom3, |= B -> |= $A -> B$.
   Proof.
