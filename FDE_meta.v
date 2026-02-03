@@ -3,7 +3,7 @@ From Mendelson Require Import FDE_formula.
 From Mendelson Require Import FDE_semantics.
 From Mendelson Require Import FDE_syntactic.
 From Mendelson Require Import FDE_semantic_equiv.
-From Stdlib Require Import Lists.List.
+From Coq Require Import Lists.List.
 Import ListNotations.
 Import FDE_FormulaDef.
 Import FDE_Formula.
@@ -14,19 +14,19 @@ Import RelStarEquiv.
 Module Meta_star.
 
   Open Scope star_scope.
-  Proposition axiom1_tautology {atom : Set} (A B: @formula atom) : [$A /\ B$] |= A.
+  Proposition axiom1_tautology {atom : Type} (A B: @formula atom) : [$A /\ B$] |= A.
   Proof.
     unfold consequence.
     intros M w H.
 
-    rewrite HoldsAll1 in H.
+    rewrite (HoldsAll1 M w) in H.
     simpl in H.
     rewrite Bool.andb_true_iff in H.
     destruct H as [H _].
     exact H.
   Qed.
 
-  Proposition axiom2_tautology {atom : Set} (A B: @formula atom) : [$A /\ B$] |= B.
+  Proposition axiom2_tautology {atom : Type} (A B: @formula atom) : [$A /\ B$] |= B.
   Proof.
     unfold consequence.
     intros M w H.
@@ -38,7 +38,7 @@ Module Meta_star.
     exact H.
   Qed.
 
-  Proposition axiom3_tautology {atom : Set} (A B: @formula atom) : [A] |= $A \/ B$.
+  Proposition axiom3_tautology {atom : Type} (A B: @formula atom) : [A] |= $A \/ B$.
   Proof.
     unfold consequence.
     intros M w H.
@@ -50,7 +50,7 @@ Module Meta_star.
     exact H.
   Qed.
 
-  Proposition axiom4_tautology {atom : Set} (A B: @formula atom) : [B] |= $A \/ B$.
+  Proposition axiom4_tautology {atom : Type} (A B: @formula atom) : [B] |= $A \/ B$.
   Proof.
     unfold consequence.
     intros M w H.
@@ -62,7 +62,7 @@ Module Meta_star.
     exact H.
   Qed.
 
-  Proposition axiom5_tautology {atom : Set} (A B C: @formula atom) : [$A /\ (B \/ C)$] |= $(A /\ B) \/ C$.
+  Proposition axiom5_tautology {atom : Type} (A B C: @formula atom) : [$A /\ (B \/ C)$] |= $(A /\ B) \/ C$.
   Proof.
     unfold consequence.
     intros M w H.
@@ -84,7 +84,7 @@ Module Meta_star.
       exact H2.
   Qed.
 
-  Proposition axiom6_tautology {atom : Set} (A: @formula atom) : [A] |= $~~A$.
+  Proposition axiom6_tautology {atom : Type} (A: @formula atom) : [A] |= $~~A$.
   Proof.
     unfold consequence.
     intros M w H.
@@ -98,7 +98,7 @@ Module Meta_star.
   Qed.
 
 
-  Proposition axiom7_tautology {atom : Set} (A: @formula atom) : [$~~A$] |= A.
+  Proposition axiom7_tautology {atom : Type} (A: @formula atom) : [$~~A$] |= A.
   Proof.
     unfold consequence.
     intros M w H.
@@ -110,7 +110,7 @@ Module Meta_star.
     exact H.
   Qed.
 
-  Proposition trans_tautology {atom : Set} (A B C: @formula atom) :
+  Proposition trans_tautology {atom : Type} (A B C: @formula atom) :
     [A] |= B -> [B] |= C -> [A] |= C.
   Proof.
     unfold consequence.
@@ -129,7 +129,7 @@ Module Meta_star.
     exact H2.
   Qed.
 
-  Proposition conj_intro_tautology {atom : Set} (A B C: @formula atom) :
+  Proposition conj_intro_tautology {atom : Type} (A B C: @formula atom) :
     [A] |= B -> [A] |= C -> [A] |= $B /\ C$.
   Proof.
     unfold consequence.
@@ -152,7 +152,7 @@ Module Meta_star.
   Qed.
 
 
-  Proposition case_analysis_tautology {atom : Set} (A B C: @formula atom) :
+  Proposition case_analysis_tautology {atom : Type} (A B C: @formula atom) :
     [A] |= C -> [B] |= C -> [$A \/ B$] |= C.
   Proof.
     unfold consequence.
@@ -175,7 +175,7 @@ Module Meta_star.
       exact H2.
   Qed.
 
-  Proposition contrapos_tautology {atom : Set} (A B: @formula atom) :
+  Proposition contrapos_tautology {atom : Type} (A B: @formula atom) :
     [A] |= B -> [$~B$] |= $~A$.
   Proof.
     intro H.
@@ -204,7 +204,7 @@ Module Meta_star.
     - reflexivity.
   Qed.
 
-  Theorem soundness {atom : Set} : forall (A B : @formula atom), A |- B -> [A] |= B.
+  Theorem soundness {atom : Type} : forall (A B : @formula atom), A |- B -> [A] |= B.
   Proof.
     intros A B.
     intro H.
@@ -230,13 +230,22 @@ Module Meta_star.
       exact H1.
   Qed.
 
+  Theorem no_valid_formulas : forall {atom : Type} (A : @formula atom), ~ StarSemantic.valid A.
+  Proof.
+    intros atom A.
+    unfold not.
+    intro H.
+    unfold valid in H.
+    induction A.
+    -
+
 End Meta_star.
 
 Import RelSemantic.
 
 Module Meta_relational.
   Open Scope rel_scope.
-  Proposition axiom1_tautology {atom : Set} (A B: @formula atom) : [$A /\ B$] |= A.
+  Proposition axiom1_tautology {atom : Type} (A B: @formula atom) : [$A /\ B$] |= A.
   Proof.
     unfold consequence.
     intros M H.
@@ -253,7 +262,7 @@ Module Meta_relational.
     exact H.
   Qed.
 
-  Proposition axiom2_tautology {atom : Set} (A B: @formula atom) : [$A /\ B$] |= B.
+  Proposition axiom2_tautology {atom : Type} (A B: @formula atom) : [$A /\ B$] |= B.
   Proof.
     unfold consequence.
     intros M H.
@@ -270,7 +279,7 @@ Module Meta_relational.
     exact H.
   Qed.
 
-  Proposition axiom3_tautology {atom : Set} (A B: @formula atom) : [A] |= $A \/ B$.
+  Proposition axiom3_tautology {atom : Type} (A B: @formula atom) : [A] |= $A \/ B$.
   Proof.
     unfold consequence.
     intros M H.
@@ -287,7 +296,7 @@ Module Meta_relational.
     exact H.
   Qed.
 
-  Proposition axiom4_tautology {atom : Set} (A B: @formula atom) : [B] |= $A \/ B$.
+  Proposition axiom4_tautology {atom : Type} (A B: @formula atom) : [B] |= $A \/ B$.
   Proof.
     unfold consequence.
     intros M H.
@@ -304,7 +313,7 @@ Module Meta_relational.
     exact H.
   Qed.
 
-  Proposition axiom5_tautology {atom : Set} (A B C: @formula atom) : [$A /\ (B \/ C)$] |= $(A /\ B) \/ C$.
+  Proposition axiom5_tautology {atom : Type} (A B C: @formula atom) : [$A /\ (B \/ C)$] |= $(A /\ B) \/ C$.
   Proof.
     unfold consequence.
     intros M H.
@@ -329,7 +338,7 @@ Module Meta_relational.
       exact H2.
   Qed.
 
-  Proposition axiom6_tautology {atom : Set} (A: @formula atom) : [A] |= $~~A$.
+  Proposition axiom6_tautology {atom : Type} (A: @formula atom) : [A] |= $~~A$.
   Proof.
     unfold consequence.
     intros M H.
@@ -344,7 +353,7 @@ Module Meta_relational.
     exact H.
   Qed.
 
-  Proposition axiom7_tautology {atom : Set} (A: @formula atom) : [$~~A$] |= A.
+  Proposition axiom7_tautology {atom : Type} (A: @formula atom) : [$~~A$] |= A.
   Proof.
     unfold consequence.
     intros M H.
@@ -359,7 +368,7 @@ Module Meta_relational.
     exact H.
   Qed.
 
-  Proposition trans_tautology {atom : Set} (A B C: @formula atom) :
+  Proposition trans_tautology {atom : Type} (A B C: @formula atom) :
     [A] |= B -> [B] |= C -> [A] |= C.
   Proof.
     intros H1 H2.
@@ -386,7 +395,7 @@ Module Meta_relational.
     exact H2.
   Qed.
 
-  Proposition conj_intro_tautology {atom : Set} (A B C: @formula atom) :
+  Proposition conj_intro_tautology {atom : Type} (A B C: @formula atom) :
     [A] |= B -> [A] |= C -> [A] |= $B /\ C$.
   Proof.
     intros H1 H2.
@@ -415,7 +424,7 @@ Module Meta_relational.
     exact (conj H1 H2).
   Qed.
 
-  Proposition case_analysis_tautology {atom : Set} (A B C: @formula atom) :
+  Proposition case_analysis_tautology {atom : Type} (A B C: @formula atom) :
     [A] |= C -> [B] |= C -> [$A \/ B$] |= C.
   Proof.
     intros H1 H2.
@@ -443,7 +452,7 @@ Module Meta_relational.
       exact H2.
   Qed.
 
-  Proposition contrapos_tautology {atom : Set} (A B: @formula atom) :
+  Proposition contrapos_tautology {atom : Type} (A B: @formula atom) :
     [A] |= B -> [$~B$] |= $~A$.
   Proof.
     intro H.
@@ -454,7 +463,7 @@ Module Meta_relational.
     exact H1.
   Qed.
 
-  Theorem soundness {atom : Set} : forall (A B : @formula atom), A |- B -> [A] |= B.
+  Theorem soundness {atom : Type} : forall (A B : @formula atom), A |- B -> [A] |= B.
   Proof.
     intros A B.
     intro H.

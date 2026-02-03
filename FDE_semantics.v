@@ -1,7 +1,7 @@
 From Mendelson Require Import FSignature.
 From Mendelson Require Import Sets.
 From Mendelson Require Import FDE_formula.
-From Stdlib Require Import Lists.List.
+From Coq Require Import Lists.List.
 Import ListNotations.
 Import FDE_FormulaDef.
 Import FDE_Formula.
@@ -44,7 +44,7 @@ Module RelSemantic.
 
   #[global] Notation "Γ |= f" := (consequence Γ f) (at level 90) : rel_scope.
 
-  Lemma HoldsAll1 {atom : Set} (M : @Model atom) (f : @formula atom) : holds_all M [f] <-> eval M f true = true.
+  Lemma HoldsAll1 {atom : Type} (M : @Model atom) (f : @formula atom) : holds_all M [f] <-> eval M f true = true.
   Proof.
     split.
     - intro H.
@@ -96,7 +96,7 @@ Module StarSemantic.
 
   #[global] Notation "Γ |= f" := (consequence Γ f) (at level 90) : star_scope.
 
-  Lemma HoldsAll1 {atom : Set} (M : @Model atom) (w : M.(worlds)) (f : @formula atom) : holds_all M [f] w <-> eval M f w = true.
+  Lemma HoldsAll1 {atom : Type} (M : @Model atom) (w : M.(worlds)) (f : @formula atom) : holds_all M [f] w <-> eval M f w = true.
   Proof.
     split.
     - intro H.

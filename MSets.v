@@ -1,4 +1,4 @@
-From Stdlib Require Import Lists.List.
+From Coq Require Import Lists.List.
 Import ListNotations.
 
 Module MSet.

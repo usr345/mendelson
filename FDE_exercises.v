@@ -1,7 +1,7 @@
 From Mendelson Require Import FSignature.
 From Mendelson Require Import FDE_formula.
 From Mendelson Require Import FDE_semantics.
-From Stdlib Require Import Lists.List.
+From Coq Require Import Lists.List.
 Import ListNotations.
 Import FDE_FormulaDef.
 Import FDE_Formula.
@@ -319,12 +319,12 @@ Import StarSemantic.
 Module StarExcersizes.
   Open Scope star_scope.
 
-  Variant atom3 : Set := S | P | Q | R.
+  Variant atom4 : Set := S | P | Q | R.
 
-  Definition f (a: atom3) : @formula atom3 :=
+  Definition f (a: atom4) : @formula atom4 :=
     f_atom a.
 
-  Coercion f: atom3 >-> formula.
+  Coercion f: atom4 >-> formula.
 
   Variant worlds1 : Set := Γ | Γ'.
 
@@ -380,11 +380,11 @@ Module StarExcersizes.
   Theorem T8_5_5_2 : ~ forall (atom : Type) (P Q R : @formula atom), [$P /\ (Q \/ ~Q)$] |= R.
   Proof.
     intro H.
-    specialize (H atom3 P Q R).
+    specialize (H atom4 P Q R).
     unfold consequence in H.
     pose (
         v1 :=
-          fun (a : atom3) (w : worlds1) =>
+          fun (a : atom4) (w : worlds1) =>
             match a, w with
             | P, Γ => true
             | _, _ => false
@@ -539,7 +539,7 @@ Module StarExcersizes.
   Proof.
     unfold not.
     intro H.
-    specialize (H atom3 P Q).
+    specialize (H atom4 P Q).
     unfold consequence in H.
     Abort.
 End StarExcersizes.

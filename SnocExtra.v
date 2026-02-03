@@ -1,6 +1,6 @@
 Require Import Snoc.
 
-From Stdlib Require Import Lists.List.
+From Coq Require Import Lists.List.
 Import ListNotations.
 
 (* В функции snoc обратный порядом аргументов по сравнению c list.cons *)
