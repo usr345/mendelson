@@ -1,6 +1,6 @@
 From Mendelson Require Import FSignature.
 From Mendelson Require Import Sets.
-Require Import Lists.List.
+From Stdlib Require Import Lists.List.
 Import ListNotations.
 
 Module Formula1 <: TFormula.

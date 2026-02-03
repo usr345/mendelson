@@ -2,11 +2,10 @@ Require Import Setoid.
 From Mendelson Require Import MSets.
 From Mendelson Require Import FSignature.
 From Mendelson Require Import EqDec.
-Require Import Lists.List.
+From Stdlib Require Import Lists.List.
+Import ListNotations.
 Require Import Coq.Arith.PeanoNat.
 Require Import Coq.Init.Logic.
-From Coq Require Import List.
-Import ListNotations.
 Require Import Logic.Classical_Prop.
 Require Import Logic.Classical_Pred_Type.
 

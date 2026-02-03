@@ -1,6 +1,6 @@
 From Mendelson Require Import FSignature.
 From Mendelson Require Import FDE.
-Require Import Lists.List.
+From Stdlib Require Import Lists.List.
 Import ListNotations.
 Import Formula1.      (* To use the formula type *)
 Import RelSemantic.

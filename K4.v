@@ -1,6 +1,6 @@
 From Mendelson Require Import FSignature.
 From Mendelson Require Import MSets.
-Require Import Lists.List.
+From Stdlib Require Import Lists.List.
 Import ListNotations.
 Set Implicit Arguments.
 Generalizable All Variables.

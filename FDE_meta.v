@@ -2,7 +2,7 @@ From Mendelson Require Import FSignature.
 From Mendelson Require Import FDE.
 From Mendelson Require Import FDE_syntactic.
 From Mendelson Require Import FDE_semantic_equiv.
-Require Import Lists.List.
+From Stdlib Require Import Lists.List.
 Import ListNotations.
 Import Formula1 Syntactic Syntactic.F1.
 Import StarSemantic.

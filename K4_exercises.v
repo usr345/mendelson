@@ -1,6 +1,6 @@
 From Mendelson Require Import FSignature.
 From Mendelson Require Import K4.
-Require Import Lists.List.
+From Stdlib Require Import Lists.List.
 Import ListNotations.
 Import Formula1.      (* To use the formula type *)
 Import K4.
