@@ -43,6 +43,12 @@ FDE.vo : FDE.v FSignature.vo Sets.vo
 FDE_excercises.vo : FDE_excercises.v FDE.vo
 	$(COQC) FDE_excercises.v
 
+FDE_syntactic.vo : FDE_syntactic.v FDE.vo FSignature.vo
+	$(COQC) FDE_syntactic.v
+
+FDE_meta.vo : FDE_meta.v FDE.vo FSignature.vo
+	$(COQC) FDE_meta.v
+
 K4.vo : K4.v FSignature.vo MSets.vo
 	$(COQC) K4.v
 

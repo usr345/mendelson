@@ -503,35 +503,6 @@ Module StarExcersizes.
     exact H.
   Qed.
 
-  Proposition contrapos_tautology {atom : Set} (A B: @formula atom) :
-    [A] |= B -> [$~B$] |= $~A$.
-  Proof.
-    intro H.
-    unfold consequence.
-    unfold consequence in H.
-
-    intros M w H1.
-    rewrite HoldsAll1 in H1.
-    simpl in H1.
-    rewrite Bool.negb_true_iff in H1.
-
-    simpl.
-    rewrite Bool.negb_true_iff.
-    specialize (H M (star M w)).
-
-    rewrite HoldsAll1 in H.
-    destruct (eval M A (star M w)) eqn:Heq.
-    - assert (H2 : true = true).
-      {
-        reflexivity.
-      }
-
-      specialize (H H2).
-      rewrite H in H1.
-      exact H1.
-    - reflexivity.
-  Qed.
-
   Theorem T_12 {atom : Type} : forall A B C : @formula atom, [$(A /\ B) -> C$] |= $A -> (~B \/ C)$.
   Proof.
     intros A B C.
