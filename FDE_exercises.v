@@ -543,3 +543,64 @@ Module StarExcersizes.
     unfold consequence in H.
     Abort.
 End StarExcersizes.
+
+Import FourValuedSemantic.
+Module V4Excersizes.
+  Open Scope V4_scope.
+
+  Theorem T_836 {atom : Type} : forall A B C D : @formula atom, [$~(B /\ ~C) /\ A$] |= $(~B \/ C) \/ D$.
+  Proof.
+    intros A B C D.
+    unfold consequence.
+    intros M H.
+    unfold holds_all in H.
+    simpl.
+    rewrite Bool.orb_true_iff.
+    left.
+
+    specialize (in_eq $~ (B /\ ~ C) /\ A$ nil) as H1.
+    specialize (H $~ (B /\ ~ C) /\ A$).
+    specialize (H H1).
+    clear H1.
+    simpl in H.
+    rewrite Bool.andb_true_iff in H.
+    destruct H as [H _].
+
+    rewrite Bool.orb_true_iff in H.
+    rewrite Bool.orb_true_iff.
+    destruct H as [H | H].
+    - left.
+      exact H.
+    - right.
+      exact H.
+  Qed.
+
+  Theorem T_3 {atom : Type} : forall A B C : @formula atom, [$A /\ (B \/ C)$] |= $(A /\ B) \/ (A /\ C)$.
+  Proof.
+    intros A B C.
+    unfold consequence.
+    intros M H.
+    unfold holds_all in H.
+
+    specialize (H $A /\ (B \/ C)$).
+    specialize (in_eq $A /\ (B \/ C)$ nil) as H1.
+    specialize (H H1).
+    clear H1.
+
+    simpl in H.
+    rewrite Bool.andb_true_iff in H.
+    destruct H as [H1 H2].
+    rewrite Bool.orb_true_iff in H2.
+    simpl.
+    rewrite Bool.orb_true_iff.
+    destruct H2 as [H2 | H2].
+    - left.
+      rewrite Bool.andb_true_iff.
+      exact (conj H1 H2).
+    - right.
+      rewrite Bool.andb_true_iff.
+      exact (conj H1 H2).
+  Qed.
+
+
+End V4Excersizes.

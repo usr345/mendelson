@@ -268,6 +268,179 @@ Module StarSemantic.
 
 End StarSemantic.
 
+Module FDE_V4.
+  Variant V4 : Type := Zero | None | Both | One.
+  Scheme Equality for V4.
+
+  Inductive le_t : V4 -> V4 -> Prop :=
+  | le_t_refl : forall x, le_t x x
+  | le_t_ZN : le_t Zero None
+  | le_t_ZB : le_t Zero Both
+  | le_t_NO : le_t None One
+  | le_t_BO : le_t Both One.
+
+  Instance PO_V4_truth : PartialOrder V4.
+
+  Definition designated (v : V4) : Prop :=
+    v = One \/ v = Both.
+
+  Definition neg (a : V4) : V4 :=
+    match a with
+    | Zero => One
+    | None => None
+    | Both => Both
+    | One => Zero
+    end.
+
+  Definition conj (a b : V4) : V4 :=
+    match a, b with
+    | Zero, _ => Zero
+    | _, Zero => Zero
+    | None, None => None
+    | None, Both => Zero
+    | None, One => None
+    | Both, None => Zero
+    | Both, Both => Both
+    | Both, One => Both
+    | One, None => None
+    | One, Both => Both
+    | One, One => One
+    end.
+
+  Definition disj (a b : V4) : V4 :=
+    match a, b with
+    | One, _ => One
+    | _, One => One
+    | None, Zero => None
+    | None, None => None
+    | None, Both => One
+    | Both, Zero => Both
+    | Both, None => One
+    | Both, Both => Both
+    | Zero, Zero => Zero
+    | Zero, None => None
+    | Zero, Both => Both
+    end.
+
+  Theorem neg_involutive : forall a : V4, neg (neg a) = a.
+  Proof.
+    intro a.
+    destruct a ; auto.
+  Qed.
+
+  Theorem conj_one_iff : forall a b : V4, conj a b = One <-> a = One /\ b = One.
+  Proof.
+    intros a b.
+    split ; intro H.
+    - destruct a, b ; simpl in H ; try discriminate H.
+      split ; exact H.
+    - destruct H as [H1 H2].
+      rewrite H1.
+      rewrite H2.
+      simpl.
+      reflexivity.
+  Qed.
+
+  Theorem conj_zero_iff : forall a b : V4, conj a b = Zero <-> a = Zero \/ b = Zero \/ (a = Both /\ b = None) \/ (a = None /\ b = Both).
+  Proof.
+    intros a b.
+    split ; intro H.
+    - destruct a, b ; simpl in H ; try discriminate H ; auto.
+    - destruct H as [H | [H | [H | H]]].
+      + rewrite H.
+        destruct b ; auto.
+      + rewrite H.
+        destruct a ; auto.
+      + destruct H as [H1 H2].
+        rewrite H1, H2.
+        simpl.
+        reflexivity.
+      + destruct H as [H1 H2].
+        rewrite H1, H2.
+        simpl.
+        reflexivity.
+  Qed.
+
+  Theorem disj_zero_iff : forall a b : V4, disj a b = Zero <-> a = Zero /\ b = Zero.
+  Proof.
+    intros a b.
+    split ; intro H.
+    - destruct a, b ; simpl in H ; try discriminate H.
+      split ; exact H.
+    - destruct H as [H1 H2].
+      rewrite H1.
+      rewrite H2.
+      simpl.
+      reflexivity.
+  Qed.
+
+  Theorem disj_one_iff : forall a b : V4, disj a b = One <-> a = One \/ b = One \/ (a = Both /\ b = None) \/ (a = None /\ b = Both).
+  Proof.
+    intros a b.
+    split ; intro H.
+    - destruct a, b ; simpl in H ; try discriminate H ; auto.
+    - destruct H as [H | [H | [H | H]]].
+      + rewrite H.
+        destruct b ; auto.
+      + rewrite H.
+        destruct a ; auto.
+      + destruct H as [H1 H2].
+        rewrite H1, H2.
+        simpl.
+        reflexivity.
+      + destruct H as [H1 H2].
+        rewrite H1, H2.
+        simpl.
+        reflexivity.
+  Qed.
+End FDE_V4.
+
 Module FourValuedSemantic.
+  Import V4.
+
+  Record Model (atom : Type) :=
+  {
+    v : atom -> V4;
+  }.
+
+  Fixpoint eval {atom : Type} (M: Model atom) (f : formula) : V4 :=
+    match f with
+    | f_atom A => v atom M A
+    | f_not f' => neg (eval M f')
+    | f_conj f g => V4.conj (eval M f) (eval M g)
+    | f_disj f g => V4.disj (eval M f) (eval M g)
+    end.
+
+  Definition valid {atom : Type} (f : formula) : Prop := forall (M : @Model atom), designated (eval M f).
+
+  Declare Scope V4_scope.
+  #[global] Notation "|= f" := (valid f) (at level 90) : V4_scope.
+
+  Definition holds_all {atom : Type} (M : @Model atom) (Γ : list formula) : Prop := forall f : @formula atom, In f Γ -> designated (eval M f).
+
+  Definition consequence {atom : Type} (Γ : list (@formula atom))
+    (f : @formula atom) : Prop :=
+    forall (M : @Model atom),
+      holds_all M Γ -> designated (eval M f).
+
+  #[global] Notation "Γ |= f" := (consequence Γ f) (at level 90) : V4_scope.
+
+  Lemma HoldsAll1 {atom : Type} (M : @Model atom) (f : @formula atom) : holds_all M [f] <-> eval M f = One.
+  Proof.
+    split.
+    - intro H.
+      unfold holds_all in H.
+      specialize (H f).
+      specialize (in_eq f nil) as H1.
+      specialize (H H1).
+      exact H.
+    - intro H.
+      unfold holds_all.
+      intros f1 H1.
+      unfold In in H1.
+      destruct H1 as [H1 | []].
+      rewrite <-H1.
+      exact H.
+  Qed.
 
 End FourValuedSemantic.
