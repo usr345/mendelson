@@ -236,9 +236,78 @@ Module Meta_star.
     unfold not.
     intro H.
     unfold valid in H.
-    induction A.
-    -
+    pose (
+        v1 :=
+          fun (a : atom) (w: TrueWorlds) =>
+          match w with
+          | TrueWorld => false
+          | TrueWorld' => true
+          end
+      ).
 
+    pose (CounterModel := {|
+      worlds := TrueWorlds;
+      w0 := TrueWorld;
+      star := true_star;
+      star_involutive := true_star_involutive;
+      v := v1;
+    |}).
+
+  assert (H1 : forall f : @formula atom, (StarSemantic.eval CounterModel f TrueWorld = false) /\ (StarSemantic.eval CounterModel f TrueWorld' = true)).
+  {
+    intro f.
+    induction f as [a | f' IH | f1 IH1 f2 IH2 | f1 IH1 f2 IH2].
+    - (* atom *) 
+      split.
+      + simpl.
+        reflexivity.
+      + simpl.
+        reflexivity.
+    - (* not *)
+      split.
+      + simpl.
+        rewrite Bool.negb_false_iff.
+        destruct IH as [IH1 IH2].
+        rewrite IH2.
+        reflexivity.
+      + simpl. 
+        rewrite Bool.negb_true_iff.
+        destruct IH as [IH1 IH2].
+        rewrite IH1.
+        reflexivity.
+    - (* conj *)
+      split.
+      + simpl.
+        rewrite (proj1 IH1).
+        rewrite (proj1 IH2).
+        cbn [andb].
+        reflexivity.
+      + simpl.
+        rewrite (proj2 IH1).
+        rewrite (proj2 IH2).
+        cbn [andb].
+        reflexivity.
+    - (* disj *)
+      split.
+      + simpl.
+        rewrite (proj1 IH1).
+        rewrite (proj1 IH2).
+        cbn [orb].
+        reflexivity.
+      + simpl. 
+        rewrite (proj2 IH1).
+        rewrite (proj2 IH2).
+        cbn [orb].        
+        reflexivity.
+  }
+
+  specialize (H1 A).
+  destruct H1 as [H1 _].
+  specialize (H CounterModel TrueWorld).
+  rewrite H1 in H.
+  discriminate H.
+Qed.
+  
 End Meta_star.
 
 Import RelSemantic.

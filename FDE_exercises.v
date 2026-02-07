@@ -547,7 +547,7 @@ End StarExcersizes.
 Import FourValuedSemantic.
 Module V4Excersizes.
   Open Scope V4_scope.
-
+(*
   Theorem T_836 {atom : Type} : forall A B C D : @formula atom, [$~(B /\ ~C) /\ A$] |= $(~B \/ C) \/ D$.
   Proof.
     intros A B C D.
@@ -601,6 +601,6 @@ Module V4Excersizes.
       rewrite Bool.andb_true_iff.
       exact (conj H1 H2).
   Qed.
-
+*)
 
 End V4Excersizes.

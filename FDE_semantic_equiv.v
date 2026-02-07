@@ -6,14 +6,14 @@ Import RelSemantic.
 Import StarSemantic.
 
 Module RelStarEquiv.
-  Lemma eval_invariant1 {atom : Type} (f : @formula atom) (M : RelSemantic.Model atom) :
+  Lemma eval_invariant_rel_star {atom : Type} (f : @formula atom) (M : RelSemantic.Model atom) :
     (RelSemantic.eval M f true = true) -> StarSemantic.eval (convert2 M) f TrueWorld = true
-  with eval_invariant2 {atom : Type} (f : @formula atom) (M : RelSemantic.Model atom) :
+  with eval_invariant_rel_star_false {atom : Type} (f : @formula atom) (M : RelSemantic.Model atom) :
     (RelSemantic.eval M f false = true) -> StarSemantic.eval (convert2 M) f TrueWorld' = false.
   Proof.
   - intro H.
-    specialize (eval_invariant1 atom).
-    specialize (eval_invariant2 atom).
+    specialize (eval_invariant_rel_star atom).
+    specialize (eval_invariant_rel_star_false atom).
     induction f.
     + simpl.
       simpl in H.
@@ -21,9 +21,9 @@ Module RelStarEquiv.
     + simpl.
       rewrite Bool.negb_true_iff.
       simpl in H.
-      specialize (eval_invariant2 f0 M).
-      specialize (eval_invariant2 H).
-      exact eval_invariant2.
+      specialize (eval_invariant_rel_star_false f0 M).
+      specialize (eval_invariant_rel_star_false H).
+      exact eval_invariant_rel_star_false.
     + simpl.
       rewrite Bool.andb_true_iff.
       simpl in H.
@@ -44,8 +44,8 @@ Module RelStarEquiv.
         right.
         exact IHf2.
   - intro H.
-    specialize (eval_invariant1 atom).
-    specialize (eval_invariant2 atom).
+    specialize (eval_invariant_rel_star atom).
+    specialize (eval_invariant_rel_star_false atom).
     induction f.
     + simpl.
       rewrite Bool.negb_false_iff.
@@ -54,9 +54,9 @@ Module RelStarEquiv.
     + simpl.
       rewrite Bool.negb_false_iff.
       simpl in H.
-      specialize (eval_invariant1 f0 M).
-      specialize (eval_invariant1 H).
-      exact eval_invariant1.
+      specialize (eval_invariant_rel_star f0 M).
+      specialize (eval_invariant_rel_star H).
+      exact eval_invariant_rel_star.
     + simpl.
       rewrite Bool.andb_false_iff.
       simpl in H.
@@ -78,14 +78,14 @@ Module RelStarEquiv.
       exact (conj IHf1 IHf2).
   Qed.
 
-  Lemma eval_invariant3 {atom : Type} (f : @formula atom) (M : @StarSemantic.Model atom) (w : M.(worlds)):
+  Lemma eval_invariant_star_rel {atom : Type} (f : @formula atom) (M : @StarSemantic.Model atom) (w : M.(worlds)):
     StarSemantic.eval M f w = true -> RelSemantic.eval (convert1 M w) f true = true
-  with eval_invariant4 {atom : Type} (f : @formula atom) (M : @StarSemantic.Model atom) (w : M.(worlds)):
+  with eval_invariant_star_rel_false {atom : Type} (f : @formula atom) (M : @StarSemantic.Model atom) (w : M.(worlds)):
     StarSemantic.eval M f (M.(star) w) = false -> RelSemantic.eval (convert1 M w) f false = true.
   Proof.
   - intro H.
-    specialize (eval_invariant3 atom).
-    specialize (eval_invariant4 atom).
+    specialize (eval_invariant_star_rel atom).
+    specialize (eval_invariant_star_rel_false atom).
     induction f.
     + simpl.
       simpl in H.
@@ -93,9 +93,9 @@ Module RelStarEquiv.
     + simpl.
       simpl in H.
       rewrite Bool.negb_true_iff in H.
-      specialize (eval_invariant4 f0 M w).
-      specialize (eval_invariant4 H).
-      exact eval_invariant4.
+      specialize (eval_invariant_star_rel_false f0 M w).
+      specialize (eval_invariant_star_rel_false H).
+      exact eval_invariant_star_rel_false.
     + simpl.
       rewrite Bool.andb_true_iff.
       simpl in H.
@@ -116,8 +116,8 @@ Module RelStarEquiv.
         right.
         exact IHf2.
   - intro H.
-    specialize (eval_invariant3 atom).
-    specialize (eval_invariant4 atom).
+    specialize (eval_invariant_star_rel atom).
+    specialize (eval_invariant_star_rel_false atom).
     induction f.
     + simpl.
       rewrite Bool.negb_true_iff.
@@ -127,9 +127,9 @@ Module RelStarEquiv.
       simpl in H.
       rewrite star_involutive in H.
       rewrite Bool.negb_false_iff in H.
-      specialize (eval_invariant3 f0 M w).
-      specialize (eval_invariant3 H).
-      exact eval_invariant3.
+      specialize (eval_invariant_star_rel f0 M w).
+      specialize (eval_invariant_star_rel H).
+      exact eval_invariant_star_rel.
     + simpl.
       rewrite Bool.orb_true_iff.
       simpl in H.
@@ -151,7 +151,7 @@ Module RelStarEquiv.
       exact (conj IHf1 IHf2).
   Qed.
 
-  Lemma holds_all_invariant1 {atom : Type} (Γ : list (@formula atom)) (M : RelSemantic.Model atom) :
+  Lemma holds_all_rel_star {atom : Type} (Γ : list (@formula atom)) (M : RelSemantic.Model atom) :
     RelSemantic.holds_all M Γ -> StarSemantic.holds_all (convert2 M) Γ TrueWorld.
   Proof.
     intro H.
@@ -159,11 +159,11 @@ Module RelStarEquiv.
     intros f H1.
     unfold RelSemantic.holds_all in H.
     specialize (H f H1).
-    apply (eval_invariant1 f M) in H.
+    apply (eval_invariant_rel_star f M) in H.
     exact H.
   Qed.
 
-  Lemma holds_all_invariant2 {atom : Type} (Γ : list (@formula atom))
+  Lemma holds_all_star_rel {atom : Type} (Γ : list (@formula atom))
     (M : @StarSemantic.Model atom) (w : M.(worlds)) : StarSemantic.holds_all M Γ w -> RelSemantic.holds_all (convert1 M w) Γ.
   Proof.
     intro H.
@@ -171,7 +171,7 @@ Module RelStarEquiv.
     intros f H1.
     unfold StarSemantic.holds_all in H.
     specialize (H f H1).
-    apply (eval_invariant3 f M w) in H.
+    apply (eval_invariant_star_rel f M w) in H.
     exact H.
   Qed.
 
@@ -186,11 +186,11 @@ Module RelStarEquiv.
     set (StarM := convert2 M).
     specialize (H StarM).
     specialize (H TrueWorld).
-    apply holds_all_invariant1 in H1.
+    apply holds_all_rel_star in H1.
     specialize (H H1).
     clear H1.
     induction A.
-    - apply eval_invariant3 in H.
+    - apply eval_invariant_star_rel in H.
       unfold StarM in H.
       simpl in H.
       simpl.
@@ -198,9 +198,8 @@ Module RelStarEquiv.
     - simpl.
       simpl in H.
       rewrite Bool.negb_true_iff in H.
-      apply (eval_invariant4 A StarM TrueWorld) in H.
+      apply (eval_invariant_star_rel_false A StarM TrueWorld) in H.
       unfold StarM in H.
-      simpl in H.
       specialize (eval_eq (convert1 (convert2 M) TrueWorld) M A false) as H1.
       assert (H2 : forall (A : atom) (b : bool),
                  RelSemantic.ρ atom (convert1 (convert2 M) TrueWorld) A b = RelSemantic.ρ atom M A b).
@@ -236,7 +235,8 @@ Module RelStarEquiv.
 
   Lemma eval_star_roundtrip {atom : Type} (M : @StarSemantic.Model atom)
   (w : M.(worlds)) (f : formula) (u : (convert2 (convert1 M w)).(worlds)) :
-    StarSemantic.eval (convert2 (convert1 M w)) f u = StarSemantic.eval M f (match u with
+    StarSemantic.eval (convert2 (convert1 M w)) f u = StarSemantic.eval M f 
+    (match u with
      | TrueWorld  => w
      | TrueWorld' => star M w
      end).
@@ -280,12 +280,12 @@ Module RelStarEquiv.
     intros M w H1.
     set (RelM := convert1 M w).
     specialize (H RelM).
-    apply holds_all_invariant2 in H1.
+    apply holds_all_star_rel in H1.
     specialize (H H1).
-    apply eval_invariant1 in H.
+    apply eval_invariant_rel_star in H.
+    unfold RelM in H.
     specialize (eval_star_roundtrip M w A TrueWorld) as H2.
     simpl in H2.
-    unfold RelM in H.
     rewrite H2 in H.
     exact H.
   Qed.

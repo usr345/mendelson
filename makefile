@@ -40,8 +40,10 @@ L1_Hilbert_Accerman.vo: L1_Hilbert_Accerman.v Sets.vo FSignature.vo
 	$(COQC) L1_Hilbert_Accerman.v
 
 # FDE
+FDE_formula.vo: FDE_formula.v FSignature.vo
+	$(COQC) FDE_formula.v
 
-FDE_semantics.vo: FDE_semantics.v FSignature.vo Sets.vo
+FDE_semantics.vo: FDE_semantics.v FDE_formula.vo Sets.vo
 	$(COQC) FDE_semantics.v
 
 FDE_semantic_equiv.vo: FDE_semantic_equiv.v FDE_semantics.vo
@@ -65,4 +67,4 @@ K4_exercises.vo: K4_exercises.v K4.vo
 	$(COQC) K4_exercises.v
 
 clean:
-	rm -f *.vo *.vok *.vos *.glob
+	find . -type f \( -name "*.vo" -o -name "*.vok" -o -name "*.vos" -o -name "*.glob" -o -name "*.aux" -o -name "*.time" -o -name "*.cache" \) -print0 | xargs -0 rm -f

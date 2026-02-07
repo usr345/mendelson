@@ -1,4 +1,3 @@
-From Mendelson Require Import FSignature.
 From Mendelson Require Import Sets.
 From Mendelson Require Import FDE_formula.
 From Coq Require Import Lists.List.
@@ -279,7 +278,7 @@ Module FDE_V4.
   | le_t_NO : le_t None One
   | le_t_BO : le_t Both One.
 
-  Instance PO_V4_truth : PartialOrder V4.
+(*  Instance PO_V4_truth : PartialOrder V4. *)
 
   Definition designated (v : V4) : Prop :=
     v = One \/ v = Both.
@@ -396,7 +395,7 @@ Module FDE_V4.
 End FDE_V4.
 
 Module FourValuedSemantic.
-  Import V4.
+  Import FDE_V4.
 
   Record Model (atom : Type) :=
   {
@@ -407,8 +406,8 @@ Module FourValuedSemantic.
     match f with
     | f_atom A => v atom M A
     | f_not f' => neg (eval M f')
-    | f_conj f g => V4.conj (eval M f) (eval M g)
-    | f_disj f g => V4.disj (eval M f) (eval M g)
+    | f_conj f g => FDE_V4.conj (eval M f) (eval M g)
+    | f_disj f g => FDE_V4.disj (eval M f) (eval M g)
     end.
 
   Definition valid {atom : Type} (f : formula) : Prop := forall (M : @Model atom), designated (eval M f).
@@ -425,7 +424,7 @@ Module FourValuedSemantic.
 
   #[global] Notation "Γ |= f" := (consequence Γ f) (at level 90) : V4_scope.
 
-  Lemma HoldsAll1 {atom : Type} (M : @Model atom) (f : @formula atom) : holds_all M [f] <-> eval M f = One.
+  Lemma HoldsAll1 {atom : Type} (M : @Model atom) (f : @formula atom) : holds_all M [f] <-> designated (eval M f).
   Proof.
     split.
     - intro H.
