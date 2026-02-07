@@ -5,6 +5,7 @@ Import ListNotations.
 Import K4_FormulaDef.
 Import K4_Formula.
 Import K4.
+Local Open Scope formula_scope.
 
 (* A set of worlds is divided into 2 subsets: a set of normal and non-normal worlds.
 Нам нужно 2 $\ro$: одно для связи пропозициональных переменных с мирами и значениями истинности.

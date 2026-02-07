@@ -1,4 +1,5 @@
 From Mendelson Require Import FSignature.
+Open Scope formula_scope.
 
 Module FDE_FormulaDef <: TFormula.
   Inductive formula {atom : Type} : Type :=

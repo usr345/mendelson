@@ -6,6 +6,7 @@ From Mendelson Require Import Semantic.
 From Mendelson Require Import EqDec.
 From Coq Require Import Lists.List.
 Import ListNotations.
+Local Open Scope formula_scope.
 
 Module Meta.
 

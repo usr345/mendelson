@@ -2,6 +2,7 @@ Require Import Setoid.
 From Mendelson Require Import Sets.
 From Mendelson Require Import FSignature.
 From Mendelson Require Import Formula.
+Local Open Scope formula_scope.
 
 Module Syntactic.
   (* We now come to main definitions. We first define a type

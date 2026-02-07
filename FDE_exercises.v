@@ -6,6 +6,7 @@ Import ListNotations.
 Import FDE_FormulaDef.
 Import FDE_Formula.
 Import RelSemantic.
+Local Open Scope formula_scope.
 
 (* A set of worlds is divided into 2 subsets: a set of normal and non-normal worlds.
 Нам нужно 2 $\ro$: одно для связи пропозициональных переменных с мирами и значениями истинности.

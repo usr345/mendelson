@@ -3,6 +3,7 @@ From Coq Require Import Classical.
 From Mendelson Require Import Sets.
 From Mendelson Require Import Formula.
 From Mendelson Require Import FSignature.
+Local Open Scope formula_scope.
 
 Module Semantic.
 
