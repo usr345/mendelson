@@ -307,7 +307,7 @@ Module Meta_star.
   rewrite H1 in H.
   discriminate H.
 Qed.
-  
+
 End Meta_star.
 
 Import RelSemantic.

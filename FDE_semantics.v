@@ -1,5 +1,6 @@
 From Mendelson Require Import Sets.
 From Mendelson Require Import FDE_formula.
+From Lattices Require Import Order.
 From Coq Require Import Lists.List.
 Import ListNotations.
 Import FDE_FormulaDef.
@@ -112,173 +113,52 @@ Module StarSemantic.
       rewrite <-H1.
       exact H.
   Qed.
-
-  Definition convert1 {atom : Type} (M : @StarSemantic.Model atom) (w : M.(worlds)) : RelSemantic.Model atom :=
-      let ρ1 :=
-            fun (a : atom) (val : bool) =>
-              match val with
-              | true => (M.(v) a w)
-              | false => negb (M.(v) a (M.(star) w))
-              end
-      in
-        RelSemantic.Build_Model atom ρ1.
-
-  Variant TrueWorlds : Type := TrueWorld | TrueWorld'.
-
-  Definition true_star (w : TrueWorlds) : TrueWorlds :=
-  match w with
-  | TrueWorld => TrueWorld'
-  | TrueWorld' => TrueWorld
-  end.
-
-  Lemma true_star_involutive : forall w : TrueWorlds, true_star (true_star w) = w.
-  Proof.
-    intro w.
-    destruct w.
-    - simpl.
-      reflexivity.
-    - simpl.
-      reflexivity.
-  Qed.
-
-  Definition convert2 {atom : Type} (M : RelSemantic.Model atom) : @StarSemantic.Model atom :=
-      let v :=
-            fun (a : atom) (w : TrueWorlds) =>
-              match w with
-              | TrueWorld => RelSemantic.ρ atom M a true
-              | TrueWorld' => negb (RelSemantic.ρ atom M a false)
-              end
-      in
-        StarSemantic.Build_Model atom TrueWorlds TrueWorld true_star true_star_involutive v.
-
-  Variant atom3 : Set := P | Q | R.
-
-  Definition f (a: atom3) : @formula atom3 :=
-    f_atom a.
-
-  Coercion f: atom3 >-> formula.
-
-  Definition ρ1 (a : atom3) (val : bool) :=
-    match a, val with
-    | P, _ => true
-    | _, _ => false
-    end.
-
-  Definition M1 := RelSemantic.Build_Model atom3 ρ1.
-
-  Example Test1 : (v (convert2 M1) P TrueWorld) = true.
-  Proof.
-    simpl.
-    reflexivity.
-  Qed.
-
-  Example Test2 : (v (convert2 M1) P TrueWorld') = false.
-  Proof.
-    simpl.
-    reflexivity.
-  Qed.
-
-  Example Test3 : forall A : atom3, ~(A = P) -> (v (convert2 M1) A TrueWorld) = false.
-  Proof.
-    intros A H.
-    destruct A.
-    - contradiction.
-    - simpl.
-      reflexivity.
-    - simpl.
-      reflexivity.
-  Qed.
-
-  Example Test4 : forall A : atom3, ~(A = P) -> (v (convert2 M1) A TrueWorld') = true.
-  Proof.
-    intros A H.
-    destruct A.
-    - contradiction.
-    - simpl.
-      reflexivity.
-    - simpl.
-      reflexivity.
-  Qed.
-
-  Example Test5 : (RelSemantic.ρ atom3 (convert1 (convert2 M1) TrueWorld) P true) = true.
-  Proof.
-    simpl.
-    reflexivity.
-  Qed.
-
-  Example Test6 : (RelSemantic.ρ atom3 (convert1 (convert2 M1) TrueWorld) P false) = true.
-  Proof.
-    simpl.
-    reflexivity.
-  Qed.
-
-  Example Test7 : forall (A : atom3) (b : bool), ~(A = P) -> (RelSemantic.ρ atom3 (convert1 (convert2 M1) TrueWorld) A b) = false.
-  Proof.
-    intros A b H.
-    destruct A.
-    - contradiction.
-    - destruct b ; simpl ; reflexivity.
-    - destruct b ; simpl ; reflexivity.
-  Qed.
-
-  Lemma ρ_eq {atom : Type} (M : RelSemantic.Model atom) :
-    let
-      StarM := (convert2 M)
-    in
-      forall (A : atom) (b : bool),
-      RelSemantic.ρ atom M A b = RelSemantic.ρ atom (convert1 StarM TrueWorld) A b.
-  Proof.
-    intros StarM A b.
-    simpl.
-    rewrite Bool.negb_involutive.
-    destruct b ; reflexivity.
-  Qed.
-
-  Lemma eval_eq {atom : Type} (M1 M2 : RelSemantic.Model atom)
-    (f : formula) (b : bool) (Hρ : forall A b, RelSemantic.ρ atom M1 A b =
-                                         RelSemantic.ρ atom M2 A b) :
-    RelSemantic.eval M1 f b = RelSemantic.eval M2 f b.
-  Proof.
-    revert b.
-    induction f ; intro b.
-    - simpl.
-      specialize (Hρ a b).
-      exact Hρ.
-    - simpl.
-      specialize (IHf (negb b)).
-      exact IHf.
-    - simpl.
-      destruct b.
-      + rewrite IHf1.
-        rewrite IHf2.
-        reflexivity.
-      + rewrite IHf1.
-        rewrite IHf2.
-        reflexivity.
-    - simpl.
-      destruct b.
-      + rewrite IHf1.
-        rewrite IHf2.
-        reflexivity.
-      + rewrite IHf1.
-        rewrite IHf2.
-        reflexivity.
-  Qed.
-
 End StarSemantic.
+
+Import Lattice_LE.
 
 Module FDE_V4.
   Variant V4 : Type := Zero | None | Both | One.
   Scheme Equality for V4.
 
-  Inductive le_t : V4 -> V4 -> Prop :=
-  | le_t_refl : forall x, le_t x x
-  | le_t_ZN : le_t Zero None
-  | le_t_ZB : le_t Zero Both
-  | le_t_NO : le_t None One
-  | le_t_BO : le_t Both One.
+  Inductive le_v4 : V4 -> V4 -> Prop :=
+  | le_t_refl : forall x, le_v4 x x
+  | le_t_zero : forall x, le_v4 Zero x
+  | le_t_one : forall x, le_v4 x One.
 
-(*  Instance PO_V4_truth : PartialOrder V4. *)
+
+  Instance v4Le : Le V4 := {
+  le_lat := le_v4;
+  }.
+
+  Proposition le_v4_trans : forall x y z : V4, le_v4 x y -> le_v4 y z -> le_v4 x z.
+  Proof.
+    intros x y z H1 H2.
+    inversion H1 ; subst.
+    - inversion H2 ; subst.
+      + apply le_t_refl.
+      + apply le_t_zero.
+      + apply le_t_one.
+    - apply le_t_zero.
+    - inversion H2 ; subst.
+      + apply le_t_one.
+      + apply le_t_one.
+  Qed.
+
+  Proposition le_v4_le_antisym : forall x y : V4, le_v4 x y -> le_v4 y x -> x = y.
+  Proof.
+    intros x y H1 H2.
+    inversion H1 ; subst.
+    - reflexivity.
+    - inversion H2 ; subst ; reflexivity.
+    - inversion H2 ; subst ; reflexivity.
+  Qed.
+
+  Instance v4PO : PartialOrder V4 := {
+  le_refl := le_t_refl;
+  le_trans := le_v4_trans;
+  le_antisym := le_v4_le_antisym;
+  }.
 
   Definition designated (v : V4) : Prop :=
     v = One \/ v = Both.
@@ -320,6 +200,167 @@ Module FDE_V4.
     | Zero, None => None
     | Zero, Both => Both
     end.
+
+  Theorem le_disj_left : forall x y : V4,  le_v4 x (disj x y).
+  Proof.
+    intros x y.
+    destruct x.
+    - apply le_t_zero.
+    - destruct y ; simpl.
+      + apply le_t_refl.
+      + apply le_t_refl.
+      + apply le_t_one.
+      + apply le_t_one.
+    - destruct y ; simpl. 
+      + apply le_t_refl.
+      + apply le_t_one.
+      + apply le_t_refl.
+      + apply le_t_one.
+    - apply le_t_one.
+  Qed.
+
+  Theorem le_disj_right : forall x y : V4,  le_v4 y (disj x y).
+  Proof.
+    intros x y.
+    destruct y.
+    - apply le_t_zero.
+    - destruct x ; simpl.
+      + apply le_t_refl.
+      + apply le_t_refl.
+      + apply le_t_one.
+      + apply le_t_one.
+    - destruct x ; simpl. 
+      + apply le_t_refl.
+      + apply le_t_one.
+      + apply le_t_refl.
+      + apply le_t_one.
+    - destruct x ; simpl ; apply le_t_one.
+  Qed.
+
+  Theorem disj_same: forall x : V4, disj x x = x.
+  Proof.
+    destruct x ; simpl ; reflexivity.
+  Qed.
+
+  Theorem disj_comm: forall x y: V4, disj x y = disj y x.
+  Proof.
+    destruct x, y ; simpl ; reflexivity.
+  Qed.
+
+  Theorem disj_zero: forall x : V4, disj x Zero = x.
+  Proof.
+    destruct x ; simpl ; reflexivity.
+  Qed.
+
+  Theorem disj_one: forall x : V4, disj x One = One.
+  Proof.
+    destruct x ; simpl ; reflexivity.
+  Qed.
+
+  Theorem conj_same: forall x : V4, conj x x = x.
+  Proof.
+    destruct x ; simpl ; reflexivity.
+  Qed.
+
+  Theorem conj_comm: forall x y: V4, conj x y = conj y x.
+  Proof.
+    destruct x, y ; simpl ; reflexivity.
+  Qed.
+
+  Theorem conj_zero: forall x : V4, conj x Zero = Zero.
+  Proof.
+    destruct x ; simpl ; reflexivity.
+  Qed.
+
+  Theorem conj_one: forall x : V4, conj x One = x.
+  Proof.
+    destruct x ; simpl ; reflexivity.
+  Qed.
+
+  Theorem disj_supremum : forall x y z, (le_v4 x z) -> (le_v4 y z) -> le_v4 (disj x y) z.
+  Proof.
+    intros x y z H1 H2.
+    inversion H1 ; subst.
+    - inversion H2 ; subst.
+      + rewrite disj_same.
+        apply le_t_refl.
+      + rewrite disj_zero.
+        apply le_t_refl.
+      + rewrite disj_comm.
+        rewrite disj_one.
+        apply le_t_refl.
+    - rewrite disj_comm.
+      rewrite disj_zero.
+      exact H2.
+    - apply le_t_one.
+  Qed.
+
+  Theorem le_conj_left : forall x y : V4,  le_v4 (conj x y) x.
+  Proof.
+    intros x y.
+    destruct x.
+    - rewrite conj_comm.
+      rewrite conj_zero.
+      apply le_t_refl.
+    - destruct y ; simpl.
+      + apply le_t_zero.
+      + apply le_t_refl.
+      + apply le_t_zero.
+      + apply le_t_refl.
+    - destruct y ; simpl.
+      + apply le_t_zero.
+      + apply le_t_zero.
+      + apply le_t_refl.
+      + apply le_t_refl.
+    - apply le_t_one.
+  Qed.
+
+  Theorem le_conj_right : forall x y : V4,  le_v4 (conj x y) y.
+  Proof.
+    intros x y.
+    destruct y.
+    - rewrite conj_zero.
+      apply le_t_refl.
+    - destruct x ; simpl.
+      + apply le_t_zero.
+      + apply le_t_refl.
+      + apply le_t_zero.
+      + apply le_t_refl.
+    - destruct x ; simpl.
+      + apply le_t_zero.
+      + apply le_t_zero.
+      + apply le_t_refl.
+      + apply le_t_refl.
+    - apply le_t_one.
+  Qed.
+
+  Theorem conj_infimum : forall x y z, le_v4 z x -> le_v4 z y -> le_v4 z (conj x y).
+  Proof.
+    intros x y z H1 H2.
+    inversion H1 ; subst.
+    - inversion H2 ; subst.
+      + rewrite conj_same.
+        apply le_t_refl.
+      + apply le_t_zero.
+      + rewrite conj_one.
+        apply le_t_refl.
+    - apply le_t_zero.
+    - rewrite conj_comm.
+      rewrite conj_one.
+      exact H2.
+  Qed.
+
+  Instance V4_Lattice : Lattice V4 :=
+  {
+    join := disj;
+    meet := conj;
+    le_join_left := le_disj_left;
+    le_join_right := le_disj_right;
+    A2 := disj_supremum;
+    le_meet_left := le_conj_left;
+    le_meet_right := le_conj_right;
+    A4 := conj_infimum;
+  }.
 
   Theorem neg_involutive : forall a : V4, neg (neg a) = a.
   Proof.
@@ -397,14 +438,14 @@ End FDE_V4.
 Module FourValuedSemantic.
   Import FDE_V4.
 
-  Record Model (atom : Type) :=
+  Record Model {atom : Type} :=
   {
     v : atom -> V4;
   }.
 
-  Fixpoint eval {atom : Type} (M: Model atom) (f : formula) : V4 :=
+  Fixpoint eval {atom : Type} (M: @Model atom) (f : formula) : V4 :=
     match f with
-    | f_atom A => v atom M A
+    | f_atom A => v M A
     | f_not f' => neg (eval M f')
     | f_conj f g => FDE_V4.conj (eval M f) (eval M g)
     | f_disj f g => FDE_V4.disj (eval M f) (eval M g)
