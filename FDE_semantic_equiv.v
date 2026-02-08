@@ -159,7 +159,7 @@ Qed.
 
 Module RelStarEquiv.
   Lemma eval_rel_star_equiv {atom : Type} (f : @formula atom) (M : RelSemantic.Model atom) :
-    forall b : bool, 
+    forall b : bool,
     RelSemantic.eval M f b = true ->
     StarSemantic.eval (convert_rel_star M) f (if b then TrueWorld else TrueWorld') = b.
   Proof.
@@ -227,8 +227,8 @@ Module RelStarEquiv.
   Qed.
 
   Lemma eval_star_rel_equiv {atom : Type} (f : @formula atom) (M : @StarSemantic.Model atom) (w : M.(worlds)) :
-    forall b : bool, 
-    StarSemantic.eval M f (if b then w else (M.(star) w)) = b -> 
+    forall b : bool,
+    StarSemantic.eval M f (if b then w else (M.(star) w)) = b ->
     RelSemantic.eval (convert_star_rel M w) f b = true.
   Proof.
     induction f as [a | f' IH | f1 IH1 f2 IH2 | f1 IH1 f2 IH2].
@@ -379,7 +379,7 @@ Module RelStarEquiv.
 
   Lemma eval_star_roundtrip {atom : Type} (M : @StarSemantic.Model atom)
   (w : M.(worlds)) (f : formula) (u : (convert_rel_star (convert_star_rel M w)).(worlds)) :
-    StarSemantic.eval (convert_rel_star (convert_star_rel M w)) f u = StarSemantic.eval M f 
+    StarSemantic.eval (convert_rel_star (convert_star_rel M w)) f u = StarSemantic.eval M f
     (match u with
      | TrueWorld  => w
      | TrueWorld' => star M w
@@ -447,7 +447,9 @@ End RelStarEquiv.
 Import FDE_V4.
 Import FourValuedSemantic.
 
-Definition convert_v4_rel {atom : Type} (M : @FourValuedSemantic.Model atom) : @RelSemantic.Model atom :=
+Module V4StarEquiv.
+
+  Definition convert_v4_rel {atom : Type} (M : @FourValuedSemantic.Model atom) : @RelSemantic.Model atom :=
     let ρ1 :=
           fun (a : atom) (val : bool) =>
             match val with
@@ -465,7 +467,31 @@ Definition convert_v4_rel {atom : Type} (M : @FourValuedSemantic.Model atom) : @
     in
       RelSemantic.Build_Model atom ρ1.
 
-Module V4StarEquiv.
+  Definition convert_rel_v4 {atom : Type} (M : @RelSemantic.Model atom) : @RelSemantic.Model atom :=
+    let ρ1 :=
+          fun (a : atom) (val : bool) =>
+            match val with
+            | true => match (M.(v atom) a) with
+                      | Zero => false
+                      | None => false
+                      | _ => true
+                      end
+            | false => match (M.(v atom) a) with
+                      | Zero => true
+                      | Both => true
+                      | _ => false
+                      end
+            end
+    in
+      RelSemantic.Build_Model atom ρ1.
+
+
+  Lemma eval_v4_rel_equiv {atom : Type} (f : @formula atom) (M : @FourValuedSemantic.Model atom) :
+    FourValuedSemantic.eval M f = One ->
+    RelSemantic.eval (convert_v4_rel M) f true = true /\
+    RelSemantic.eval (convert_v4_rel M) f false = false.
+  Proof.
+
 
 Lemma eval_invariant_v4_rel_One {atom : Type} (f : @formula atom) (M : @FourValuedSemantic.Model atom) :
     FourValuedSemantic.eval M f = One -> RelSemantic.eval (convert_v4_rel M) f true = true /\ RelSemantic.eval (convert_v4_rel M) f false = false

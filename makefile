@@ -8,7 +8,7 @@ else
     COQC=coqc
 endif
 
-COQC := $(COQC) -R . Mendelson
+COQC := $(COQC) -Q . Mendelson  -Q lattices Lattices
 
 all: Meta.vo FDE_exercises.vo K4_exercises.vo FDE_meta.vo
 
