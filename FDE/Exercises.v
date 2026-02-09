@@ -545,7 +545,7 @@ Module StarExcersizes.
     Abort.
 End StarExcersizes.
 
-Import FourValuedSemantic.
+Import V4Semantic.
 Module V4Excersizes.
   Open Scope V4_scope.
 (*

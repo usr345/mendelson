@@ -435,7 +435,7 @@ Module FDE_V4.
   Qed.
 End FDE_V4.
 
-Module FourValuedSemantic.
+Module V4Semantic.
   Import FDE_V4.
 
   Record Model {atom : Type} :=
@@ -483,4 +483,4 @@ Module FourValuedSemantic.
       exact H.
   Qed.
 
-End FourValuedSemantic.
+End V4Semantic.

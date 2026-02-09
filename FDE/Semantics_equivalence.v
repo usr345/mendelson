@@ -445,11 +445,11 @@ Module RelStarEquiv.
 End RelStarEquiv.
 
 Import FDE_V4.
-Import FourValuedSemantic.
+Import V4Semantic.
 
 Module V4StarEquiv.
 
-  Definition convert_v4_rel {atom : Type} (M : @FourValuedSemantic.Model atom) : @RelSemantic.Model atom :=
+  Definition convert_v4_rel {atom : Type} (M : @V4Semantic.Model atom) : @RelSemantic.Model atom :=
     let ρ1 :=
           fun (a : atom) (val : bool) =>
             match val with
@@ -486,21 +486,21 @@ Module V4StarEquiv.
       RelSemantic.Build_Model atom ρ1.
 
 
-  Lemma eval_v4_rel_equiv {atom : Type} (f : @formula atom) (M : @FourValuedSemantic.Model atom) :
-    FourValuedSemantic.eval M f = One ->
+  Lemma eval_v4_rel_equiv {atom : Type} (f : @formula atom) (M : @V4Semantic.Model atom) :
+    V4Semantic.eval M f = One ->
     RelSemantic.eval (convert_v4_rel M) f true = true /\
     RelSemantic.eval (convert_v4_rel M) f false = false.
   Proof.
 
 
-Lemma eval_invariant_v4_rel_One {atom : Type} (f : @formula atom) (M : @FourValuedSemantic.Model atom) :
-    FourValuedSemantic.eval M f = One -> RelSemantic.eval (convert_v4_rel M) f true = true /\ RelSemantic.eval (convert_v4_rel M) f false = false
-  with eval_invariant_v4_rel_None {atom : Type} (f : @formula atom) (M : @FourValuedSemantic.Model atom) :
-    FourValuedSemantic.eval M f = None -> RelSemantic.eval (convert_v4_rel M) f true = false /\ RelSemantic.eval (convert_v4_rel M) f false = false
-  with eval_invariant_v4_rel_Both {atom : Type} (f : @formula atom) (M : @FourValuedSemantic.Model atom) :
-    FourValuedSemantic.eval M f = Both -> RelSemantic.eval (convert_v4_rel M) f true = true /\ RelSemantic.eval (convert_v4_rel M) f false = true
-  with eval_invariant_v4_rel_Zero {atom : Type} (f : @formula atom) (M : @FourValuedSemantic.Model atom) :
-    FourValuedSemantic.eval M f = Zero -> RelSemantic.eval (convert_v4_rel M) f true = false /\ RelSemantic.eval (convert_v4_rel M) f false = true.
+Lemma eval_invariant_v4_rel_One {atom : Type} (f : @formula atom) (M : @V4Semantic.Model atom) :
+    V4Semantic.eval M f = One -> RelSemantic.eval (convert_v4_rel M) f true = true /\ RelSemantic.eval (convert_v4_rel M) f false = false
+  with eval_invariant_v4_rel_None {atom : Type} (f : @formula atom) (M : @V4Semantic.Model atom) :
+    V4Semantic.eval M f = None -> RelSemantic.eval (convert_v4_rel M) f true = false /\ RelSemantic.eval (convert_v4_rel M) f false = false
+  with eval_invariant_v4_rel_Both {atom : Type} (f : @formula atom) (M : @V4Semantic.Model atom) :
+    V4Semantic.eval M f = Both -> RelSemantic.eval (convert_v4_rel M) f true = true /\ RelSemantic.eval (convert_v4_rel M) f false = true
+  with eval_invariant_v4_rel_Zero {atom : Type} (f : @formula atom) (M : @V4Semantic.Model atom) :
+    V4Semantic.eval M f = Zero -> RelSemantic.eval (convert_v4_rel M) f true = false /\ RelSemantic.eval (convert_v4_rel M) f false = true.
   Proof.
     intro H.
     specialize (eval_invariant_v4_rel_One atom).
