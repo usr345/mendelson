@@ -1,7 +1,7 @@
 Require Import Setoid.
-From Mendelson Require Import MSets.
-From Mendelson Require Import FSignature.
-From Mendelson Require Import EqDec.
+From Basis Require Import MSets.
+From Basis Require Import FSignature.
+From Basis Require Import EqDec.
 From Coq Require Import Lists.List.
 Import ListNotations.
 From Coq Require Import Arith.PeanoNat.
@@ -9,7 +9,7 @@ From Coq Require Import Init.Logic.
 Require Import Logic.Classical_Prop.
 Require Import Logic.Classical_Pred_Type.
 
-Module Formula1 <: TFormula.
+Module ModalFormula <: TFormula.
   (* Синтаксис модальной формулы *)
   Inductive formula {atom : Type} : Type :=
   | f_atom : atom -> formula
@@ -29,14 +29,13 @@ Module Formula1 <: TFormula.
 
   #[global] Notation "'box' p" := (f_box p) (p custom formula_view at level 1, in custom formula_view at level 1) : formula_scope.
   #[global] Notation "'diamond' p" := (f_diamond p) (p custom formula_view at level 1, in custom formula_view at level 1) : formula_scope.
-End Formula1.
-Export Formula1.
+End ModalFormula.
+Export ModalFormula.
+Module F1:= Make_Formula(ModalFormula).
+Import F1.
+Local Open Scope formula_scope.
 
 Module Formula.
-
-  Module F1:= Make_Formula(Formula1).
-  Import F1.
-  Export F1.
 
   (* We assume atomic propositions form a set with decidable equality. *)
   Parameter atom_eq : forall {atom : Set} (a b : atom), {a = b} + {a <> b}.
@@ -1345,8 +1344,9 @@ Definition valid_in_frame {atom : Set} `(Fr : Frame) (f : @formula atom) : Prop 
     forall w, valid {| frame := Fr;
                   valuation := V |} w f.
 
+(*
 Definition consequence {atom : Set} `(Fr : Frame) {Set_obj1 : TSet (@formula atom)} {Set_obj2 : TSet (@formula atom)} (G : Set_obj1) (L : Set_obj2) (f : @formula atom)
-
+*)
 Import Relation.
 
 (* Exercize 5.2.1 стр. 81 *)
@@ -3295,6 +3295,7 @@ Qed.
 
 End Goldblatt.
 
+(*
 Module CanonicalModels.
   Import Kripke.
   Import Syntactic.
@@ -3413,12 +3414,11 @@ Module CanonicalModels.
       + intro H.
         rewrite IHφ1 in H.
         rewrite IHφ2 in H.
-         (max_consistent_implication1 Γ φ1 φ2 HmaxH).
-      max_consistent_implication1 {atom : Set} {Set_obj : TSet (@formula atom)} (Γ : Set_obj) (A B : @formula atom): max_consistent Set_obj Γ -> ($A -> B$ ∈ Γ -> (A ∈ Γ -> B ∈ Γ)).
-
+        Abort.
 
 
   (* Если формула φ общезначима в канонической модели в мире Γ, то она принадлежит Γ *)
+  (*
   Lemma TruthLemma {atom : Set} (Γ : MaxConsintentWorld) : forall φ : @formula atom, valid (CanonicalModel atom) Γ φ -> φ ∈ Γ.(formulas).
   Proof.
     intros φ Hvalid.
@@ -3431,20 +3431,15 @@ Module CanonicalModels.
       specialize (max_consistent_negation Γ Γ.(is_max)) as H1.
       specialize (H1 φ).
       destruct H1.
-      + specialize (ident term+)
-  max_consistent Set_obj Γ -> forall φ : @formula atom, (φ ∈ Γ) \/ ($~ φ$ ∈ Γ).
-
-       consistent_no_contradiction1 {atom : Set} {Set_obj : TSet (@formula atom)} (Γ: Set_obj) (f : @formula atom):
-  consistent Γ -> f ∈ Γ -> $~f$ ∈ Γ -> False.
-      specialize (meta_contraposition  (P -> Q) -> (~Q -> ~P) as HContra.
-
+      + Abort.
+    *)
 
   Inductive atom2 : Set :=
-  | P : atom
-  | Q : atom.
+  | P : atom2
+  | Q : atom2.
 
   Proposition ReflexiveValid :
-    reflexive (@accessible CanonicalFrame) -> (forall φ : @formula atom, valid_in_frame CanonicalFrame $box φ -> φ$).
+    reflexive (@accessible CanonicalFrame) -> (forall φ : @formula atom2, valid_in_frame CanonicalFrame $box φ -> φ$).
   Proof.
     intro H.
     unfold reflexive in H.
@@ -3516,3 +3511,4 @@ Module CanonicalModels.
 
 
 End CanonicalModels.
+*)

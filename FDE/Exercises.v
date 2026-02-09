@@ -1,9 +1,9 @@
-From Mendelson Require Import FSignature.
-From Mendelson Require Import FDE_formula.
-From Mendelson Require Import FDE_semantics.
+From Basis Require Import FSignature.
+From FDE Require Import Formula.
+From FDE Require Import Semantics.
 From Coq Require Import Lists.List.
 Import ListNotations.
-Import FDE_FormulaDef.
+Import FormulaDef.
 Import FDE_Formula.
 Import RelSemantic.
 Local Open Scope formula_scope.

@@ -1,5 +1,5 @@
-From Mendelson Require Import FSignature.
-From Mendelson Require Import K4.
+From Basis Require Import FSignature.
+From K4_N4 Require Import K4.
 From Coq Require Import Lists.List.
 Import ListNotations.
 Import K4_FormulaDef.

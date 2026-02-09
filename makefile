@@ -1,70 +1,35 @@
-.PHONY: all clean
+.PHONY: all clean lattices basis classical fde k4 modal
 
-OUTPUT=$(shell which rocq 2>/dev/null)
+all: lattices basis classical fde k4 modal
 
-ifneq ($(OUTPUT), )
-    COQC=rocq c
-else
-    COQC=coqc
-endif
+# 1. Build Lattices
+lattices:
+	$(MAKE) -C Lattices
 
-COQC := $(COQC) -Q . Mendelson  -Q lattices Lattices
+# 2. Build Basis
+basis:
+	$(MAKE) -C Basis
 
-all: Meta.vo FDE_exercises.vo K4_exercises.vo FDE_meta.vo
+# 3. Build Classical
+classical: basis
+	$(MAKE) -C Classical
 
-FSignature.vo: FSignature.v
-	$(COQC) FSignature.v
+# 4. Build FDE
+fde: basis lattices
+	$(MAKE) -C FDE
 
-Sets.vo: Sets.v
-	$(COQC) Sets.v
+# 5. Build K4_N4
+k4: basis
+	$(MAKE) -C K4_N4
 
-MSets.vo: MSets.v
-	$(COQC) MSets.v
-
-EqDec.vo: EqDec.v
-	$(COQC) EqDec.v
-
-Formula.vo: Formula.v EqDec.vo FSignature.vo
-	$(COQC) Formula.v
-
-Semantic.vo: Semantic.v Sets.vo Formula.vo
-	$(COQC) Semantic.v
-
-Syntactic.vo: Syntactic.v Sets.vo Formula.vo
-	$(COQC) Syntactic.v
-
-Meta.vo: Meta.v Syntactic.vo Semantic.vo EqDec.vo
-	$(COQC) Meta.v
-
-L1_Hilbert_Accerman.vo: L1_Hilbert_Accerman.v Sets.vo FSignature.vo
-	$(COQC) L1_Hilbert_Accerman.v
-
-# FDE
-FDE_formula.vo: FDE_formula.v FSignature.vo
-	$(COQC) FDE_formula.v
-
-FDE_semantics.vo: FDE_semantics.v FDE_formula.vo Sets.vo
-	$(COQC) FDE_semantics.v
-
-FDE_semantic_equiv.vo: FDE_semantic_equiv.v FDE_semantics.vo
-	$(COQC) FDE_semantic_equiv.v
-
-FDE_exercises.vo: FDE_exercises.v FDE_semantics.vo
-	$(COQC) FDE_exercises.v
-
-FDE_syntactic.vo: FDE_syntactic.v FDE_semantics.vo FSignature.vo
-	$(COQC) FDE_syntactic.v
-
-FDE_meta.vo: FDE_meta.v FDE_semantic_equiv.vo FDE_syntactic.vo FDE_semantics.vo FSignature.vo
-	$(COQC) FDE_meta.v
-
-# K4
-
-K4.vo: K4.v FSignature.vo MSets.vo
-	$(COQC) K4.v
-
-K4_exercises.vo: K4_exercises.v K4.vo
-	$(COQC) K4_exercises.v
+# 6. Build Modal
+modal: basis
+	$(MAKE) -C Modal
 
 clean:
-	find . -type f \( -name "*.vo" -o -name "*.vok" -o -name "*.vos" -o -name "*.glob" -o -name "*.aux" -o -name "*.time" -o -name "*.cache" \) -print0 | xargs -0 rm -f
+	$(MAKE) -C Lattices clean || true
+	$(MAKE) -C Basis clean || true
+	$(MAKE) -C Classical clean || true
+	$(MAKE) -C FDE clean || true
+	$(MAKE) -C K4_N4 clean || true
+	$(MAKE) -C Modal clean || true

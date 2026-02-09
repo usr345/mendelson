@@ -1,9 +1,9 @@
-From Mendelson Require Import Sets.
-From Mendelson Require Import FSignature.
-From Mendelson Require Import Formula.
-From Mendelson Require Import Syntactic.
-From Mendelson Require Import Semantic.
-From Mendelson Require Import EqDec.
+From Basis Require Import EqDec.
+From Basis Require Import Sets.
+From Basis Require Import FSignature.
+From Basis Require Import Formula.
+From Classical Require Import Syntactic.
+From Classical Require Import Semantic.
 From Coq Require Import Lists.List.
 Import ListNotations.
 Local Open Scope formula_scope.

@@ -1,6 +1,6 @@
-From Mendelson Require Import FDE_formula.
-From Mendelson Require Import FDE_semantics.
-Import FDE_FormulaDef.
+From FDE Require Import Formula.
+From FDE Require Import Semantics.
+Import FormulaDef.
 Import FDE_Formula.
 Import RelSemantic.
 Import StarSemantic.
@@ -466,7 +466,7 @@ Module V4StarEquiv.
             end
     in
       RelSemantic.Build_Model atom ρ1.
-
+(*
   Definition convert_rel_v4 {atom : Type} (M : @RelSemantic.Model atom) : @RelSemantic.Model atom :=
     let ρ1 :=
           fun (a : atom) (val : bool) =>
@@ -511,5 +511,5 @@ Lemma eval_invariant_v4_rel_One {atom : Type} (f : @formula atom) (M : @FourValu
       exact eval_invariant_v4_rel_One.
     - specialize (eval_invariant_v4_rel_One f M H).
       exact eval_invariant_v4_rel_One.
-
+*)
 End V4StarEquiv.

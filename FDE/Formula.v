@@ -1,7 +1,7 @@
-From Mendelson Require Import FSignature.
+From Basis Require Import FSignature.
 Open Scope formula_scope.
 
-Module FDE_FormulaDef <: TFormula.
+Module FormulaDef <: TFormula.
   Inductive formula {atom : Type} : Type :=
   | f_atom : atom -> formula
   | f_not  : formula -> formula
@@ -15,7 +15,7 @@ Module FDE_FormulaDef <: TFormula.
   Definition implication {atom : Type} (A B: @formula atom) :=
     disjunction (negation A) B.
   Definition equivalence {atom : Type} (A B: @formula atom) : formula := conjunction (implication A B) (implication B A).
-End FDE_FormulaDef.
+End FormulaDef.
 
-Module FDE_Formula := Make_Formula(FDE_FormulaDef).
+Module FDE_Formula := Make_Formula(FormulaDef).
 Export FDE_Formula.

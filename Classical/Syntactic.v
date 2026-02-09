@@ -1,7 +1,7 @@
 Require Import Setoid.
-From Mendelson Require Import Sets.
-From Mendelson Require Import FSignature.
-From Mendelson Require Import Formula.
+From Basis Require Import Sets.
+From Basis Require Import FSignature.
+From Basis Require Import Formula.
 Local Open Scope formula_scope.
 
 Module Syntactic.

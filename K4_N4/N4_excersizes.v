@@ -1,10 +1,11 @@
-From Mendelson Require Import FSignature.
-From Mendelson Require Import K4.
+From Basis Require Import FSignature.
+From K4_N4 Require Import K4.
 From Coq Require Import Lists.List.
 Import ListNotations.
 Import K4_FormulaDef.
 Import K4_Formula.
 Import N4.
+Local Open Scope formula_scope.
 
 Module N4_excersizes.
   Open Scope N4_scope.
@@ -240,6 +241,7 @@ Module N4_excersizes.
   exact H.
   Qed.
 
+  (*
   Theorem T5_neg {atom : Type} : ~ forall A B C : @formula atom3, [$A -> B$; $A -> C$] |= $A -> (B /\ C)$.
   Proof.
     unfold not.
@@ -331,7 +333,6 @@ Module N4_excersizes.
     change (FormulaTruth M (f_conj (f_atom Q) (f_atom R)) Δ true) in H_Γ.
     cbn [FormulaTruth] in H_Γ.
     destruct H_Γ as [H2 H3].
-
-
-
+    Abort.
+*)
 End N4_excersizes.

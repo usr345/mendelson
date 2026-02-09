@@ -1,8 +1,8 @@
 From Coq Require Import Setoid.
 From Coq Require Import Classical.
-From Mendelson Require Import Sets.
-From Mendelson Require Import Formula.
-From Mendelson Require Import FSignature.
+From Basis Require Import Sets.
+From Basis Require Import Formula.
+From Basis Require Import FSignature.
 Local Open Scope formula_scope.
 
 Module Semantic.

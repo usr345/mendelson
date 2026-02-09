@@ -1,5 +1,5 @@
-From Mendelson Require Import FSignature.
-From Mendelson Require Import MSets.
+From Basis Require Import FSignature.
+From Basis Require Import MSets.
 From Coq Require Import Lists.List.
 Import ListNotations.
 Set Implicit Arguments.
@@ -23,6 +23,7 @@ End K4_FormulaDef.
 
 Import K4_FormulaDef.
 Module K4_Formula := Make_Formula(K4_FormulaDef).
+Export K4_Formula.
 
 Module K4.
   Record Model (atom : Type) :=

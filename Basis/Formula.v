@@ -1,5 +1,5 @@
-From Mendelson Require Import FSignature.
-From Mendelson Require Import EqDec.
+From Basis Require Import FSignature.
+From Basis Require Import EqDec.
 
 Module Formula1 <: TFormula.
   Inductive formula {atom : Type} : Type :=

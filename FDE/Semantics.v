@@ -1,9 +1,9 @@
-From Mendelson Require Import Sets.
-From Mendelson Require Import FDE_formula.
+From Basis Require Import Sets.
 From Lattices Require Import Order.
+From FDE Require Import Formula.
 From Coq Require Import Lists.List.
 Import ListNotations.
-Import FDE_FormulaDef.
+Import FormulaDef.
 Import FDE_Formula.
 
 Module RelSemantic.
@@ -211,7 +211,7 @@ Module FDE_V4.
       + apply le_t_refl.
       + apply le_t_one.
       + apply le_t_one.
-    - destruct y ; simpl. 
+    - destruct y ; simpl.
       + apply le_t_refl.
       + apply le_t_one.
       + apply le_t_refl.
@@ -229,7 +229,7 @@ Module FDE_V4.
       + apply le_t_refl.
       + apply le_t_one.
       + apply le_t_one.
-    - destruct x ; simpl. 
+    - destruct x ; simpl.
       + apply le_t_refl.
       + apply le_t_one.
       + apply le_t_refl.

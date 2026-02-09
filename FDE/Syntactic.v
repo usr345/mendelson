@@ -1,6 +1,6 @@
-From Mendelson Require Import FSignature.
-From Mendelson Require Import FDE_formula.
-Import FDE_FormulaDef.
+From Basis Require Import FSignature.
+From FDE Require Import Formula.
+Import FormulaDef.
 Import FDE_Formula.
 Local Open Scope formula_scope.
 

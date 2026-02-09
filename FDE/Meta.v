@@ -1,11 +1,11 @@
-From Mendelson Require Import FSignature.
-From Mendelson Require Import FDE_formula.
-From Mendelson Require Import FDE_semantics.
-From Mendelson Require Import FDE_syntactic.
-From Mendelson Require Import FDE_semantic_equiv.
+From Basis Require Import FSignature.
+From FDE Require Import Formula.
+From FDE Require Import Semantics.
+From FDE Require Import Syntactic.
+From FDE Require Import Semantics_equivalence.
 From Coq Require Import Lists.List.
 Import ListNotations.
-Import FDE_FormulaDef.
+Import FormulaDef.
 Import FDE_Formula.
 Import Syntactic.
 Import StarSemantic.
@@ -257,7 +257,7 @@ Module Meta_star.
   {
     intro f.
     induction f as [a | f' IH | f1 IH1 f2 IH2 | f1 IH1 f2 IH2].
-    - (* atom *) 
+    - (* atom *)
       split.
       + simpl.
         reflexivity.
@@ -270,7 +270,7 @@ Module Meta_star.
         destruct IH as [IH1 IH2].
         rewrite IH2.
         reflexivity.
-      + simpl. 
+      + simpl.
         rewrite Bool.negb_true_iff.
         destruct IH as [IH1 IH2].
         rewrite IH1.
@@ -294,10 +294,10 @@ Module Meta_star.
         rewrite (proj1 IH2).
         cbn [orb].
         reflexivity.
-      + simpl. 
+      + simpl.
         rewrite (proj2 IH1).
         rewrite (proj2 IH2).
-        cbn [orb].        
+        cbn [orb].
         reflexivity.
   }
 
