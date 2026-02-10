@@ -1,6 +1,6 @@
 include ../common.mk
 
-COQC := $(COQC) -Q . FDE -Q ../Basis Basis
+COQC := $(COQC) -Q . FDE -Q ../Basis Basis -Q ../Lattices Lattices
 
 all: Meta.vo Exercises.vo
 
@@ -16,7 +16,7 @@ Semantics_equivalence.vo: Semantics_equivalence.v Semantics.vo
 Exercises.vo: Exercises.v Semantics.vo
 	$(COQC) Exercises.v
 
-Syntactic.vo: Syntactic.v
+Syntactic.vo: Syntactic.v Formula.vo
 	$(COQC) Syntactic.v
 
 Meta.vo: Meta.v Semantics_equivalence.vo Syntactic.vo

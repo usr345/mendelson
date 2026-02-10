@@ -1,5 +1,7 @@
 .PHONY: all clean lattices basis classical fde k4 modal
 
+COQDEP = coqdep
+
 all: lattices basis classical fde k4 modal
 
 # 1. Build Lattices
