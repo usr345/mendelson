@@ -10,14 +10,14 @@ Module RelSemantic.
   (*
     Возвращает true, если данное булево значение привязано к атому
   *)
-  Record Model (atom : Type) :=
+  Record Model {atom : Type} :=
   {
     ρ : atom -> bool -> bool;
   }.
 
-  Fixpoint eval {atom : Type} (M: Model atom) (f : formula) (b : bool) : bool :=
+  Fixpoint eval {atom : Type} (M: @Model atom) (f : formula) (b : bool) : bool :=
     match f with
-    | f_atom A => ρ atom M A b
+    | f_atom A => ρ M A b
     | f_not f' => eval M f' (negb b)
     | f_conj f g =>
         match b with
@@ -31,16 +31,16 @@ Module RelSemantic.
         end
   end.
 
-  Definition valid {atom : Type} (f : formula) : Prop := forall (M : Model atom), eval M f true = true.
+  Definition valid {atom : Type} (f : formula) : Prop := forall (M : @Model atom), eval M f true = true.
 
   Declare Scope rel_scope.
   #[global] Notation "|= f" := (valid f) (at level 90) : rel_scope.
 
-  Definition holds_all {atom : Type} (M : Model atom) (Γ : list formula) : Prop := forall f : @formula atom, In f Γ -> eval M f true = true.
+  Definition holds_all {atom : Type} (M : @Model atom) (Γ : list formula) : Prop := forall f : @formula atom, In f Γ -> eval M f true = true.
 
   Definition consequence {atom : Type} (Γ : list (@formula atom))
     (f : @formula atom) : Prop :=
-    forall (M : Model atom), holds_all M Γ -> eval M f true = true.
+    forall (M : @Model atom), holds_all M Γ -> eval M f true = true.
 
   #[global] Notation "Γ |= f" := (consequence Γ f) (at level 90) : rel_scope.
 

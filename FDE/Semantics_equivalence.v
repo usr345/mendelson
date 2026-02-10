@@ -5,7 +5,7 @@ Import FDE_Formula.
 Import RelSemantic.
 Import StarSemantic.
 
-Definition convert_star_rel {atom : Type} (M : @StarSemantic.Model atom) (w : M.(worlds)) : RelSemantic.Model atom :=
+Definition convert_star_rel {atom : Type} (M : @StarSemantic.Model atom) (w : M.(worlds)) : @RelSemantic.Model atom :=
     let ρ1 :=
           fun (a : atom) (val : bool) =>
             match val with
@@ -33,12 +33,12 @@ Proof.
     reflexivity.
 Qed.
 
-Definition convert_rel_star {atom : Type} (M : RelSemantic.Model atom) : @StarSemantic.Model atom :=
+Definition convert_rel_star {atom : Type} (M : @RelSemantic.Model atom) : @StarSemantic.Model atom :=
     let v :=
           fun (a : atom) (w : TrueWorlds) =>
             match w with
-            | TrueWorld => RelSemantic.ρ atom M a true
-            | TrueWorld' => negb (RelSemantic.ρ atom M a false)
+            | TrueWorld => RelSemantic.ρ M a true
+            | TrueWorld' => negb (RelSemantic.ρ M a false)
             end
     in
       StarSemantic.Build_Model atom TrueWorlds TrueWorld true_star true_star_involutive v.
@@ -92,19 +92,19 @@ Proof.
     reflexivity.
 Qed.
 
-Example Test5 : (RelSemantic.ρ atom3 (convert_star_rel (convert_rel_star M1) TrueWorld) P true) = true.
+Example Test5 : (RelSemantic.ρ (convert_star_rel (convert_rel_star M1) TrueWorld) P true) = true.
 Proof.
   simpl.
   reflexivity.
 Qed.
 
-Example Test6 : (RelSemantic.ρ atom3 (convert_star_rel (convert_rel_star M1) TrueWorld) P false) = true.
+Example Test6 : (RelSemantic.ρ (convert_star_rel (convert_rel_star M1) TrueWorld) P false) = true.
 Proof.
   simpl.
   reflexivity.
 Qed.
 
-Example Test7 : forall (A : atom3) (b : bool), ~(A = P) -> (RelSemantic.ρ atom3 (convert_star_rel (convert_rel_star M1) TrueWorld) A b) = false.
+Example Test7 : forall (A : atom3) (b : bool), ~(A = P) -> (RelSemantic.ρ (convert_star_rel (convert_rel_star M1) TrueWorld) A b) = false.
 Proof.
   intros A b H.
   destruct A.
@@ -113,12 +113,12 @@ Proof.
   - destruct b ; simpl ; reflexivity.
 Qed.
 
-Lemma ρ_eq {atom : Type} (M : RelSemantic.Model atom) :
+Lemma ρ_eq {atom : Type} (M : @RelSemantic.Model atom) :
   let
     StarM := (convert_rel_star M)
   in
     forall (A : atom) (b : bool),
-    RelSemantic.ρ atom M A b = RelSemantic.ρ atom (convert_star_rel StarM TrueWorld) A b.
+    RelSemantic.ρ M A b = RelSemantic.ρ (convert_star_rel StarM TrueWorld) A b.
 Proof.
   intros StarM A b.
   simpl.
@@ -126,9 +126,9 @@ Proof.
   destruct b ; reflexivity.
 Qed.
 
-Lemma eval_eq {atom : Type} (M1 M2 : RelSemantic.Model atom)
-  (f : formula) (b : bool) (Hρ : forall A b, RelSemantic.ρ atom M1 A b =
-                                       RelSemantic.ρ atom M2 A b) :
+Lemma eval_eq {atom : Type} (M1 M2 : @RelSemantic.Model atom)
+  (f : formula) (b : bool) (Hρ : forall A b, RelSemantic.ρ M1 A b =
+                                       RelSemantic.ρ M2 A b) :
   RelSemantic.eval M1 f b = RelSemantic.eval M2 f b.
 Proof.
   revert b.
@@ -158,7 +158,7 @@ Proof.
 Qed.
 
 Module RelStarEquiv.
-  Lemma eval_rel_star_equiv {atom : Type} (f : @formula atom) (M : RelSemantic.Model atom) :
+  Lemma eval_rel_star_equiv {atom : Type} (f : @formula atom) (M : @RelSemantic.Model atom) :
     forall b : bool,
     RelSemantic.eval M f b = true ->
     StarSemantic.eval (convert_rel_star M) f (if b then TrueWorld else TrueWorld') = b.
@@ -293,7 +293,7 @@ Module RelStarEquiv.
         exact (conj IH1 IH2).
   Qed.
 
-  Lemma holds_all_rel_star {atom : Type} (Γ : list (@formula atom)) (M : RelSemantic.Model atom) :
+  Lemma holds_all_rel_star {atom : Type} (Γ : list (@formula atom)) (M : @RelSemantic.Model atom) :
     RelSemantic.holds_all M Γ -> StarSemantic.holds_all (convert_rel_star M) Γ TrueWorld.
   Proof.
     intro H.
@@ -346,7 +346,7 @@ Module RelStarEquiv.
       unfold StarM in H.
       specialize (eval_eq (convert_star_rel (convert_rel_star M) TrueWorld) M A false) as H1.
       assert (H2 : forall (A : atom) (b : bool),
-                 RelSemantic.ρ atom (convert_star_rel (convert_rel_star M) TrueWorld) A b = RelSemantic.ρ atom M A b).
+                 RelSemantic.ρ (convert_star_rel (convert_rel_star M) TrueWorld) A b = RelSemantic.ρ M A b).
       {
         intros A1 b.
         symmetry.
@@ -447,7 +447,7 @@ End RelStarEquiv.
 Import FDE_V4.
 Import V4Semantic.
 
-Module V4StarEquiv.
+Module V4RelEquiv.
 
   Definition convert_v4_rel {atom : Type} (M : @V4Semantic.Model atom) : @RelSemantic.Model atom :=
     let ρ1 :=
@@ -466,6 +466,20 @@ Module V4StarEquiv.
             end
     in
       RelSemantic.Build_Model atom ρ1.
+
+  Definition convert_rel_v4 {atom : Type} (M : @RelSemantic.Model atom) : @V4Semantic.Model atom :=
+    let ρ1 :=
+      fun (a : atom) =>
+        let v1 := (M.(ρ) a true) in
+        let v2 := (M.(ρ) a false) in
+        match v1, v2 with
+        | true, true => Both
+        | true, false => One
+        | false, true => Zero
+        | false, false => None
+        end
+    in
+      V4Semantic.Build_Model atom ρ1.
 (*
   Definition convert_rel_v4 {atom : Type} (M : @RelSemantic.Model atom) : @RelSemantic.Model atom :=
     let ρ1 :=
@@ -512,4 +526,4 @@ Lemma eval_invariant_v4_rel_One {atom : Type} (f : @formula atom) (M : @V4Semant
     - specialize (eval_invariant_v4_rel_One f M H).
       exact eval_invariant_v4_rel_One.
 *)
-End V4StarEquiv.
+End V4RelEquiv.
