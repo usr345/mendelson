@@ -201,6 +201,13 @@ Module FDE_V4.
     | Zero, Both => Both
     end.
 
+  Proposition neg_one_zero : forall x : V4,  neg x = One -> x = Zero.
+  Proof.
+    intros x H.
+    destruct x ; simpl in H ; try discriminate H.
+    reflexivity.
+  Qed.
+
   Theorem le_disj_left : forall x y : V4,  le_v4 x (disj x y).
   Proof.
     intros x y.

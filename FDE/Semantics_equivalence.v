@@ -480,32 +480,23 @@ Module V4RelEquiv.
         end
     in
       V4Semantic.Build_Model atom ρ1.
-(*
-  Definition convert_rel_v4 {atom : Type} (M : @RelSemantic.Model atom) : @RelSemantic.Model atom :=
-    let ρ1 :=
-          fun (a : atom) (val : bool) =>
-            match val with
-            | true => match (M.(v atom) a) with
-                      | Zero => false
-                      | None => false
-                      | _ => true
-                      end
-            | false => match (M.(v atom) a) with
-                      | Zero => true
-                      | Both => true
-                      | _ => false
-                      end
-            end
-    in
-      RelSemantic.Build_Model atom ρ1.
-
 
   Lemma eval_v4_rel_equiv {atom : Type} (f : @formula atom) (M : @V4Semantic.Model atom) :
     V4Semantic.eval M f = One ->
     RelSemantic.eval (convert_v4_rel M) f true = true /\
     RelSemantic.eval (convert_v4_rel M) f false = false.
   Proof.
-
+    intro H.
+    induction f as [a | f' IH | f1 IH1 f2 IH2 | f1 IH1 f2 IH2].
+    (* atom *)
+    - simpl in H.
+      simpl.
+      rewrite H.
+      split ; reflexivity.
+    (* not *)
+    - simpl in H.
+      simpl.
+      apply neg_one_zero in H.
 
 Lemma eval_invariant_v4_rel_One {atom : Type} (f : @formula atom) (M : @V4Semantic.Model atom) :
     V4Semantic.eval M f = One -> RelSemantic.eval (convert_v4_rel M) f true = true /\ RelSemantic.eval (convert_v4_rel M) f false = false
