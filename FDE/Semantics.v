@@ -201,11 +201,48 @@ Module FDE_V4.
     | Zero, Both => Both
     end.
 
-  Proposition neg_one_zero : forall x : V4,  neg x = One -> x = Zero.
+  Proposition neg_one_zero : forall x : V4,  neg x = One <-> x = Zero.
   Proof.
-    intros x H.
-    destruct x ; simpl in H ; try discriminate H.
-    reflexivity.
+    intro x.
+    split ; intro H.
+    - destruct x ; simpl in H ; try discriminate H.
+      reflexivity.
+    - rewrite H.
+      simpl.
+      reflexivity.
+  Qed.
+
+  Proposition neg_both_both : forall x : V4,  neg x = Both <-> x = Both.
+  Proof.
+    intro x.
+    split ; intro H.
+    - destruct x ; simpl in H ; try discriminate H.
+      reflexivity.
+    - rewrite H.
+      simpl.
+      reflexivity.
+  Qed.
+
+  Proposition neg_none_none : forall x : V4,  neg x = None <-> x = None.
+  Proof.
+    intro x.
+    split ; intro H.
+    - destruct x ; simpl in H ; try discriminate H.
+      reflexivity.
+    - rewrite H.
+      simpl.
+      reflexivity.
+  Qed.
+
+  Proposition neg_zero_one : forall x : V4,  neg x = Zero <-> x = One.
+  Proof.
+    intro x.
+    split ; intro H.
+    - destruct x ; simpl in H ; try discriminate H.
+      reflexivity.
+    - rewrite H.
+      simpl.
+      reflexivity.
   Qed.
 
   Theorem le_disj_left : forall x y : V4,  le_v4 x (disj x y).

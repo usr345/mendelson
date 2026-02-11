@@ -481,6 +481,41 @@ Module V4RelEquiv.
     in
       V4Semantic.Build_Model atom ρ1.
 
+  Lemma eval_rel_v4_equiv {atom : Type} (f : @formula atom) (M : @RelSemantic.Model atom) :
+    forall b1 b2 : bool,
+    RelSemantic.eval M f true = b1 /\ RelSemantic.eval M f false = b2 ->
+    V4Semantic.eval (convert_rel_v4 M) f =
+      match b1, b2 with
+      | true, true => Both
+      | true, false => One
+      | false, true => Zero
+      | false, false => None
+      end.
+  Proof.
+    intros b1 b2 [H1 H2].
+    induction f as [a | f' IH | f1 IH1 f2 IH2 | f1 IH1 f2 IH2].
+    - destruct b1, b2 ; simpl in H1 ; simpl in H2 ; simpl.
+      + rewrite H1.
+        rewrite H2.
+        reflexivity.
+      + rewrite H1.
+        rewrite H2.
+        reflexivity.
+      + rewrite H1.
+        rewrite H2.
+        reflexivity.
+      + rewrite H1.
+        rewrite H2.
+        reflexivity.
+    - destruct b1, b2 ; simpl in H1 ; simpl in H2 ; simpl.
+      + rewrite neg_both_both.
+        specialize (IH H2 H1).
+        exact IH.
+      + rewrite neg_one_zero.
+        specialize (IH H2 H1).
+        exact IH.
+
+
   Lemma eval_v4_rel_equiv {atom : Type} (f : @formula atom) (M : @V4Semantic.Model atom) :
     V4Semantic.eval M f = One ->
     RelSemantic.eval (convert_v4_rel M) f true = true /\
@@ -498,23 +533,6 @@ Module V4RelEquiv.
       simpl.
       apply neg_one_zero in H.
 
-Lemma eval_invariant_v4_rel_One {atom : Type} (f : @formula atom) (M : @V4Semantic.Model atom) :
-    V4Semantic.eval M f = One -> RelSemantic.eval (convert_v4_rel M) f true = true /\ RelSemantic.eval (convert_v4_rel M) f false = false
-  with eval_invariant_v4_rel_None {atom : Type} (f : @formula atom) (M : @V4Semantic.Model atom) :
-    V4Semantic.eval M f = None -> RelSemantic.eval (convert_v4_rel M) f true = false /\ RelSemantic.eval (convert_v4_rel M) f false = false
-  with eval_invariant_v4_rel_Both {atom : Type} (f : @formula atom) (M : @V4Semantic.Model atom) :
-    V4Semantic.eval M f = Both -> RelSemantic.eval (convert_v4_rel M) f true = true /\ RelSemantic.eval (convert_v4_rel M) f false = true
-  with eval_invariant_v4_rel_Zero {atom : Type} (f : @formula atom) (M : @V4Semantic.Model atom) :
-    V4Semantic.eval M f = Zero -> RelSemantic.eval (convert_v4_rel M) f true = false /\ RelSemantic.eval (convert_v4_rel M) f false = true.
-  Proof.
-    intro H.
-    specialize (eval_invariant_v4_rel_One atom).
-    specialize (eval_invariant_v4_rel_None atom).
-    specialize (eval_invariant_v4_rel_Both atom).
-    specialize (eval_invariant_v4_rel_Zero atom).
-    - specialize (eval_invariant_v4_rel_One f M H).
-      exact eval_invariant_v4_rel_One.
-    - specialize (eval_invariant_v4_rel_One f M H).
-      exact eval_invariant_v4_rel_One.
+
 *)
 End V4RelEquiv.

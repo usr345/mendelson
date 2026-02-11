@@ -1,6 +1,3 @@
-[submodule "lattices"]
-	path = lattices
-	url = ssh://lion:/home/dima/lattices.git
 [submodule "Lattices"]
 	path = Lattices
 	url = ssh://lion:/home/dima/lattices.git
