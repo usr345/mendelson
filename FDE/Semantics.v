@@ -201,48 +201,67 @@ Module FDE_V4.
     | Zero, Both => Both
     end.
 
-  Proposition neg_one_zero : forall x : V4,  neg x = One <-> x = Zero.
+  Inductive neg_rel : V4 -> V4 -> Prop :=
+  | neg_zero : neg_rel Zero One
+  | neg_none : neg_rel None None
+  | neg_both : neg_rel Both Both
+  | neg_one  : neg_rel One Zero.
+
+  Inductive conj_rel : V4 -> V4 -> V4 -> Prop :=
+  | conj_zero_l : forall x, conj_rel Zero x Zero
+  | conj_zero_r : forall x, conj_rel x Zero Zero
+  | conj_none_none : conj_rel None None None
+  | conj_none_both : conj_rel None Both Zero
+  | conj_none_one  : conj_rel None One None
+  | conj_both_none : conj_rel Both None Zero
+  | conj_both_both : conj_rel Both Both Both
+  | conj_both_one  : conj_rel Both One Both
+  | conj_one_none  : conj_rel One None None
+  | conj_one_both  : conj_rel One Both Both
+  | conj_one_one   : conj_rel One One One.
+
+  Inductive disj_rel : V4 -> V4 -> V4 -> Prop :=
+  | disj_one_l : forall x, disj_rel One x One
+  | disj_one_r : forall x, disj_rel x One One
+  | disj_none_zero  : disj_rel None Zero None
+  | disj_none_none : disj_rel None None None
+  | disj_none_both : disj_rel None Both One
+  | disj_both_zero  : disj_rel Both Zero Both
+  | disj_both_none : disj_rel Both None One
+  | disj_both_both : disj_rel Both Both Both
+  | disj_zero_zero  : disj_rel Zero Zero Zero
+  | disj_zero_none  : disj_rel Zero None None
+  | disj_zero_both   : disj_rel Zero Both Both.
+
+  Lemma neg_rel_fun_equiv :
+    forall a b, neg_rel a b <-> neg a = b.
   Proof.
-    intro x.
+    intros a b.
     split ; intro H.
-    - destruct x ; simpl in H ; try discriminate H.
-      reflexivity.
-    - rewrite H.
-      simpl.
-      reflexivity.
+    - destruct a, b ; simpl ; try reflexivity ; try inversion H.
+    - destruct a, b ; simpl in H ; try discriminate H.
+      + apply neg_zero.
+      + apply neg_none.
+      + apply neg_both.
+      + apply neg_one.
   Qed.
 
-  Proposition neg_both_both : forall x : V4,  neg x = Both <-> x = Both.
+  Lemma conj_rel_fun_equiv :
+    forall a b c, conj_rel a b c <-> conj a b = c.
   Proof.
-    intro x.
+    intros a b c.
     split ; intro H.
-    - destruct x ; simpl in H ; try discriminate H.
-      reflexivity.
-    - rewrite H.
-      simpl.
-      reflexivity.
+    - destruct a, b, c ; simpl ; try reflexivity ; try inversion H.
+    - destruct a, b, c ; simpl in H ; try discriminate H ; try constructor.
   Qed.
 
-  Proposition neg_none_none : forall x : V4,  neg x = None <-> x = None.
+  Lemma disj_rel_fun_equiv :
+    forall a b c, disj_rel a b c <-> disj a b = c.
   Proof.
-    intro x.
+    intros a b c.
     split ; intro H.
-    - destruct x ; simpl in H ; try discriminate H.
-      reflexivity.
-    - rewrite H.
-      simpl.
-      reflexivity.
-  Qed.
-
-  Proposition neg_zero_one : forall x : V4,  neg x = Zero <-> x = One.
-  Proof.
-    intro x.
-    split ; intro H.
-    - destruct x ; simpl in H ; try discriminate H.
-      reflexivity.
-    - rewrite H.
-      simpl.
-      reflexivity.
+    - destruct a, b, c ; simpl ; try reflexivity ; try inversion H.
+    - destruct a, b, c ; simpl in H ; try discriminate H ; try constructor.
   Qed.
 
   Theorem le_disj_left : forall x y : V4,  le_v4 x (disj x y).

@@ -444,8 +444,9 @@ Module RelStarEquiv.
   Qed.
 End RelStarEquiv.
 
-Import FDE_V4.
 Import V4Semantic.
+Module V4 := FDE_V4.
+Import V4 (One, Zero, Both, None, neg_both_both, neg_one_zero, neg_none_none, neg_zero_one).
 
 Module V4RelEquiv.
 
@@ -492,8 +493,7 @@ Module V4RelEquiv.
       | false, false => None
       end.
   Proof.
-    intros b1 b2 [H1 H2].
-    induction f as [a | f' IH | f1 IH1 f2 IH2 | f1 IH1 f2 IH2].
+    induction f as [a | f' IH | f1 IH1 f2 IH2 | f1 IH1 f2 IH2] ; intros b1 b2 [H1 H2].
     - destruct b1, b2 ; simpl in H1 ; simpl in H2 ; simpl.
       + rewrite H1.
         rewrite H2.
@@ -508,12 +508,27 @@ Module V4RelEquiv.
         rewrite H2.
         reflexivity.
     - destruct b1, b2 ; simpl in H1 ; simpl in H2 ; simpl.
-      + rewrite neg_both_both.
-        specialize (IH H2 H1).
+      +  rewrite neg_both_both.
+         specialize (IH true true).
+         specialize (IH (conj H2 H1)).
+         exact IH.
+      +  rewrite neg_one_zero.
+         specialize (IH false true).
+         specialize (IH (conj H2 H1)).
+         simpl in IH.
+         exact IH.
+      + rewrite neg_zero_one.
+        specialize (IH true false).
+        specialize (IH (conj H2 H1)).
+        simpl in IH.
         exact IH.
-      + rewrite neg_one_zero.
-        specialize (IH H2 H1).
+      + rewrite neg_none_none.
+        specialize (IH false false).
+        specialize (IH (conj H2 H1)).
+        simpl in IH.
         exact IH.
+    - destruct b1, b2 ; simpl in H1 ; simpl in H2 ; simpl.
+      +
 
 
   Lemma eval_v4_rel_equiv {atom : Type} (f : @formula atom) (M : @V4Semantic.Model atom) :
