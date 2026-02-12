@@ -446,7 +446,8 @@ End RelStarEquiv.
 
 Import V4Semantic.
 Module V4 := FDE_V4.
-Import V4 (One, Zero, Both, None, neg_both_both, neg_one_zero, neg_none_none, neg_zero_one).
+Import V4 (One, Zero, Both, None, neg_rel, neg_zero, neg_none, neg_both, neg_one, conj_rel, disj_rel, neg_rel_fun_equiv, conj_rel_fun_equiv, disj_rel_fun_equiv).
+
 
 Module V4RelEquiv.
 
@@ -507,26 +508,27 @@ Module V4RelEquiv.
       + rewrite H1.
         rewrite H2.
         reflexivity.
-    - destruct b1, b2 ; simpl in H1 ; simpl in H2 ; simpl.
-      +  rewrite neg_both_both.
-         specialize (IH true true).
-         specialize (IH (conj H2 H1)).
-         exact IH.
-      +  rewrite neg_one_zero.
-         specialize (IH false true).
-         specialize (IH (conj H2 H1)).
-         simpl in IH.
-         exact IH.
-      + rewrite neg_zero_one.
-        specialize (IH true false).
+    - destruct b1, b2 ; simpl in H1 ; simpl in H2 ; simpl ; rewrite <-neg_rel_fun_equiv.
+      + specialize (IH true true).
         specialize (IH (conj H2 H1)).
         simpl in IH.
-        exact IH.
-      + rewrite neg_none_none.
-        specialize (IH false false).
+        rewrite IH.
+        apply neg_both.
+      + specialize (IH false true).
         specialize (IH (conj H2 H1)).
         simpl in IH.
-        exact IH.
+        rewrite IH.
+        apply neg_zero.
+      + specialize (IH true false).
+        specialize (IH (conj H2 H1)).
+        simpl in IH.
+        rewrite IH.
+        apply neg_one.
+      + specialize (IH false false).
+        specialize (IH (conj H2 H1)).
+        simpl in IH.
+        rewrite IH.
+        apply neg_none.
     - destruct b1, b2 ; simpl in H1 ; simpl in H2 ; simpl.
       +
 
