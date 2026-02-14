@@ -446,183 +446,392 @@ End RelStarEquiv.
 
 Import V4Semantic.
 Module V4 := FDE_V4.
-Import V4 (One, Zero, Both, None, neg_rel, neg_zero, neg_none, neg_both, neg_one, conj_rel, disj_rel, neg_rel_fun_equiv, conj_rel_fun_equiv, disj_rel_fun_equiv).
-
+Import V4 (One, Zero, Both, None, neg_rel, neg_zero, neg_none, neg_both, neg_one, conj_rel, disj_rel, conj_zero_l, conj_zero_r, conj_none_both, conj_both_none, disj_one_l, disj_one_r, neg_rel_fun_equiv, conj_rel_fun_equiv, disj_rel_fun_equiv).
 
 Module V4RelEquiv.
 
-  Definition convert_v4_rel {atom : Type} (M : @V4Semantic.Model atom) : @RelSemantic.Model atom :=
-    let ρ1 :=
-          fun (a : atom) (val : bool) =>
-            match val with
-            | true => match (M.(v atom) a) with
-                      | Zero => false
-                      | None => false
-                      | _ => true
-                      end
-            | false => match (M.(v atom) a) with
-                      | Zero => true
-                      | Both => true
-                      | _ => false
-                      end
-            end
-    in
-      RelSemantic.Build_Model atom ρ1.
+Definition convert_v4_rel {atom : Type} (M : @V4Semantic.Model atom) : @RelSemantic.Model atom :=
+  let ρ1 :=
+        fun (a : atom) (val : bool) =>
+          match val with
+          | true => match (M.(v atom) a) with
+                    | Zero => false
+                    | None => false
+                    | _ => true
+                    end
+          | false => match (M.(v atom) a) with
+                    | Zero => true
+                    | Both => true
+                    | _ => false
+                    end
+          end
+  in
+    RelSemantic.Build_Model atom ρ1.
 
-  Definition convert_rel_v4 {atom : Type} (M : @RelSemantic.Model atom) : @V4Semantic.Model atom :=
-    let ρ1 :=
-      fun (a : atom) =>
-        let v1 := (M.(ρ) a true) in
-        let v2 := (M.(ρ) a false) in
-        match v1, v2 with
-        | true, true => Both
-        | true, false => One
-        | false, true => Zero
-        | false, false => None
-        end
-    in
-      V4Semantic.Build_Model atom ρ1.
-
-  Lemma eval_rel_v4_equiv {atom : Type} (f : @formula atom) (M : @RelSemantic.Model atom) :
-    forall b1 b2 : bool,
-    RelSemantic.eval M f true = b1 /\ RelSemantic.eval M f false = b2 ->
-    V4Semantic.eval (convert_rel_v4 M) f =
-      match b1, b2 with
+Definition convert_rel_v4 {atom : Type} (M : @RelSemantic.Model atom) : @V4Semantic.Model atom :=
+  let ρ1 :=
+    fun (a : atom) =>
+      let v1 := (M.(ρ) a true) in
+      let v2 := (M.(ρ) a false) in
+      match v1, v2 with
       | true, true => Both
       | true, false => One
       | false, true => Zero
       | false, false => None
-      end.
-  Proof.
-    induction f as [a | f' IH | f1 IH1 f2 IH2 | f1 IH1 f2 IH2] ; intros b1 b2 [H1 H2].
-    - destruct b1, b2 ; simpl in H1 ; simpl in H2 ; simpl.
-      + rewrite H1.
-        rewrite H2.
-        reflexivity.
-      + rewrite H1.
-        rewrite H2.
-        reflexivity.
-      + rewrite H1.
-        rewrite H2.
-        reflexivity.
-      + rewrite H1.
-        rewrite H2.
-        reflexivity.
-    - destruct b1, b2 ; simpl in H1 ; simpl in H2 ; simpl ; rewrite <-neg_rel_fun_equiv.
-      + specialize (IH true true).
-        specialize (IH (conj H2 H1)).
-        simpl in IH.
-        rewrite IH.
-        apply neg_both.
-      + specialize (IH false true).
-        specialize (IH (conj H2 H1)).
-        simpl in IH.
-        rewrite IH.
-        apply neg_zero.
-      + specialize (IH true false).
-        specialize (IH (conj H2 H1)).
-        simpl in IH.
-        rewrite IH.
-        apply neg_one.
-      + specialize (IH false false).
-        specialize (IH (conj H2 H1)).
-        simpl in IH.
-        rewrite IH.
-        apply neg_none.
-    - destruct b1, b2 ; simpl in H1 ; simpl in H2 ; simpl ; rewrite <-conj_rel_fun_equiv.
-      + rewrite Bool.andb_true_iff in H1.
-        rewrite Bool.orb_true_iff in H2.
-        destruct H1 as [H3 H4].
-        destruct H2 as [H2 | H2].
-        * specialize (IH1 true true).
-          specialize (IH1 (conj H3 H2)).
-          simpl in IH1.
-          rewrite IH1.
-          simpl in IH2.
-          (* Now eval f2 is unknown, but f2 true = true, so eval f2 ∈ {One, Both} *)
-          destruct (RelSemantic.eval M f2 false) eqn:Heq.
-          ** (* f2 false = true → eval f2 = Both *)
-            specialize (IH2 true true).
-            specialize (IH2 (conj H4 eq_refl)).
-            rewrite IH2.
-            constructor.
-          ** (* f2 false = false → eval f2 = One *)
-            specialize (IH2 true false).
-            specialize (IH2 (conj H4 eq_refl)).
-            simpl in IH2.
-            rewrite IH2.
-            constructor.
-        * specialize (IH2 true true).
-          specialize (IH2 (conj H4 H2)).
+      end
+  in
+    V4Semantic.Build_Model atom ρ1.
+
+Lemma eval_rel_v4_equiv {atom : Type} (f : @formula atom) (M : @RelSemantic.Model atom) :
+  forall b1 b2 : bool,
+  RelSemantic.eval M f true = b1 /\ RelSemantic.eval M f false = b2 ->
+  V4Semantic.eval (convert_rel_v4 M) f =
+    match b1, b2 with
+    | true, true => Both
+    | true, false => One
+    | false, true => Zero
+    | false, false => None
+    end.
+Proof.
+  induction f as [a | f' IH | f1 IH1 f2 IH2 | f1 IH1 f2 IH2] ; intros b1 b2 [H1 H2].
+  - destruct b1, b2 ; simpl in H1 ; simpl in H2 ; simpl.
+    + rewrite H1.
+      rewrite H2.
+      reflexivity.
+    + rewrite H1.
+      rewrite H2.
+      reflexivity.
+    + rewrite H1.
+      rewrite H2.
+      reflexivity.
+    + rewrite H1.
+      rewrite H2.
+      reflexivity.
+  - destruct b1, b2 ; simpl in H1 ; simpl in H2 ; simpl ; rewrite <-neg_rel_fun_equiv.
+    + specialize (IH true true).
+      specialize (IH (conj H2 H1)).
+      simpl in IH.
+      rewrite IH.
+      apply neg_both.
+    + specialize (IH false true).
+      specialize (IH (conj H2 H1)).
+      simpl in IH.
+      rewrite IH.
+      apply neg_zero.
+    + specialize (IH true false).
+      specialize (IH (conj H2 H1)).
+      simpl in IH.
+      rewrite IH.
+      apply neg_one.
+    + specialize (IH false false).
+      specialize (IH (conj H2 H1)).
+      simpl in IH.
+      rewrite IH.
+      apply neg_none.
+  - destruct b1, b2 ; simpl in H1 ; simpl in H2 ; simpl ; rewrite <-conj_rel_fun_equiv.
+    + rewrite Bool.andb_true_iff in H1.
+      rewrite Bool.orb_true_iff in H2.
+      destruct H1 as [H3 H4].
+      destruct H2 as [H2 | H2].
+      * specialize (IH1 true true).
+        specialize (IH1 (conj H3 H2)).
+        simpl in IH1.
+        rewrite IH1.
+        (* Now eval f2 is unknown, but f2 true = true, so eval f2 ∈ {One, Both} *)
+        destruct (RelSemantic.eval M f2 false) eqn:Heq.
+        ** (* f2 false = true → eval f2 = Both *)
+          specialize (IH2 true true).
+          specialize (IH2 (conj H4 eq_refl)).
           simpl in IH2.
           rewrite IH2.
-          destruct (RelSemantic.eval M f1 false) eqn:Heq.
-          ** specialize (IH1 true true).
-             specialize (IH1 (conj H3 eq_refl)).
-             simpl in IH1.
-             rewrite IH1.
-             constructor.
-          ** specialize (IH1 true false).
-             specialize (IH1 (conj H3 eq_refl)).
-             simpl in IH1.
-             rewrite IH1.
-             constructor.
-      + rewrite Bool.andb_true_iff in H1.
-        rewrite Bool.orb_true_iff in H2.
-        destruct H1 as [H3 H4].
-        destruct H2 as [H2 | H2].
-        * specialize (IH1 true true).
-          specialize (IH1 (conj H3 H2)).
-          simpl in IH1.
-          rewrite IH1.
-          simpl in IH2.
-          (* Now eval f2 is unknown, but f2 true = true, so eval f2 ∈ {One, Both} *)
-          destruct (RelSemantic.eval M f2 false) eqn:Heq.
-          ** (* f2 false = true → eval f2 = Both *)
-            specialize (IH2 true true).
-            specialize (IH2 (conj H4 eq_refl)).
-            rewrite IH2.
-            constructor.
-          ** (* f2 false = false → eval f2 = One *)
-            specialize (IH2 true false).
-            specialize (IH2 (conj H4 eq_refl)).
-            simpl in IH2.
-            rewrite IH2.
-            constructor.
-        * specialize (IH2 true true).
-          specialize (IH2 (conj H4 H2)).
+          constructor.
+        ** (* f2 false = false → eval f2 = One *)
+          specialize (IH2 true false).
+          specialize (IH2 (conj H4 eq_refl)).
           simpl in IH2.
           rewrite IH2.
-          destruct (RelSemantic.eval M f1 false) eqn:Heq.
-          ** specialize (IH1 true true).
-             specialize (IH1 (conj H3 eq_refl)).
-             simpl in IH1.
-             rewrite IH1.
+          constructor.
+      * specialize (IH2 true true).
+        specialize (IH2 (conj H4 H2)).
+        simpl in IH2.
+        rewrite IH2.
+        destruct (RelSemantic.eval M f1 false) eqn:Heq.
+        ** specialize (IH1 true true).
+           specialize (IH1 (conj H3 eq_refl)).
+           simpl in IH1.
+           rewrite IH1.
+           constructor.
+        ** specialize (IH1 true false).
+           specialize (IH1 (conj H3 eq_refl)).
+           simpl in IH1.
+           rewrite IH1.
+           constructor.
+    + rewrite Bool.andb_true_iff in H1.
+      rewrite Bool.orb_false_iff in H2.
+      destruct H1 as [H3 H4].
+      destruct H2 as [H1 H2].
+      specialize (IH1 true false).
+      specialize (IH1 (conj H3 H1)).
+      specialize (IH2 true false).
+      specialize (IH2 (conj H4 H2)).
+      simpl in IH1, IH2.
+      rewrite IH1, IH2.
+      constructor.
+    + rewrite Bool.andb_false_iff in H1.
+      rewrite Bool.orb_true_iff in H2.
+      destruct H1 as [H1 | H1], H2 as [H2 | H2].
+      * specialize (IH1 false true).
+        specialize (IH1 (conj H1 H2)).
+        simpl in IH1.
+        rewrite IH1.
+        apply conj_zero_l.
+      * specialize (IH1 false).
+        destruct (RelSemantic.eval M f1 false) eqn:Heq1.
+        ** specialize (IH1 true).
+           specialize (IH1 (conj H1 eq_refl)).
+           simpl in IH1.
+           rewrite IH1.
+           apply conj_zero_l.
+        ** specialize (IH1 false).
+           specialize (IH1 (conj H1 eq_refl)).
+           simpl in IH1.
+           rewrite IH1.
+           destruct (RelSemantic.eval M f2 true) eqn:Heq2.
+           *** specialize (IH2 true true).
+               specialize (IH2 (conj eq_refl H2)).
+               simpl in IH2.
+               rewrite IH2.
+               apply conj_none_both.
+           *** specialize (IH2 false true).
+               specialize (IH2 (conj eq_refl H2)).
+               simpl in IH2.
+               rewrite IH2.
+               apply conj_zero_r.
+      * specialize (IH2 false).
+        destruct (RelSemantic.eval M f1 true) eqn:Heq1.
+        ** specialize (IH1 true true).
+           specialize (IH1 (conj eq_refl H2)).
+           simpl in IH1.
+           rewrite IH1.
+           destruct (RelSemantic.eval M f2 false) eqn:Heq2.
+           *** specialize (IH2 true).
+               specialize (IH2 (conj H1 eq_refl)).
+               simpl in IH2.
+               rewrite IH2.
+               apply conj_zero_r.
+           *** specialize (IH2 false).
+               specialize (IH2 (conj H1 eq_refl)).
+               simpl in IH2.
+               rewrite IH2.
+               apply conj_both_none.
+        ** specialize (IH1 false true).
+           specialize (IH1 (conj eq_refl H2)).
+           simpl in IH1.
+           rewrite IH1.
+           apply conj_zero_l.
+      * specialize (IH2 false true).
+        specialize (IH2 (conj H1 H2)).
+        simpl in IH2.
+        rewrite IH2.
+        apply conj_zero_r.
+  + rewrite Bool.andb_false_iff in H1.
+    rewrite Bool.orb_false_iff in H2.
+    destruct H1 as [H1 | H1], H2 as [H2 H3].
+    * specialize (IH1 false false).
+      specialize (IH1 (conj H1 H2)).
+      simpl in IH1.
+      rewrite IH1.
+      destruct (RelSemantic.eval M f2 true) eqn:Heq.
+      ** specialize (IH2 true false).
+         specialize (IH2 (conj eq_refl H3)).
+         simpl in IH2.
+         rewrite IH2.
+         constructor.
+      ** specialize (IH2 false false).
+         specialize (IH2 (conj eq_refl H3)).
+         simpl in IH2.
+         rewrite IH2.
+         constructor.
+    * specialize (IH2 false false).
+      specialize (IH2 (conj H1 H3)).
+      simpl in IH2.
+      rewrite IH2.
+      destruct (RelSemantic.eval M f1 true) eqn:Heq.
+      ** specialize (IH1 true false).
+         specialize (IH1 (conj eq_refl H2)).
+         simpl in IH1.
+         rewrite IH1.
+         constructor.
+      ** specialize (IH1 false false).
+         specialize (IH1 (conj eq_refl H2)).
+         simpl in IH1.
+         rewrite IH1.
+         constructor.
+- destruct b1, b2 ; simpl in H1 ; simpl in H2 ; simpl; rewrite <-disj_rel_fun_equiv.
+    + rewrite Bool.orb_true_iff in H1.
+      rewrite Bool.andb_true_iff in H2.
+      destruct H2 as [H2 H3].
+      destruct H1 as [H1 | H1].
+      * specialize (IH1 true true).
+        specialize (IH1 (conj H1 H2)).
+        simpl in IH1.
+        rewrite IH1.
+        destruct (RelSemantic.eval M f2 true) eqn:Heq.
+        ** specialize (IH2 true true).
+           specialize (IH2 (conj eq_refl H3)).
+           simpl in IH2.
+           rewrite IH2.
+           constructor.
+        ** specialize (IH2 false true).
+           specialize (IH2 (conj eq_refl H3)).
+           simpl in IH2.
+           rewrite IH2.
+           constructor.
+      * specialize (IH2 true true).
+        specialize (IH2 (conj H1 H3)).
+        simpl in IH2.
+        rewrite IH2.
+        destruct (RelSemantic.eval M f1 true) eqn:Heq.
+        ** specialize (IH1 true true).
+           specialize (IH1 (conj eq_refl H2)).
+           simpl in IH1.
+           rewrite IH1.
+           constructor.
+        ** specialize (IH1 false true).
+           specialize (IH1 (conj eq_refl H2)).
+           simpl in IH1.
+           rewrite IH1.
+           constructor.
+  + rewrite Bool.orb_true_iff in H1.
+    rewrite Bool.andb_false_iff in H2.
+    destruct H1 as [H1 | H1], H2 as [H2 | H2].
+    * specialize (IH1 true false).
+      specialize (IH1 (conj H1 H2)).
+      simpl in IH1.
+      rewrite IH1.
+      apply disj_one_l.
+    * specialize (IH1 true).
+      destruct (RelSemantic.eval M f1 false) eqn:Heq1.
+      ** specialize (IH1 true).
+         specialize (IH1 (conj H1 eq_refl)).
+         simpl in IH1.
+         rewrite IH1.
+         destruct (RelSemantic.eval M f2 true) eqn:Heq2.
+         *** specialize (IH2 true false).
+             specialize (IH2 (conj eq_refl H2)).
+             simpl in IH2.
+             rewrite IH2.
              constructor.
-          ** specialize (IH1 true false).
-             specialize (IH1 (conj H3 eq_refl)).
-             simpl in IH1.
-             rewrite IH1.
+         *** specialize (IH2 false false).
+             specialize (IH2 (conj eq_refl H2)).
+             simpl in IH2.
+             rewrite IH2.
              constructor.
+      ** specialize (IH1 false).
+         specialize (IH1 (conj H1 eq_refl)).
+         simpl in IH1.
+         rewrite IH1.
+         apply disj_one_l.
+    * specialize (IH2 true).
+      destruct (RelSemantic.eval M f1 true) eqn:Heq1.
+      ** specialize (IH1 true false).
+         specialize (IH1 (conj eq_refl H2)).
+         simpl in IH1.
+         rewrite IH1.
+         destruct (RelSemantic.eval M f2 false) eqn:Heq2.
+         *** specialize (IH2 true).
+             specialize (IH2 (conj H1 eq_refl)).
+             simpl in IH2.
+             rewrite IH2.
+             constructor.
+         *** specialize (IH2 false).
+             specialize (IH2 (conj H1 eq_refl)).
+             simpl in IH2.
+             rewrite IH2.
+             constructor.
+      ** specialize (IH1 false false).
+         specialize (IH1 (conj eq_refl H2)).
+         simpl in IH1.
+         rewrite IH1.
+         destruct (RelSemantic.eval M f2 false) eqn:Heq2.
+         *** specialize (IH2 true).
+             specialize (IH2 (conj H1 eq_refl)).
+             simpl in IH2.
+             rewrite IH2.
+             constructor.
+         *** specialize (IH2 false).
+             specialize (IH2 (conj H1 eq_refl)).
+             simpl in IH2.
+             rewrite IH2.
+             constructor.
+    * specialize (IH2 true false).
+      specialize (IH2 (conj H1 H2)).
+      simpl in IH2.
+      rewrite IH2.
+      apply disj_one_r.
+  + rewrite Bool.orb_false_iff in H1.
+    rewrite Bool.andb_true_iff in H2.
+    destruct H2 as [H3 H4], H1 as [H1 H2].
+    specialize (IH1 false true).
+    specialize (IH1 (conj H1 H3)).
+    simpl in IH1.
+    rewrite IH1.
+    specialize (IH2 false true).
+    specialize (IH2 (conj H2 H4)).
+    simpl in IH2.
+    rewrite IH2.
+    constructor.
+  + rewrite Bool.orb_false_iff in H1.
+    rewrite Bool.andb_false_iff in H2.
+    destruct H1 as [H1 H3], H2 as [H2 | H2].
+    * specialize (IH1 false false).
+      specialize (IH1 (conj H1 H2)).
+      simpl in IH1.
+      rewrite IH1.
+      destruct (RelSemantic.eval M f2 false) eqn:Heq.
+      ** specialize (IH2 false true).
+         specialize (IH2 (conj H3 eq_refl)).
+         simpl in IH2.
+         rewrite IH2.
+         constructor.
+      ** specialize (IH2 false false).
+         specialize (IH2 (conj H3 eq_refl)).
+         simpl in IH2.
+         rewrite IH2.
+         constructor.
+    * specialize (IH2 false false).
+      specialize (IH2 (conj H3 H2)).
+      simpl in IH2.
+      rewrite IH2.
+      destruct (RelSemantic.eval M f1 false) eqn:Heq.
+      ** specialize (IH1 false true).
+         specialize (IH1 (conj H1 eq_refl)).
+         simpl in IH1.
+         rewrite IH1.
+         constructor.
+      ** specialize (IH1 false false).
+         specialize (IH1 (conj H1 eq_refl)).
+         simpl in IH1.
+         rewrite IH1.
+         constructor.
+Qed.
 
-
-
-  Lemma eval_v4_rel_equiv {atom : Type} (f : @formula atom) (M : @V4Semantic.Model atom) :
-    V4Semantic.eval M f = One ->
-    RelSemantic.eval (convert_v4_rel M) f true = true /\
-    RelSemantic.eval (convert_v4_rel M) f false = false.
-  Proof.
-    intro H.
-    induction f as [a | f' IH | f1 IH1 f2 IH2 | f1 IH1 f2 IH2].
-    (* atom *)
-    - simpl in H.
-      simpl.
-      rewrite H.
-      split ; reflexivity.
-    (* not *)
-    - simpl in H.
-      simpl.
-      apply neg_one_zero in H.
+Lemma eval_v4_rel_equiv {atom : Type} (f : @formula atom) (M : @V4Semantic.Model atom) :
+  V4Semantic.eval M f = One ->
+  RelSemantic.eval (convert_v4_rel M) f true = true /\
+  RelSemantic.eval (convert_v4_rel M) f false = false.
+Proof.
+  intro H.
+  induction f as [a | f' IH | f1 IH1 f2 IH2 | f1 IH1 f2 IH2].
+  (* atom *)
+  - simpl in H.
+    simpl.
+    rewrite H.
+    split ; reflexivity.
+  (* not *)
+  - simpl in H.
+    simpl.
+    apply neg_one_zero in H.
 
 
 *)
