@@ -552,7 +552,58 @@ Module V4RelEquiv.
             simpl in IH2.
             rewrite IH2.
             constructor.
-        *
+        * specialize (IH2 true true).
+          specialize (IH2 (conj H4 H2)).
+          simpl in IH2.
+          rewrite IH2.
+          destruct (RelSemantic.eval M f1 false) eqn:Heq.
+          ** specialize (IH1 true true).
+             specialize (IH1 (conj H3 eq_refl)).
+             simpl in IH1.
+             rewrite IH1.
+             constructor.
+          ** specialize (IH1 true false).
+             specialize (IH1 (conj H3 eq_refl)).
+             simpl in IH1.
+             rewrite IH1.
+             constructor.
+      + rewrite Bool.andb_true_iff in H1.
+        rewrite Bool.orb_true_iff in H2.
+        destruct H1 as [H3 H4].
+        destruct H2 as [H2 | H2].
+        * specialize (IH1 true true).
+          specialize (IH1 (conj H3 H2)).
+          simpl in IH1.
+          rewrite IH1.
+          simpl in IH2.
+          (* Now eval f2 is unknown, but f2 true = true, so eval f2 ∈ {One, Both} *)
+          destruct (RelSemantic.eval M f2 false) eqn:Heq.
+          ** (* f2 false = true → eval f2 = Both *)
+            specialize (IH2 true true).
+            specialize (IH2 (conj H4 eq_refl)).
+            rewrite IH2.
+            constructor.
+          ** (* f2 false = false → eval f2 = One *)
+            specialize (IH2 true false).
+            specialize (IH2 (conj H4 eq_refl)).
+            simpl in IH2.
+            rewrite IH2.
+            constructor.
+        * specialize (IH2 true true).
+          specialize (IH2 (conj H4 H2)).
+          simpl in IH2.
+          rewrite IH2.
+          destruct (RelSemantic.eval M f1 false) eqn:Heq.
+          ** specialize (IH1 true true).
+             specialize (IH1 (conj H3 eq_refl)).
+             simpl in IH1.
+             rewrite IH1.
+             constructor.
+          ** specialize (IH1 true false).
+             specialize (IH1 (conj H3 eq_refl)).
+             simpl in IH1.
+             rewrite IH1.
+             constructor.
 
 
 
