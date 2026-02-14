@@ -817,22 +817,536 @@ Proof.
 Qed.
 
 Lemma eval_v4_rel_equiv {atom : Type} (f : @formula atom) (M : @V4Semantic.Model atom) :
-  V4Semantic.eval M f = One ->
-  RelSemantic.eval (convert_v4_rel M) f true = true /\
-  RelSemantic.eval (convert_v4_rel M) f false = false.
+  forall b1 b2 : bool,
+  V4Semantic.eval M f =
+    match b1, b2 with
+    | true, true => Both
+    | true, false => One
+    | false, true => Zero
+    | false, false => None
+    end
+  -> RelSemantic.eval (convert_v4_rel M) f true = b1 /\ RelSemantic.eval (convert_v4_rel M) f false = b2.
+Proof.
+  induction f as [a | f' IH | f1 IH1 f2 IH2 | f1 IH1 f2 IH2] ; intros b1 b2 H.
+  - destruct b1, b2 ; simpl in H ; simpl.
+    + rewrite H.
+      auto.
+    + rewrite H.
+      auto.
+    + rewrite H.
+      auto.
+    + rewrite H.
+      auto.
+  - simpl in H.
+    rewrite <-neg_rel_fun_equiv in H.
+    simpl.
+    destruct b1, b2.
+    + inversion H ; subst.
+      specialize (IH true true).
+      simpl in IH.
+      symmetry in H1.
+      specialize (IH H1).
+      rewrite and_comm.
+      exact IH.
+    + inversion H ; subst.
+      specialize (IH false true).
+      simpl in IH.
+      symmetry in H1.
+      specialize (IH H1).
+      rewrite and_comm.
+      exact IH.
+    + inversion H ; subst.
+      specialize (IH true false).
+      simpl in IH.
+      symmetry in H1.
+      specialize (IH H1).
+      rewrite and_comm.
+      exact IH.
+    + inversion H ; subst.
+      specialize (IH false false).
+      simpl in IH.
+      symmetry in H1.
+      specialize (IH H1).
+      rewrite and_comm.
+      exact IH.
+  - simpl in H.
+    rewrite <-conj_rel_fun_equiv in H.
+    simpl.
+    destruct b1, b2.
+    + rewrite Bool.andb_true_iff.
+      rewrite Bool.orb_true_iff.
+      inversion H ; subst.
+      * specialize (IH1 true true).
+        simpl in IH1.
+        symmetry in H1.
+        specialize (IH1 H1).
+        destruct IH1 as [H3 H4].
+        specialize (IH2 true true).
+        simpl in IH2.
+        symmetry in H2.
+        specialize (IH2 H2).
+        destruct IH2 as [H5 H6].
+        split.
+        ** exact (conj H3 H5).
+        ** apply (or_introl H4).
+      * symmetry in H1.
+        symmetry in H2.
+        specialize (IH1 true true).
+        specialize (IH2 true false).
+        simpl in IH1.
+        simpl in IH2.
+        specialize (IH1 H1).
+        specialize (IH2 H2).
+        destruct IH1 as [H3 H4].
+        destruct IH2 as [H5 H6].
+        split.
+        ** exact (conj H3 H5).
+        ** apply (or_introl H4).
+      * symmetry in H1.
+        symmetry in H2.
+        specialize (IH1 true false).
+        specialize (IH2 true true).
+        simpl in IH1.
+        simpl in IH2.
+        specialize (IH1 H1).
+        specialize (IH2 H2).
+        destruct IH1 as [H3 H4].
+        destruct IH2 as [H5 H6].
+        split.
+        ** exact (conj H3 H5).
+        ** apply (or_intror H6).
+    + rewrite Bool.andb_true_iff.
+      rewrite Bool.orb_false_iff.
+      inversion H ; subst.
+      symmetry in H1.
+      symmetry in H2.
+      specialize (IH1 true false).
+      simpl in IH1.
+      specialize (IH1 H1).
+      destruct IH1 as [H3 H4].
+      specialize (IH2 true false).
+      simpl in IH2.
+      specialize (IH2 H2).
+      destruct IH2 as [H5 H6].
+      split.
+      * exact (conj H3 H5).
+      * exact (conj H4 H6).
+    + rewrite Bool.andb_false_iff.
+      rewrite Bool.orb_true_iff.
+      inversion H ; subst.
+      * symmetry in H1.
+        specialize (IH1 false true).
+        specialize (IH1 H1).
+        destruct IH1 as [H2 H3].
+        split.
+        ** left.
+           exact H2.
+        ** left.
+           exact H3.
+      * symmetry in H2.
+        specialize (IH2 false true).
+        specialize (IH2 H2).
+        destruct IH2 as [H1 H3].
+        split.
+        ** right.
+           exact H1.
+        ** right.
+           exact H3.
+      * symmetry in H1.
+        symmetry in H2.
+        specialize (IH1 false false).
+        simpl in IH1.
+        specialize (IH1 H1).
+        destruct IH1 as [H3 H4].
+        specialize (IH2 true true).
+        simpl in IH2.
+        specialize (IH2 H2).
+        destruct IH2 as [H5 H6].
+        split.
+        ** left.
+           exact H3.
+        ** right.
+           exact H6.
+      * symmetry in H1.
+        symmetry in H2.
+        specialize (IH1 true true).
+        simpl in IH1.
+        specialize (IH1 H1).
+        destruct IH1 as [H3 H4].
+        specialize (IH2 false false).
+        simpl in IH2.
+        specialize (IH2 H2).
+        destruct IH2 as [H5 H6].
+        split.
+        ** right.
+           exact H5.
+        ** left.
+           exact H4.
+    + rewrite Bool.andb_false_iff.
+      rewrite Bool.orb_false_iff.
+      inversion H ; subst.
+      * symmetry in H1.
+        symmetry in H2.
+        specialize (IH1 false false).
+        simpl in IH1.
+        specialize (IH1 H1).
+        destruct IH1 as [H3 H4].
+        specialize (IH2 false false).
+        simpl in IH2.
+        specialize (IH2 H2).
+        destruct IH2 as [H5 H6].
+        split.
+        ** left.
+           exact H3.
+        ** exact (conj H4 H6).
+      * symmetry in H1.
+        symmetry in H2.
+        specialize (IH1 false false).
+        simpl in IH1.
+        specialize (IH1 H1).
+        destruct IH1 as [H3 H4].
+        specialize (IH2 true false).
+        simpl in IH2.
+        specialize (IH2 H2).
+        destruct IH2 as [H5 H6].
+        split.
+        ** left.
+           exact H3.
+        ** exact (conj H4 H6).
+      * symmetry in H1.
+        symmetry in H2.
+        specialize (IH1 true false).
+        simpl in IH1.
+        specialize (IH1 H1).
+        destruct IH1 as [H3 H4].
+        specialize (IH2 false false).
+        simpl in IH2.
+        specialize (IH2 H2).
+        destruct IH2 as [H5 H6].
+        split.
+        ** right.
+           exact H5.
+        ** exact (conj H4 H6).
+  - simpl in H.
+    rewrite <-disj_rel_fun_equiv in H.
+    simpl.
+    destruct b1, b2.
+    + rewrite Bool.orb_true_iff.
+      rewrite Bool.andb_true_iff.
+      inversion H ; subst.
+      * symmetry in H1.
+        symmetry in H2.
+        specialize (IH1 true true).
+        simpl in IH1.
+        specialize (IH1 H1).
+        destruct IH1 as [H3 H4].
+        specialize (IH2 false true).
+        simpl in IH2.
+        specialize (IH2 H2).
+        destruct IH2 as [H5 H6].
+        split.
+        ** left.
+           exact H3.
+        ** exact (conj H4 H6).
+      * symmetry in H1.
+        symmetry in H2.
+        specialize (IH1 true true).
+        simpl in IH1.
+        specialize (IH1 H1).
+        destruct IH1 as [H3 H4].
+        specialize (IH2 true true).
+        simpl in IH2.
+        specialize (IH2 H2).
+        destruct IH2 as [H5 H6].
+        split.
+        ** left.
+           exact H3.
+        ** exact (conj H4 H6).
+      * symmetry in H1.
+        symmetry in H2.
+        specialize (IH1 false true).
+        simpl in IH1.
+        specialize (IH1 H1).
+        destruct IH1 as [H3 H4].
+        specialize (IH2 true true).
+        simpl in IH2.
+        specialize (IH2 H2).
+        destruct IH2 as [H5 H6].
+        split.
+        ** right.
+           exact H5.
+        ** exact (conj H4 H6).
+    + rewrite Bool.orb_true_iff.
+      rewrite Bool.andb_false_iff.
+      inversion H ; subst.
+      * symmetry in H1.
+        specialize (IH1 true false).
+        simpl in IH1.
+        specialize (IH1 H1).
+        destruct IH1 as [H3 H4].
+        split.
+        ** left.
+           exact H3.
+        ** left.
+           exact H4.
+      * symmetry in H2.
+        specialize (IH2 true false).
+        simpl in IH2.
+        specialize (IH2 H2).
+        destruct IH2 as [H3 H4].
+        split.
+        ** right.
+           exact H3.
+        ** right.
+           exact H4.
+      * symmetry in H1.
+        symmetry in H2.
+        specialize (IH1 false false).
+        simpl in IH1.
+        specialize (IH1 H1).
+        destruct IH1 as [H3 H4].
+        specialize (IH2 true true).
+        simpl in IH2.
+        specialize (IH2 H2).
+        destruct IH2 as [H5 H6].
+        split.
+        ** right.
+           exact H5.
+        ** left.
+           exact H4.
+      * symmetry in H1.
+        symmetry in H2.
+        specialize (IH1 true true).
+        simpl in IH1.
+        specialize (IH1 H1).
+        destruct IH1 as [H3 H4].
+        specialize (IH2 false false).
+        simpl in IH2.
+        specialize (IH2 H2).
+        destruct IH2 as [H5 H6].
+        split.
+        ** left.
+           exact H3.
+        ** right.
+           exact H6.
+    + rewrite Bool.orb_false_iff.
+      rewrite Bool.andb_true_iff.
+      inversion H ; subst.
+      symmetry in H1.
+      symmetry in H2.
+      specialize (IH1 false true).
+      simpl in IH1.
+      specialize (IH1 H1).
+      destruct IH1 as [H3 H4].
+      specialize (IH2 false true).
+      simpl in IH2.
+      specialize (IH2 H2).
+      destruct IH2 as [H5 H6].
+      split.
+      * exact (conj H3 H5).
+      * exact (conj H4 H6).
+    + rewrite Bool.orb_false_iff.
+      rewrite Bool.andb_false_iff.
+      inversion H ; subst.
+      * symmetry in H1.
+        symmetry in H2.
+        specialize (IH1 false false).
+        simpl in IH1.
+        specialize (IH1 H1).
+        destruct IH1 as [H3 H4].
+        specialize (IH2 false true).
+        simpl in IH2.
+        specialize (IH2 H2).
+        destruct IH2 as [H5 H6].
+        split.
+        ** exact (conj H3 H5).
+        ** left.
+           exact H4.
+      * symmetry in H1.
+        symmetry in H2.
+        specialize (IH1 false false).
+        simpl in IH1.
+        specialize (IH1 H1).
+        destruct IH1 as [H3 H4].
+        specialize (IH2 false false).
+        simpl in IH2.
+        specialize (IH2 H2).
+        destruct IH2 as [H5 H6].
+        split.
+        ** exact (conj H3 H5).
+        ** left.
+           exact H4.
+      * symmetry in H1.
+        symmetry in H2.
+        specialize (IH1 false true).
+        simpl in IH1.
+        specialize (IH1 H1).
+        destruct IH1 as [H3 H4].
+        specialize (IH2 false false).
+        simpl in IH2.
+        specialize (IH2 H2).
+        destruct IH2 as [H5 H6].
+        split.
+        ** exact (conj H3 H5).
+        ** right.
+           exact H6.
+Qed.
+
+Lemma holds_all_rel_v4 {atom : Type} (Γ : list (@formula atom)) (M : @RelSemantic.Model atom) :
+  RelSemantic.holds_all M Γ -> V4Semantic.holds_all (convert_rel_v4 M) Γ.
 Proof.
   intro H.
+  unfold V4Semantic.holds_all.
+  intros f H1.
+  unfold RelSemantic.holds_all in H.
+  specialize (H f H1).
+  unfold FDE_V4.designated.
+  destruct (RelSemantic.eval M f false) eqn:Heq.
+  - specialize (eval_rel_v4_equiv f M true true) as H2.
+    simpl in H2.
+    specialize (H2 (conj H Heq)).
+    right.
+    exact H2.
+  - specialize (eval_rel_v4_equiv f M true false) as H2.
+    simpl in H2.
+    specialize (H2 (conj H Heq)).
+    left.
+    exact H2.
+Qed.
+
+Lemma holds_all_v4_rel {atom : Type} (Γ : list (@formula atom)) (M : @V4Semantic.Model atom) :
+  V4Semantic.holds_all M Γ -> RelSemantic.holds_all (convert_v4_rel M) Γ.
+Proof.
+  intro H.
+  unfold RelSemantic.holds_all.
+  intros f H1.
+  unfold V4Semantic.holds_all in H.
+  specialize (H f H1).
+  unfold FDE_V4.designated in H.
+  destruct H as [H | H].
+  - specialize (eval_v4_rel_equiv f M true false) as H2.
+    simpl in H2.
+    specialize (H2 H).
+    destruct H2 as [H2 _].
+    exact H2.
+  - specialize (eval_v4_rel_equiv f M true true) as H2.
+    simpl in H2.
+    specialize (H2 H).
+    destruct H2 as [H2 _].
+    exact H2.
+Qed.
+
+Theorem v4_eval_convert_roundtrip {atom : Type} (M : @V4Semantic.Model atom):
+  forall f : @formula atom, V4Semantic.eval (convert_rel_v4 (convert_v4_rel M)) f = V4Semantic.eval M f.
+Proof.
+  intro f.
   induction f as [a | f' IH | f1 IH1 f2 IH2 | f1 IH1 f2 IH2].
-  (* atom *)
-  - simpl in H.
-    simpl.
-    rewrite H.
-    split ; reflexivity.
-  (* not *)
-  - simpl in H.
-    simpl.
-    apply neg_one_zero in H.
+  - simpl.
+    destruct (v M a) eqn:Heq ; reflexivity.
+  - simpl.
+    rewrite IH.
+    reflexivity.
+  - simpl.
+    rewrite IH1.
+    rewrite IH2.
+    reflexivity.
+  - simpl.
+    rewrite IH1.
+    rewrite IH2.
+    reflexivity.
+Qed.
 
+Theorem rel_eval_convert_roundtrip {atom : Type} (M : @RelSemantic.Model atom) (f : @formula atom):
+  forall b : bool, RelSemantic.eval (convert_v4_rel (convert_rel_v4 M)) f b = RelSemantic.eval M f b.
+Proof.
+  induction f as [a | f' IH | f1 IH1 f2 IH2 | f1 IH1 f2 IH2] ; intro b.
+  - cbn [RelSemantic.eval].
+    destruct b ; simpl.
+    + destruct (ρ M a true) eqn:Heq1, (ρ M a false) eqn:Heq2 ; reflexivity.
+    + destruct (ρ M a true) eqn:Heq1, (ρ M a false) eqn:Heq2 ; reflexivity.
+  - simpl.
+    specialize (IH (negb b)).
+    exact IH.
+  - cbn [RelSemantic.eval].
+    specialize (IH1 b).
+    specialize (IH2 b).
+    destruct b.
+    + rewrite IH1.
+      rewrite IH2.
+      reflexivity.
+    + rewrite IH1.
+      rewrite IH2.
+      reflexivity.
+  - cbn [RelSemantic.eval].
+    specialize (IH1 b).
+    specialize (IH2 b).
+    destruct b.
+    + rewrite IH1.
+      rewrite IH2.
+      reflexivity.
+    + rewrite IH1.
+      rewrite IH2.
+      reflexivity.
+Qed.
 
-*)
+Theorem rel_v4_consequence {atom : Type} (A: @formula atom) (Γ : list (@formula atom)) :
+  RelSemantic.consequence Γ A -> V4Semantic.consequence Γ A.
+Proof.
+  intro H.
+  unfold RelSemantic.consequence in H.
+  unfold V4Semantic.consequence.
+  intros M H1.
+  apply holds_all_v4_rel in H1.
+  specialize (H (convert_v4_rel M)).
+  specialize (H H1).
+  clear H1.
+  unfold FDE_V4.designated.
+  destruct (RelSemantic.eval (convert_v4_rel M) A false) eqn:Heq.
+  - specialize (eval_rel_v4_equiv A (convert_v4_rel M) true true) as H1.
+    simpl in H1.
+    specialize (H1 (conj H Heq)).
+    right.
+    rewrite v4_eval_convert_roundtrip in H1.
+    exact H1.
+  - specialize (eval_rel_v4_equiv A (convert_v4_rel M) true false) as H1.
+    simpl in H1.
+    specialize (H1 (conj H Heq)).
+    left.
+    rewrite v4_eval_convert_roundtrip in H1.
+    exact H1.
+Qed.
+
+Theorem v4_rel_consequence {atom : Type} (A: @formula atom) (Γ : list (@formula atom)) :
+  V4Semantic.consequence Γ A -> RelSemantic.consequence Γ A.
+Proof.
+  intro H.
+  unfold V4Semantic.consequence in H.
+  unfold RelSemantic.consequence.
+  intros M H1.
+  apply holds_all_rel_v4 in H1.
+  specialize (H (convert_rel_v4 M)).
+  specialize (H H1).
+  clear H1.
+  unfold FDE_V4.designated in H.
+  destruct H.
+  - specialize (eval_v4_rel_equiv A (convert_rel_v4 M) true false) as H1.
+    simpl in H1.
+    specialize (H1 H).
+    destruct H1 as [H1 _].
+    rewrite rel_eval_convert_roundtrip in H1.
+    exact H1.
+  - specialize (eval_v4_rel_equiv A (convert_rel_v4 M) true true) as H1.
+    simpl in H1.
+    specialize (H1 H).
+    destruct H1 as [H1 _].
+    rewrite rel_eval_convert_roundtrip in H1.
+    exact H1.
+Qed.
+
+Theorem rel_v4_equiv {atom : Type} (A: @formula atom) (Γ : list (@formula atom)) : RelSemantic.consequence Γ A <-> V4Semantic.consequence Γ A.
+Proof.
+  split.
+  - apply rel_v4_consequence.
+  - apply v4_rel_consequence.
+Qed.
 End V4RelEquiv.
