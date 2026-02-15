@@ -320,9 +320,31 @@ Module RelStarEquiv.
   Qed.
 
   Lemma eval_rel_roundtrip {atom : Type} (M : @RelSemantic.Model atom) (f : formula) :
-    forall b : bool, RelSemantic.eval (convert_star_rel (convert_rel_star M) (if b then TrueWorld else TrueWorld')) f b = RelSemantic.eval M f b.
+    forall b : bool, RelSemantic.eval (convert_star_rel (convert_rel_star M) TrueWorld) f b = RelSemantic.eval M f b.
   Proof.
-
+    induction f as [a | f' IH | f1 IH1 f2 IH2 | f1 IH1 f2 IH2] ; intro b.
+    - destruct b ; simpl.
+      + reflexivity.
+      + rewrite Bool.negb_involutive.
+        reflexivity.
+    - simpl.
+      specialize (IH (negb b)).
+      exact IH.
+    - specialize (IH1 b).
+      specialize (IH2 b).
+      destruct b ; simpl.
+      + rewrite IH1, IH2.
+        reflexivity.
+      + rewrite IH1, IH2.
+        reflexivity.
+    - specialize (IH1 b).
+      specialize (IH2 b).
+      destruct b ; simpl.
+      + rewrite IH1, IH2.
+        reflexivity.
+      + rewrite IH1, IH2.
+        reflexivity.
+  Qed.
 
   Theorem star_rel_consequence {atom : Type} (A: @formula atom) (Γ : list (@formula atom)) :
     StarSemantic.consequence Γ A -> RelSemantic.consequence Γ A.
@@ -332,54 +354,16 @@ Module RelStarEquiv.
     unfold RelSemantic.consequence.
     intros M H1.
 
-    set (StarM := convert_rel_star M).
-    specialize (H StarM).
+    specialize (H (convert_rel_star M)).
     specialize (H TrueWorld).
     apply holds_all_rel_star in H1.
     specialize (H H1).
     clear H1.
-    induction A.
-    - simpl.
-      simpl in H.
-      exact H.
-    - simpl.
-      simpl in H.
-      rewrite Bool.negb_true_iff in H.
-      specialize (eval_star_rel_equiv A StarM TrueWorld false) as Heq.
-      simpl in Heq.
-      apply Heq in H.
-      unfold StarM in H.
-      specialize (eval_eq (convert_star_rel (convert_rel_star M) TrueWorld) M A false) as H1.
-      assert (H2 : forall (A : atom) (b : bool),
-                 RelSemantic.ρ (convert_star_rel (convert_rel_star M) TrueWorld) A b = RelSemantic.ρ M A b).
-      {
-        intros A1 b.
-        symmetry.
-        apply ρ_eq.
-      }
-
-      specialize (H1 H2).
-      rewrite H1 in H.
-      exact H.
-    - simpl.
-      simpl in H.
-      rewrite Bool.andb_true_iff in H.
-      destruct H as [H1 H2].
-      specialize (IHA1 H1).
-      specialize (IHA2 H2).
-      rewrite Bool.andb_true_iff.
-      exact (conj IHA1 IHA2).
-    - simpl.
-      simpl in H.
-      rewrite Bool.orb_true_iff.
-      rewrite Bool.orb_true_iff in H.
-      destruct H as [H | H].
-      + specialize (IHA1 H).
-        left.
-        exact IHA1.
-      + specialize (IHA2 H).
-        right.
-        exact IHA2.
+    specialize (eval_star_rel_equiv A (convert_rel_star M) TrueWorld true) as H1.
+    simpl in H1.
+    specialize (H1 H).
+    rewrite eval_rel_roundtrip in H1.
+    exact H1.
   Qed.
 
   Lemma eval_star_roundtrip {atom : Type} (M : @StarSemantic.Model atom)
