@@ -319,6 +319,11 @@ Module RelStarEquiv.
     exact H.
   Qed.
 
+  Lemma eval_rel_roundtrip {atom : Type} (M : @RelSemantic.Model atom) (f : formula) :
+    forall b : bool, RelSemantic.eval (convert_star_rel (convert_rel_star M) (if b then TrueWorld else TrueWorld')) f b = RelSemantic.eval M f b.
+  Proof.
+
+
   Theorem star_rel_consequence {atom : Type} (A: @formula atom) (Γ : list (@formula atom)) :
     StarSemantic.consequence Γ A -> RelSemantic.consequence Γ A.
   Proof.
