@@ -1339,3 +1339,18 @@ Proof.
   - apply v4_rel_consequence.
 Qed.
 End V4RelEquiv.
+
+Module V4StarEquiv.
+
+Theorem star_v4_equiv {atom : Type} (A: @formula atom) (Γ : list (@formula atom)) : StarSemantic.consequence Γ A <-> V4Semantic.consequence Γ A.
+Proof.
+  split ; intro H.
+  - rewrite <-RelStarEquiv.rel_star_equiv in H.
+    rewrite V4RelEquiv.rel_v4_equiv in H.
+    exact H.
+  - rewrite <-V4RelEquiv.rel_v4_equiv in H.
+    rewrite RelStarEquiv.rel_star_equiv in H.
+    exact H.
+Qed.
+
+End V4StarEquiv.
