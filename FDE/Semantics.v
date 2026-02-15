@@ -222,6 +222,53 @@ Module FDE_V4.
     - destruct a, b, c ; simpl in H ; try discriminate H ; try constructor.
   Qed.
 
+  Lemma conj_elim1 : forall A B : V4, designated (conj A B) -> designated A.
+  Proof.
+      intros A B H.
+      unfold designated in *.
+      destruct H.
+      - destruct A, B ; simpl in H ; try discriminate H ; auto.
+      - destruct A, B ; simpl in H ; try discriminate H ; auto.
+  Qed.
+
+  Lemma conj_elim2 : forall A B : V4, designated (conj A B) -> designated B.
+  Proof.
+      intros A B H.
+      unfold designated in *.
+      destruct H.
+      - destruct A, B ; simpl in H ; try discriminate H ; auto.
+      - destruct A, B ; simpl in H ; try discriminate H ; auto.
+  Qed.
+
+  Lemma disj_intro1 : forall A B : V4, designated A -> designated (disj A B).
+  Proof.
+      intros A B H.
+      unfold designated in *.
+      destruct H.
+      - destruct A, B ; simpl in H ; try discriminate H ; auto.
+      - destruct A, B ; simpl in H ; try discriminate H ; auto.
+  Qed.
+
+  Lemma disj_intro2 : forall A B : V4, designated B -> designated (disj A B).
+  Proof.
+      intros A B H.
+      unfold designated in *.
+      destruct H.
+      - destruct A, B ; simpl in H ; try discriminate H ; auto.
+      - destruct A, B ; simpl in H ; try discriminate H ; auto.
+  Qed.
+
+  Lemma DeMorganConj : forall A B : V4, (neg (conj A B)) = disj (neg A) (neg B).
+  Proof.
+    intros A B.
+    destruct A eqn:Heq1, B eqn:Heq2 ; simpl ; reflexivity.
+  Qed.
+
+  Lemma DeMorganDisj : forall A B : V4, (neg (disj A B)) = conj (neg A) (neg B).
+  Proof.
+    intros A B.
+    destruct A eqn:Heq1, B eqn:Heq2 ; simpl ; reflexivity.
+  Qed.
 End FDE_V4.
 
 Module V4Semantic.

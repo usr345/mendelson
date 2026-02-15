@@ -1,6 +1,7 @@
 From Basis Require Import FSignature.
 From FDE Require Import Formula.
 From FDE Require Import Semantics.
+From FDE Require Import V4Lattice.
 From Coq Require Import Lists.List.
 Import ListNotations.
 Import FormulaDef.
@@ -542,38 +543,68 @@ Module StarExcersizes.
     intro H.
     specialize (H atom4 P Q).
     unfold consequence in H.
-    Abort.
+    pose (
+        v1 :=
+          fun (a : atom4) (w : worlds1) =>
+            match a, w with
+            | P, Γ => true
+            | P, Γ' => false
+            | _, Γ => false
+            | _, Γ' => true
+            end
+      ).
+
+    pose (M1 := {|
+      worlds := worlds1;
+      w0 := Γ;
+      star := star1;
+      star_involutive := star1_involutive;
+      v := v1;
+    |}).
+
+    specialize (H M1 Γ).
+    simpl in H.
+
+    assert (H1 : holds_all M1 [(f_atom P); $~ (P /\ ~ Q)$] Γ).
+    {
+      unfold holds_all.
+      intros f H1.
+      unfold In in H1.
+      destruct H1 as [H1 | [H1 | []]].
+      - rewrite <-H1.
+        simpl.
+        reflexivity.
+      - rewrite <-H1.
+        simpl.
+        reflexivity.
+    }
+
+    specialize (H H1).
+    discriminate H.
+Qed.
 End StarExcersizes.
 
+Module V4 := FDE_V4.
+Import V4 (One, Zero, Both, None, neg_rel, neg_zero, neg_none, neg_both, neg_one, conj_rel, disj_rel, conj_zero_l, conj_zero_r, conj_none_both, conj_both_none, disj_one_l, disj_one_r, neg_rel_fun_equiv, conj_rel_fun_equiv, disj_rel_fun_equiv, designated, DeMorganConj, conj_elim1, conj_elim2, disj_intro1).
 Import V4Semantic.
 Module V4Excersizes.
   Open Scope V4_scope.
-(*
+
   Theorem T_836 {atom : Type} : forall A B C D : @formula atom, [$~(B /\ ~C) /\ A$] |= $(~B \/ C) \/ D$.
   Proof.
     intros A B C D.
     unfold consequence.
     intros M H.
-    unfold holds_all in H.
-    simpl.
-    rewrite Bool.orb_true_iff.
-    left.
 
-    specialize (in_eq $~ (B /\ ~ C) /\ A$ nil) as H1.
-    specialize (H $~ (B /\ ~ C) /\ A$).
-    specialize (H H1).
-    clear H1.
+    rewrite HoldsAll1 in H.
     simpl in H.
-    rewrite Bool.andb_true_iff in H.
-    destruct H as [H _].
 
-    rewrite Bool.orb_true_iff in H.
-    rewrite Bool.orb_true_iff.
-    destruct H as [H | H].
-    - left.
-      exact H.
-    - right.
-      exact H.
+    rewrite DeMorganConj in H.
+    rewrite V4Lattice.neg_involutive in H.
+    apply conj_elim1 in H.
+    simpl.
+    apply disj_intro1.
+    exact H.
   Qed.
 
   Theorem T_3 {atom : Type} : forall A B C : @formula atom, [$A /\ (B \/ C)$] |= $(A /\ B) \/ (A /\ C)$.
@@ -581,12 +612,8 @@ Module V4Excersizes.
     intros A B C.
     unfold consequence.
     intros M H.
-    unfold holds_all in H.
 
-    specialize (H $A /\ (B \/ C)$).
-    specialize (in_eq $A /\ (B \/ C)$ nil) as H1.
-    specialize (H H1).
-    clear H1.
+    rewrite HoldsAll1 in H.
 
     simpl in H.
     rewrite Bool.andb_true_iff in H.
@@ -602,6 +629,5 @@ Module V4Excersizes.
       rewrite Bool.andb_true_iff.
       exact (conj H1 H2).
   Qed.
-*)
 
 End V4Excersizes.

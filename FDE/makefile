@@ -16,6 +16,9 @@ Semantics_equivalence.vo: Semantics_equivalence.v Semantics.vo
 Exercises.vo: Exercises.v Semantics.vo
 	$(COQC) Exercises.v
 
+V4Lattice.vo: V4Lattice.v Semantics.vo ../Lattices/Order.vo
+	$(COQC) V4Lattice.v
+
 Syntactic.vo: Syntactic.v Formula.vo
 	$(COQC) Syntactic.v
 
