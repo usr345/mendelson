@@ -33,6 +33,34 @@ Proof.
     reflexivity.
 Qed.
 
+Lemma true_worlds_bool : exists (f : TrueWorlds -> bool) (g : bool -> TrueWorlds), (forall w, g (f w) = w) /\ (forall b, f (g b) = b).
+Proof.
+    pose (
+        f1 :=
+          fun (w : TrueWorlds) =>
+            match w with
+            | TrueWorld => true
+            | TrueWorld' => false
+            end
+      ).
+
+    pose (
+        g1 :=
+          fun (b : bool) =>
+            match b with
+            | true => TrueWorld
+            | false => TrueWorld'
+            end
+      ).
+
+    exists f1, g1.
+    split.
+    - intro w.
+      destruct w ; simpl ; reflexivity.
+    - intro b.
+      destruct b ; simpl ; reflexivity.
+Qed.
+
 Definition convert_rel_star {atom : Type} (M : @RelSemantic.Model atom) : @StarSemantic.Model atom :=
     let v :=
           fun (a : atom) (w : TrueWorlds) =>
@@ -157,6 +185,118 @@ Proof.
       reflexivity.
 Qed.
 
+Theorem star_collapse_to_two_worlds {atom : Type}
+  (M : @StarSemantic.Model atom) (w : M.(worlds)) :
+  exists (M2 : @StarSemantic.Model atom),
+    (forall f : formula,
+      StarSemantic.eval M f w =
+        StarSemantic.eval M2 f M2.(w0))
+    /\
+      exists (f : M2.(worlds) -> bool) (g : bool -> M2.(worlds)),
+        (forall w, g (f w) = w) /\ (forall b, f (g b) = b).
+Proof.
+    pose (
+        v1 :=
+          fun (a : atom) (w' : TrueWorlds) =>
+            match w' with
+            | TrueWorld => M.(v) a w
+            | TrueWorld' => M.(v) a (M.(star) w)
+            end
+      ).
+
+    pose (M1 := {|
+      worlds := TrueWorlds;
+      w0 := TrueWorld;
+      star := true_star;
+      star_involutive := true_star_involutive;
+      v := v1;
+    |}).
+
+    exists M1.
+    split.
+    - intro f.
+      revert M1.
+      revert v1.
+      revert w.
+      induction f as [a | f' IH | f1 IH1 f2 IH2 | f1 IH1 f2 IH2].
+      + simpl.
+        reflexivity.
+      + intros w v1 M1.
+        simpl.
+        specialize (IH (star M w)).
+        simpl in IH.
+        rewrite M.(star_involutive) in IH.
+        rewrite IH.
+        set (M_star := {|
+           worlds := TrueWorlds;
+           w0 := TrueWorld;
+           star := true_star;
+           star_involutive := true_star_involutive;
+           v :=
+             fun (a : atom) (w' : TrueWorlds) =>
+             match w' with
+             | TrueWorld => v M a (star M w)
+             | TrueWorld' => v M a w
+             end
+                      |}).
+
+        assert (H_swap : forall g,
+                   eval M_star g TrueWorld = eval M1 g TrueWorld' /\ eval M_star g TrueWorld' = eval M1 g TrueWorld).
+        {
+          intro g.
+          induction g as [a | g' gIH | g1 gIH1 g2 gIH2 | g1 gIH1 g2 gIH2].
+          - simpl.
+            split.
+            + reflexivity.
+            + reflexivity.
+          - simpl.
+            destruct gIH as [IH1 IH2].
+            split.
+            + rewrite IH2.
+              reflexivity.
+            + rewrite IH1.
+              reflexivity.
+          - simpl.
+            destruct gIH1 as [IH1 IH2].
+            destruct gIH2 as [IH3 IH4].
+            split.
+            + rewrite IH1.
+              rewrite IH3.
+              reflexivity.
+            + rewrite IH2.
+              rewrite IH4.
+              reflexivity.
+          - simpl.
+            destruct gIH1 as [IH1 IH2].
+            destruct gIH2 as [IH3 IH4].
+            split.
+            + rewrite IH1.
+              rewrite IH3.
+              reflexivity.
+            + rewrite IH2.
+              rewrite IH4.
+              reflexivity.
+        }
+
+        specialize (H_swap f').
+        destruct H_swap as [H1 H2].
+        rewrite H1.
+        reflexivity.
+      + intros w v1 M2.
+        simpl.
+        specialize (IH1 w).
+        specialize (IH2 w).
+        rewrite IH1, IH2.
+        reflexivity.
+      + intros w v1 M2.
+        simpl.
+        specialize (IH1 w).
+        specialize (IH2 w).
+        rewrite IH1, IH2.
+        reflexivity.
+    - apply true_worlds_bool.
+Qed.
+        
 Module RelStarEquiv.
   Lemma eval_rel_star_equiv {atom : Type} (f : @formula atom) (M : @RelSemantic.Model atom) :
     forall b : bool,

@@ -18,4 +18,5 @@ Module FormulaDef <: TFormula.
 End FormulaDef.
 
 Module FDE_Formula := Make_Formula(FormulaDef).
+
 Export FDE_Formula.

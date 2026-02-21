@@ -17,7 +17,7 @@ Module Syntactic.
     | axiom7 : forall A, $~ ~A$ |- A
     | trans : forall {A B C}, A |- B -> B |- C -> A |- C
     | conj_intro : forall {A B C}, A |- B -> A |- C -> A |- $B /\ C$
-    | case_nalysis : forall {A B C}, A |- C -> B |- C -> $A \/ B$ |- C
+    | case_analysis : forall {A B C}, A |- C -> B |- C -> $A \/ B$ |- C
     | contrapos : forall {A B}, A |- B -> $~ B$ |- $~ A$
   where "A |- B" := (entails A B).
 
@@ -87,7 +87,7 @@ Proof.
   specialize (contrapos H1) as H2.
   specialize (axiom2 A B) as H3.
   specialize (contrapos H3) as H4.
-  specialize (case_nalysis H2 H4) as H5.
+  specialize (case_analysis H2 H4) as H5.
   exact H5.
 Qed.
 
@@ -111,7 +111,7 @@ Proof.
   specialize (axiom2 $~A$ $~B$) as H3.
   specialize (contrapos H3) as H4.
   apply neg_neg_del in H4.
-  specialize (case_nalysis H2 H4) as H5.
+  specialize (case_analysis H2 H4) as H5.
   specialize (contrapos H5) as H6.
   apply neg_neg_del in H6.
   exact H6.
@@ -138,4 +138,95 @@ Proof.
   exact H3.
 Qed.
 
+Inductive subformula_rel {atom : Type} : (@formula atom) -> @formula atom -> Prop :=
+| subformula_refl : forall f : @formula atom, subformula_rel f f
+| subformula_neg : forall (f' f : @formula atom), (subformula_rel f' f) -> subformula_rel f' (f_not f)
+| subformula_conjl : forall (f' f g : @formula atom), (subformula_rel f' f) -> subformula_rel f' (f_conj f g)
+| subformula_conjr : forall (g' f g : @formula atom), (subformula_rel g' g) -> subformula_rel g' (f_conj f g)
+| subformula_disjl : forall (f' f g : @formula atom), (subformula_rel f' f) -> subformula_rel f' (f_disj f g)
+| subformula_disjr : forall (g' f g : @formula atom), (subformula_rel g' g) -> subformula_rel g' (f_disj f g)
+.
+
+Theorem subformula_rel_trans {atom : Type} (A B C : @formula atom) : 
+  subformula_rel A B -> subformula_rel B C -> subformula_rel A C.
+Proof.
+  intros HAB HBC.
+  induction HBC as [| B' C' Hpre IH | B' C' D Hpre IH | B' C' D Hpre IH | B' C' D Hpre IH | B' C' D Hpre IH ].
+  - exact HAB.
+  - apply subformula_neg.
+    apply IH.
+    exact HAB.
+  - apply subformula_conjl.
+    apply IH.
+    exact HAB.
+  - apply subformula_conjr.
+    apply IH.
+    exact HAB.
+  - apply subformula_disjl.
+    apply IH.
+    exact HAB.    
+  - apply subformula_disjr.
+    apply IH.
+    exact HAB.
+Qed.
+    
+Theorem entails_relevant {atom : Type} (A B : @formula atom) : 
+    A |- B -> exists C, subformula_rel C A /\ subformula_rel C B.
+Proof.
+  intros H.
+  induction H. (* as [ | | | | | IH1 IH2 | IH1 IH2 | IH1 IH2 | IH]. *)
+  - exists A.
+    split.
+    + apply subformula_conjl.
+      apply subformula_refl.
+    + apply subformula_refl.
+  - exists B.
+    split.
+    + apply subformula_conjr.
+      apply subformula_refl.
+    + apply subformula_refl.
+  - exists A.
+    split.
+    + apply subformula_refl.
+    + apply subformula_disjl.
+      apply subformula_refl.
+  - exists B.
+    split.
+    + apply subformula_refl.
+    + apply subformula_disjr.
+      apply subformula_refl.
+  - exists A.
+    split.
+    + apply subformula_conjl.
+      apply subformula_refl.
+    + apply subformula_disjl.
+      apply subformula_conjl.
+      apply subformula_refl.
+  - exists A.
+    split.
+    + apply subformula_refl.
+    + apply subformula_neg.
+      apply subformula_neg.
+      apply subformula_refl.
+  - exists A.
+    split.
+    + apply subformula_neg.
+      apply subformula_neg.
+      apply subformula_refl.
+    + apply subformula_refl.
+  - destruct IHentails1 as [D IH1].
+    destruct IHentails2 as [F IH2].
+    destruct IH1 as [HDA HDB], IH2 as [HFB HFC].
+    generalize dependent A.
+    generalize dependent C.
+    generalize dependent D.
+    generalize dependent F.
+    induction B as [a | B1 IHB1 | B1 IHB1 B2 IHB2 | B1 IHB1 B2 IHB2] ; intros F HFB D HDB C HBC HFC A HBA HDA.
+    + exists (f_atom a).
+      split.
+      * inversion HDB ; subst.
+        exact HDA.
+      * inversion HFB ; subst.
+        exact HFC.
+    + 
 End Syntactic.
