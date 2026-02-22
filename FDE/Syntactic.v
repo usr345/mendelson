@@ -138,38 +138,6 @@ Proof.
   exact H3.
 Qed.
 
-Inductive subformula_rel {atom : Type} : (@formula atom) -> @formula atom -> Prop :=
-| subformula_refl : forall f : @formula atom, subformula_rel f f
-| subformula_neg : forall (f' f : @formula atom), (subformula_rel f' f) -> subformula_rel f' (f_not f)
-| subformula_conjl : forall (f' f g : @formula atom), (subformula_rel f' f) -> subformula_rel f' (f_conj f g)
-| subformula_conjr : forall (g' f g : @formula atom), (subformula_rel g' g) -> subformula_rel g' (f_conj f g)
-| subformula_disjl : forall (f' f g : @formula atom), (subformula_rel f' f) -> subformula_rel f' (f_disj f g)
-| subformula_disjr : forall (g' f g : @formula atom), (subformula_rel g' g) -> subformula_rel g' (f_disj f g)
-.
-
-Theorem subformula_rel_trans {atom : Type} (A B C : @formula atom) : 
-  subformula_rel A B -> subformula_rel B C -> subformula_rel A C.
-Proof.
-  intros HAB HBC.
-  induction HBC as [| B' C' Hpre IH | B' C' D Hpre IH | B' C' D Hpre IH | B' C' D Hpre IH | B' C' D Hpre IH ].
-  - exact HAB.
-  - apply subformula_neg.
-    apply IH.
-    exact HAB.
-  - apply subformula_conjl.
-    apply IH.
-    exact HAB.
-  - apply subformula_conjr.
-    apply IH.
-    exact HAB.
-  - apply subformula_disjl.
-    apply IH.
-    exact HAB.    
-  - apply subformula_disjr.
-    apply IH.
-    exact HAB.
-Qed.
-    
 Theorem entails_relevant {atom : Type} (A B : @formula atom) : 
     A |- B -> exists C, subformula_rel C A /\ subformula_rel C B.
 Proof.
@@ -221,12 +189,54 @@ Proof.
     generalize dependent C.
     generalize dependent D.
     generalize dependent F.
-    induction B as [a | B1 IHB1 | B1 IHB1 B2 IHB2 | B1 IHB1 B2 IHB2] ; intros F HFB D HDB C HBC HFC A HBA HDA.
+    induction B as [a | B' IH | B1 IHB1 B2 IHB2 | B1 IHB1 B2 IHB2] ; intros F HFB D HDB C HBC HFC A HBA HDA.
     + exists (f_atom a).
       split.
       * inversion HDB ; subst.
         exact HDA.
       * inversion HFB ; subst.
         exact HFC.
-    + 
+    + inversion HDB ; inversion HFB ; subst.
+      * exists (f_not B').
+        split.
+        ** exact HDA.
+        ** exact HFC.
+      * specialize (subformula_rel_trans F (f_not B') A HFB HDA) as HFA.
+        exists F.
+        exact (conj HFA HFC).
+      * specialize (subformula_rel_trans D (f_not B') C HDB HFC) as HDC.
+        exists D.
+        exact (conj HDA HDC).
+      * apply IH with (A := A) (C := C) (D := D) (F := F); try assumption.
+                apply IH with (A := A) (C := C) (D := D) (F := F) .
+        ** exact H4.
+        ** exact H1.
+        ** admit.
+        ** exact HFC.
+        ** 
+  - destruct IHentails1 as [D IH1].
+    destruct IHentails2 as [F IH2].
+    destruct IH1 as [HDA HDB], IH2 as [HFB HFC].
+    exists D.
+    split.
+    + exact HDA.
+    + apply subformula_conjl.
+      exact HDB.
+  - destruct IHentails1 as [D IH1].
+    destruct IHentails2 as [F IH2].
+    destruct IH1 as [HDA HDC], IH2 as [HFB HFC].
+    exists D.
+    split.
+    + apply subformula_disjl.
+      exact HDA.
+    + exact HDC.
+  - destruct IHentails as [C IH].
+    destruct IH as [HCA HCB].
+    exists C.
+    split.
+    + apply subformula_neg.
+      exact HCB.
+    + apply subformula_neg.
+      exact HCA.
+      
 End Syntactic.

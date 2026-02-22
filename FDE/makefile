@@ -7,6 +7,9 @@ all: Meta.vo Exercises.vo
 Formula.vo: Formula.v
 	$(COQC) Formula.v
 
+Subformula.vo: Subformula.v Formula.vo
+	$(COQC) Subformula.v
+
 Semantics.vo: Semantics.v Formula.vo
 	$(COQC) Semantics.v
 
