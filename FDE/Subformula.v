@@ -1,4 +1,5 @@
 From Basis Require Import FSignature.
+From Basis Require Import EqDec.
 From FDE Require Import Formula.
 From Coq Require Import Arith.
 From Coq Require Import Arith.Plus.
@@ -180,19 +181,24 @@ Proof.
 Qed.
 
 (* Useful for induction principles *)
-Lemma size_decreases {atom : Type} (f g : @formula atom) :
+Lemma size_decreases {atom : Type} `{Heq : EqDec (@formula atom)} (f g : @formula atom) :
   subformula_rel f g -> f <> g -> size f < size g.
 Proof.
-  revert g.
-  induction f.
-  - intros g Hsub Hneq.
+  revert f.
+  induction g.
+  - intros f Hsub Hneq.
     simpl.
-    specialize (size_not_atom g) as H1.
-    specialize (formula_ne_atom a g Hsub Hneq) as H2.
-    specialize (H1 H2).
-    unfold gt in H1.
-    exact H1.
-  - specialize (Hneq eq_refl).
+    inversion Hsub ; subst.
+    specialize (Hneq eq_refl).
+    destruct Hneq.
+  - intros f H Hne.
+    simpl.
+    inversion H ; subst.
+    + specialize (Hne eq_refl).
+      destruct Hne.
+    + 
+
+specialize (Hneq eq_refl).
     destruct Hneq.
   - (* subformula_neg *)
     cbn [size]. 
