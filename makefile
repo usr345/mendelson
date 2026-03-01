@@ -20,11 +20,15 @@ classical: basis
 fde: basis lattices
 	$(MAKE) -C FDE
 
-# 5. Build K4_N4
+# 5. Build Relevant_B
+relevent_b: basis
+	$(MAKE) -C Relevant_B
+
+# 6. Build K4_N4
 k4: basis
 	$(MAKE) -C K4_N4
 
-# 6. Build Modal
+# 7. Build Modal
 modal: basis
 	$(MAKE) -C Modal
 
@@ -33,5 +37,6 @@ clean:
 	$(MAKE) -C Basis clean || true
 	$(MAKE) -C Classical clean || true
 	$(MAKE) -C FDE clean || true
+	$(MAKE) -C Relevant_B clean || true
 	$(MAKE) -C K4_N4 clean || true
 	$(MAKE) -C Modal clean || true
