@@ -5,32 +5,32 @@ Import Relevant_B_Formula.
 Local Open Scope formula_scope.
 
 Module Syntactic.
-  Definition f_identity {atom : Set} (A : @formula atom) : formula :=
+  Definition f_identity {atom : Type} (A : @formula atom) : formula :=
     $A -> A$.
 
-  Definition f_disj_intro_left {atom : Set} (A B: @formula atom) : formula :=
+  Definition f_disj_intro_left {atom : Type} (A B: @formula atom) : formula :=
     $A -> A \/ B$.
 
-  Definition f_disj_intro_right {atom : Set} (A B: @formula atom) : formula :=
+  Definition f_disj_intro_right {atom : Type} (A B: @formula atom) : formula :=
     $B -> A \/ B$.
 
-  Definition f_conj_elim_left {atom : Set} (A B: @formula atom) : formula :=
+  Definition f_conj_elim_left {atom : Type} (A B: @formula atom) : formula :=
     $A /\ B -> A$.
 
-  Definition f_conj_elim_right {atom : Set} (A B: @formula atom) : formula :=
+  Definition f_conj_elim_right {atom : Type} (A B: @formula atom) : formula :=
     $A /\ B -> B$.
 
-  Definition f_conj_distrib {atom : Set} (A B C: @formula atom) : formula :=
+  Definition f_conj_distrib {atom : Type} (A B C: @formula atom) : formula :=
     $A /\ (B \/ C) -> (A /\ B) \/ (A /\ C)$.
 
-  Definition f_case_analysis {atom : Set} (A B C: @formula atom) : formula :=
+  Definition f_case_analysis {atom : Type} (A B C: @formula atom) : formula :=
     $(A -> C) /\ (B -> C) -> (A \/ B) -> C$.
 
-  Definition f_neg_elim {atom : Set} (A: @formula atom) : formula :=
+  Definition f_neg_elim {atom : Type} (A: @formula atom) : formula :=
     $~~A -> A$.
 
-  Reserved Notation "A |- B" (at level 98).
-  Inductive entails {atom : Set} (Γ : @formula atom -> Prop) : @formula atom -> Type :=
+  #[global] Reserved Notation "A |- B" (at level 98).
+  Inductive entails {atom : Type} (Γ : @formula atom -> Prop) : @formula atom -> Type :=
     | hypo : forall A, Γ A -> Γ |- A (* every hypothesis is provable *)
     | identity : forall A , Γ |- f_identity A
     | disj_intro_left : forall A B, Γ |- f_disj_intro_left A B
@@ -75,7 +75,7 @@ Ltac specialize_axiom A H :=
   | (_ |- f_neg_elim _) => unfold f_neg_elim in H
   end.
 
-Lemma A_nnA {atom : Set} (Γ : @formula atom -> Prop) (A : @formula atom) : Γ |- $A -> ~~A$.
+Lemma A_nnA {atom : Type} (Γ : @formula atom -> Prop) (A : @formula atom) : Γ |- $A -> ~~A$.
 Proof.
   specialize_axiom (identity (Γ:=Γ) $~A$) H1.
   specialize_axiom (contrapos (Γ:=Γ) H1) H2.
