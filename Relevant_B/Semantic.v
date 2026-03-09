@@ -34,12 +34,22 @@ Module Semantic.
                     end
     end.
 
-  Definition valid {atom : Type} (f : @formula atom) : Prop :=
-    forall (M : Model) (w : M.(worlds)), (M.(is_normal) w) = true -> (eval M f w).
+  Class IsModel (atom : Type) (M : Type) := {
+    to_model : M -> @Model atom
+  }.
+
+  Instance Model_IsModel (atom : Type) : IsModel atom (@Model atom) :=
+  {
+    to_model := fun m => m
+  }.
+
+  Definition valid {atom : Type} (MType : Type) `{IsModel atom MType} (f : @formula atom) : Prop :=
+    forall (m : MType) (w : worlds (to_model m)),
+      is_normal (to_model m) w = true -> eval (to_model m) f w.
 
   Declare Scope relevant_B_scope.
 
-  #[global] Notation "|= f" := (valid f) (at level 90) : relevant_B_scope.
+  #[global] Notation "M |= φ" := (valid M φ) (at level 90) : relevant_B_scope.
 
   Definition holds_all {atom : Type} (M : @Model atom) (Γ : list formula) (w : M.(worlds)) : Prop := forall f : @formula atom, In f Γ -> eval M f w.
 
@@ -53,16 +63,17 @@ Module Semantic.
     exact Hall.
   Qed.
 
-  Definition consequence {atom : Type} (Γ : list (@formula atom))
+  Definition consequence {atom : Type} (MType : Type) `{IsModel atom MType} (Γ : list (@formula atom))
     (f : @formula atom) : Prop :=
-    forall (M : @Model atom) (w : M.(worlds)),
-      (M.(is_normal) w) = true -> holds_all M Γ w -> eval M f w.
+    forall (m : MType) (w : worlds (to_model m)),
+      (is_normal (to_model m) w) = true -> holds_all (to_model m) Γ w -> eval (to_model m) f w.
 
-  #[global] Notation "Γ |= f" := (consequence Γ f) (at level 90) : relevant_B_scope.
+(*  #[global] Notation "M , Γ |= f" := (consequence M Γ f) (at level 90) : relevant_B_scope.
   Open Scope relevant_B_scope.
+*)
 
   Lemma valid_forall_consequence {atom : Type} (A : @formula atom) :
-    |= A -> forall Γ : list (@formula atom), Γ |= A.
+    valid (@Model atom) A -> forall Γ : list (@formula atom), consequence (@Model atom) Γ A.
   Proof.
     intro Hvalid.
     intro Γ.
@@ -73,71 +84,83 @@ Module Semantic.
     exact Hvalid.
   Qed.
 
-  Lemma identity_valid {atom : Type} (A : @formula atom) : |= (Syntactic.f_identity A).
+  Lemma identity_valid {atom : Type} (A : @formula atom) : valid (@Model atom) (Syntactic.f_identity A).
   Proof.
     unfold Syntactic.f_identity.
     unfold valid.
     intros M w H.
     simpl.
+    unfold to_model in H.
+    simpl in H.
     rewrite H.
     intros w' H1.
     exact H1.
   Qed.
 
-  Lemma disj_intro_left_valid {atom : Type} (A B : @formula atom) : |= (Syntactic.f_disj_intro_left A B).
+  Lemma disj_intro_left_valid {atom : Type} (A B : @formula atom) : valid (@Model atom) (Syntactic.f_disj_intro_left A B).
   Proof.
     unfold Syntactic.f_disj_intro_left.
     unfold valid.
     intros M w H.
     simpl.
+    unfold to_model in H.
+    simpl in H.
     rewrite H.
     intros w' H1.
     left.
     exact H1.
   Qed.
 
-  Lemma disj_intro_right_valid {atom : Type} (A B : @formula atom) : |= (Syntactic.f_disj_intro_right A B).
+  Lemma disj_intro_right_valid {atom : Type} (A B : @formula atom) : valid (@Model atom) (Syntactic.f_disj_intro_right A B).
   Proof.
     unfold Syntactic.f_disj_intro_right.
     unfold valid.
     intros M w H.
     simpl.
+    unfold to_model in H.
+    simpl in H.
     rewrite H.
     intros w' H1.
     right.
     exact H1.
   Qed.
 
-  Lemma conj_elim_left_valid {atom : Type} (A B : @formula atom) : |= (Syntactic.f_conj_elim_left A B).
+  Lemma conj_elim_left_valid {atom : Type} (A B : @formula atom) : valid (@Model atom) (Syntactic.f_conj_elim_left A B).
   Proof.
     unfold Syntactic.f_conj_elim_left.
     unfold valid.
     intros M w H.
     simpl.
+    unfold to_model in H.
+    simpl in H.
     rewrite H.
     intros w' H1.
     destruct H1 as [H1 _].
     exact H1.
   Qed.
 
-  Lemma conj_elim_right_valid {atom : Type} (A B : @formula atom) : |= (Syntactic.f_conj_elim_right A B).
+  Lemma conj_elim_right_valid {atom : Type} (A B : @formula atom) : valid (@Model atom) (Syntactic.f_conj_elim_right A B).
   Proof.
     unfold Syntactic.f_conj_elim_right.
     unfold valid.
     intros M w H.
     simpl.
+    unfold to_model in H.
+    simpl in H.
     rewrite H.
     intros w' H1.
     destruct H1 as [_ H1].
     exact H1.
   Qed.
 
-  Lemma conj_distrib_valid {atom : Type} (A B C : @formula atom) : |= (Syntactic.f_conj_distrib A B C).
+  Lemma conj_distrib_valid {atom : Type} (A B C : @formula atom) : valid (@Model atom) (Syntactic.f_conj_distrib A B C).
   Proof.
     unfold Syntactic.f_conj_distrib.
     unfold valid.
     intros M w H.
     simpl.
+    unfold to_model in H.
+    simpl in H.
     rewrite H.
     intros w' H1.
     destruct H1 as [H1 H2].
@@ -148,12 +171,14 @@ Module Semantic.
       exact (conj H1 H2).
   Qed.
 
-  Lemma case_analysis_valid {atom : Type} (A B C : @formula atom) : |= (Syntactic.f_case_analysis A B C).
+  Lemma case_analysis_valid {atom : Type} (A B C : @formula atom) : valid (@Model atom) (Syntactic.f_case_analysis A B C).
   Proof.
     unfold Syntactic.f_case_analysis.
     unfold valid.
     intros M w H.
     simpl.
+    unfold to_model in H.
+    simpl in H.
     rewrite H.
     intros w1 H1.
     destruct H1 as [HAC HBC].
@@ -172,12 +197,14 @@ Module Semantic.
         exact HBC.
   Qed.
 
-  Lemma neg_elim_valid {atom : Type} (A : @formula atom) : |= (Syntactic.f_neg_elim A).
+  Lemma neg_elim_valid {atom : Type} (A : @formula atom) : valid (@Model atom) (Syntactic.f_neg_elim A).
   Proof.
     unfold Syntactic.f_neg_elim.
     unfold valid.
     intros M w H.
     simpl.
+    unfold to_model in H.
+    simpl in H.
     rewrite H.
     intros w1 H1.
     rewrite star_involutive in H1.
@@ -186,7 +213,7 @@ Module Semantic.
   Qed.
 
   Lemma mp_valid {atom : Type} (Γ : list (@formula atom)) :
-    forall A B : @formula atom, Γ |= $A -> B$ -> Γ |= A -> Γ |= B.
+    forall A B : @formula atom, consequence (@Model atom) Γ $A -> B$ -> consequence (@Model atom) Γ A -> consequence (@Model atom) Γ B.
   Proof.
     intros A B HAB HA.
     unfold consequence.
@@ -196,13 +223,15 @@ Module Semantic.
     unfold consequence in HAB.
     specialize (HAB M w Hnormal Hall).
     simpl in HAB.
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
     rewrite Hnormal in HAB.
     specialize (HAB w HA).
     exact HAB.
   Qed.
 
   Lemma conj_intro_valid {atom : Type} (Γ : list (@formula atom)) :
-    forall A B : @formula atom, Γ |= A -> Γ |= B -> Γ |= $A /\ B$.
+    forall A B : @formula atom, consequence (@Model atom) Γ A -> consequence (@Model atom) Γ B -> consequence (@Model atom) Γ $A /\ B$.
   Proof.
     intros A B HA HB.
     unfold consequence.
@@ -216,7 +245,7 @@ Module Semantic.
   Qed.
 
   Lemma trans_prefix_valid {atom : Type} (Γ : list (@formula atom)) :
-    forall A B C, Γ |= $A -> B$ -> Γ |= $(C -> A) -> (C -> B)$.
+    forall A B C, consequence (@Model atom) Γ $A -> B$ -> consequence (@Model atom) Γ $(C -> A) -> (C -> B)$.
   Proof.
     intros A B C HAB.
     unfold consequence.
@@ -224,6 +253,8 @@ Module Semantic.
     unfold consequence in HAB.
     specialize (HAB M w Hnormal Hall).
     simpl.
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
     rewrite Hnormal.
     simpl in HAB.
     rewrite Hnormal in HAB.
@@ -242,7 +273,7 @@ Module Semantic.
   Qed.
 
   Lemma trans_suffix_valid {atom : Type} (Γ : list (@formula atom)) :
-    forall A B C, Γ |= $A -> B$ -> Γ |= $(B -> C) -> (A -> C)$.
+    forall A B C, consequence (@Model atom) Γ $A -> B$ -> consequence (@Model atom) Γ $(B -> C) -> (A -> C)$.
   Proof.
     intros A B C HAB.
     unfold consequence.
@@ -250,6 +281,8 @@ Module Semantic.
     unfold consequence in HAB.
     specialize (HAB M w Hnormal Hall).
     simpl.
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
     rewrite Hnormal.
     simpl in HAB.
     rewrite Hnormal in HAB.
@@ -270,7 +303,7 @@ Module Semantic.
   Qed.
 
   Lemma contrapos_valid {atom : Type} (Γ : list (@formula atom)) :
-    forall A B, Γ |= $A -> ~B$ -> Γ |= $B -> ~A$.
+    forall A B, consequence (@Model atom) Γ $A -> ~B$ -> consequence (@Model atom) Γ $B -> ~A$.
   Proof.
     intros A B HAnB.
     unfold consequence.
@@ -278,6 +311,8 @@ Module Semantic.
     unfold consequence in HAnB.
     specialize (HAnB M w Hnormal Hall).
     simpl.
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
     rewrite Hnormal.
     intros w' HB.
     unfold not.
@@ -291,7 +326,7 @@ Module Semantic.
     exact HB.
   Qed.
 
-  Theorem soundness {atom : Type} : forall (A B : @formula atom), (fun x => x = A) |- B -> [A] |= B.
+  Theorem soundness {atom : Type} : forall (A B : @formula atom), (fun x => x = A) |- B -> consequence (@Model atom) [A] B.
   Proof.
     intros A B.
     intro H.
@@ -363,7 +398,7 @@ Module Semantic.
     Definition R1 (w1 w2 w3: worlds4) : Prop :=
       (w1 = Γ /\ w2 = w3) \/ (w1 = Δ /\ w2 = Ε /\ w3 = Ω).
 
-    Lemma A1_neg : ~ forall (atom : Type) (A B : @formula atom), |= $A -> (B -> A)$.
+    Lemma A1_neg : ~ forall (atom : Type) (A B : @formula atom), valid (@Model atom) $A -> (B -> A)$.
     Proof.
       unfold not.
       intro H.
@@ -409,7 +444,7 @@ Module Semantic.
       - exact I.
     Qed.
 
-   Lemma T2_1_neg : ~ forall (atom : Type) (A B C : @formula atom), [$(A /\ B) -> C$] |= $A -> (B -> C)$.
+   Lemma T2_1_neg : ~ forall (atom : Type) (A B C : @formula atom), consequence (@Model atom) [$(A /\ B) -> C$] $A -> (B -> C)$.
    Proof.
     unfold not.
     intro H.
@@ -486,8 +521,8 @@ Module Semantic.
     - exact I.
   Qed.
 
-  Lemma T2_3_neg : ~ forall (atom : Type) (A B C : @formula atom), |= $((A -> B) /\ (B -> C)) -> (A -> C)$.
-   Proof.
+  Lemma T2_3_neg : ~ forall (atom : Type) (A B C : @formula atom), valid (@Model atom) $((A -> B) /\ (B -> C)) -> (A -> C)$.
+  Proof.
     unfold not.
     intro H.
     specialize (H atom3 P Q S).
@@ -593,8 +628,8 @@ Module Semantic.
     - exact I.
   Qed.
 
-   Lemma T2_4_neg : ~ forall (atom : Type) (A B C : @formula atom), |= $(A -> B) -> ((A /\ C)-> (B /\ C))$.
-   Proof.
+  Lemma T2_4_neg : ~ forall (atom : Type) (A B C : @formula atom), valid (@Model atom) $(A -> B) -> ((A /\ C)-> (B /\ C))$.
+  Proof.
     unfold not.
     intro H.
     specialize (H atom3 P Q S).
@@ -678,8 +713,8 @@ Module Semantic.
     exact H.
   Qed.
 
-  Lemma T2_5_neg : ~ forall (atom : Type) (A B C : @formula atom), [$(A /\ B) -> C$] |= $(A /\ ~C) -> ~B$.
-   Proof.
+  Lemma T2_5_neg : ~ forall (atom : Type) (A B C : @formula atom), consequence (@Model atom) [$(A /\ B) -> C$] $(A /\ ~C) -> ~B$.
+  Proof.
     unfold not.
     intro H.
     specialize (H atom3 P Q S).
@@ -776,6 +811,118 @@ Module Semantic.
       exact H1.
     - exact I.
   Qed.
+
+   Lemma A11_neg : ~ forall (atom : Type) (A B : @formula atom), valid (@Model atom) $(A -> (A -> B)) -> (A -> B)$.
+   Proof.
+    unfold not.
+    intro H.
+    specialize (H atom3 P Q).
+
+    pose (
+      v1 :=
+        fun (a : atom3) (w: worlds4) =>
+          match a, w with
+          | P, Ε => True
+          | _, _ => False
+          end
+    ).
+
+    pose (M1 := {|
+      worlds := worlds4;
+      w0 := Γ;
+      is_normal := is_normal1;
+      R := R1;
+      star := id;
+      star_involutive := IdInvolutive;
+      v := v1;
+    |}).
+
+    unfold valid in H.
+    specialize (H M1 M1.(w0)).
+    unfold M1 in H.
+    cbn [is_normal] in H.
+    cbn [w0] in H.
+    cbn [is_normal1] in H.
+    specialize (H eq_refl).
+    simpl in H.
+    specialize (H Δ).
+    cbn [is_normal1] in H.
+    assert (Hante : (forall x y : worlds4,
+     R1 Δ x y ->
+     match x with
+     | Ε => True
+     | _ => False
+     end ->
+     if is_normal1 y
+     then
+      forall w' : worlds4,
+      match w' with
+      | Ε => True
+      | _ => False
+      end -> False
+     else
+      forall x0 y0 : worlds4,
+      R1 y x0 y0 ->
+      match x0 with
+      | Ε => True
+      | _ => False
+      end -> False)).
+    {
+      intros x y HR.
+      destruct x, y ; unfold R1 in HR ; intro H1 ; try destruct H1 ; try apply I.
+      - destruct HR as [HR | HR].
+        + destruct HR as [HR _].
+          discriminate HR.
+        + destruct HR as [_ [_ HR]].
+          discriminate HR.
+      - destruct HR as [HR | HR].
+        + destruct HR as [HR _].
+          discriminate HR.
+        + destruct HR as [_ [_ HR]].
+          discriminate HR.
+      - destruct HR as [HR | HR].
+        + destruct HR as [HR _].
+          discriminate HR.
+        + destruct HR as [_ [_ HR]].
+          discriminate HR.
+      - destruct HR as [HR | HR].
+        + destruct HR as [HR _].
+          discriminate HR.
+        + simpl.
+          intros x1 y1 HR1.
+          destruct x1, y1 ; unfold R1 in HR1 ; intro H1 ; try exact H1.
+          * destruct HR1 as [HR1 | HR1].
+            ** destruct HR1 as [HR1 _].
+               discriminate HR1.
+            ** destruct HR1 as [HR1 _].
+               discriminate HR1.
+          * destruct HR1 as [HR1 | HR1].
+            ** destruct HR1 as [HR1 _].
+               discriminate HR1.
+            ** destruct HR1 as [HR1 _].
+               discriminate HR1.
+          * destruct HR1 as [HR1 | HR1].
+            ** destruct HR1 as [HR1 _].
+               discriminate HR1.
+            ** destruct HR1 as [HR1 _].
+               discriminate HR1.
+          * destruct HR1 as [HR1 | HR1].
+            ** destruct HR1 as [HR1 _].
+               discriminate HR1.
+            ** destruct HR1 as [HR1 _].
+               discriminate HR1.
+      }
+
+      specialize (H Hante).
+      clear Hante.
+      specialize (H Ε Ω).
+      simpl in H.
+      apply H.
+      - unfold R1.
+        right.
+        exact (conj eq_refl (conj eq_refl eq_refl)).
+      - exact I.
+  Qed.
   End Worlds4.
 
   Module Worlds2.
@@ -789,7 +936,7 @@ Module Semantic.
     Definition R1 (w1 w2 w3: worlds2) : Prop :=
       (w1 = Γ /\ w2 = w3).
 
-    Lemma T3_neg : ~ forall (atom : Type) (A B : @formula atom), |= $(A /\ (A -> B)) -> B$.
+    Lemma T3_neg : ~ forall (atom : Type) (A B : @formula atom), valid (@Model atom) $(A /\ (A -> B)) -> B$.
      Proof.
       unfold not.
       intro H.
@@ -836,35 +983,22 @@ Module Semantic.
 
     Record Model_R3w {atom : Type} :=
     {
-      worlds : Type;
-      w0 : worlds;
-      is_normal : worlds -> bool;
-      R : worlds -> worlds -> worlds -> Prop;
-      R3w : forall w : worlds, (R w w w);
-      star : worlds -> worlds;
-      star_involutive : forall w : worlds, star (star w) = w;
-      v : atom -> worlds -> Prop;
+      base_model :> @Model atom;
+      R3w : forall w : base_model.(worlds), (base_model.(R) w w w);
     }.
 
-    Definition Model_R3w_to_Model {atom} (M : @Model_R3w atom) : @Model atom :=
-       @Build_Model atom
-        (worlds M)
-        (w0 M)
-        (is_normal M)
-        (R M)
-        (star M)
-        (star_involutive M)
-        (v M).
+    Instance Model_R3w_IsModel (atom : Type) : IsModel atom (@Model_R3w atom) :=
+    {
+      to_model := base_model
+    }.
 
-    Coercion Model_R3w_to_Model : Model_R3w >-> Model.
-    Definition valid {atom : Type} (f : @formula atom) : Prop :=
-        forall (M : Model_R3w) (w : M.(worlds)), (M.(is_normal) w) = true -> (eval M f w).
-
-    Lemma T3_pos (atom : Type) (A B : @formula atom): valid $(A /\ (A -> B)) -> B$.
+    Lemma T3_pos (atom : Type) (A B : @formula atom): valid (@Model_R3w atom) $(A /\ (A -> B)) -> B$.
     Proof.
       unfold valid.
       intros M w Hnormal.
       simpl.
+      unfold to_model in Hnormal.
+      simpl in Hnormal.
       rewrite Hnormal.
       intros w1 H.
       destruct H as [H1 H2].
@@ -876,4 +1010,53 @@ Module Semantic.
         specialize (H2 H1).
         exact H2.
     Qed.
+  End Worlds2.
+
+  Record Model_T8 {atom : Type} :=
+  {
+    base_model_T8 :> @Model atom;
+    T8 : forall x y z : base_model_T8.(worlds), base_model_T8.(R) x y z -> base_model_T8.(R) x (base_model_T8.(star) z) (base_model_T8.(star) y);
+  }.
+
+  Record Model_T9 {atom : Type} :=
+  {
+    base_model_T9 :> @Model atom;
+    T9 : forall x y z u v : base_model_T9.(worlds), base_model_T9.(R) x y z -> base_model_T9.(R) z u v -> 
+      exists j : base_model_T9.(worlds), base_model_T9.(R) x u j /\ base_model_T9.(R) y j v;
+  }.
+
+  Record Model_T10 {atom : Type} :=
+  {
+    base_model_T10 :> @Model atom;
+    T10 : forall x y z u v : base_model_T10.(worlds), base_model_T10.(R) x y z -> base_model_T10.(R) z u v -> 
+      exists j : base_model_T10.(worlds), base_model_T10.(R) y u j /\ base_model_T10.(R) x j v;
+  }.
+
+  Record Model_T11 {atom : Type} :=
+  {
+    base_model_T11 :> @Model atom;
+    T11 : forall x y z : base_model_T11.(worlds), base_model_T11.(R) x y z -> 
+      exists j : base_model_T11.(worlds), base_model_T11.(R) x y j /\ base_model_T11.(R) j y z;
+  }.
+
+  Instance Model_T8_IsModel (atom : Type) : IsModel atom (@Model_T8 atom) :=
+  {
+    to_model := base_model_T8
+  }.
+
+  Instance Model_T9_IsModel (atom : Type) : IsModel atom (@Model_T9 atom) :=
+  {
+    to_model := base_model_T9
+  }.
+
+  Instance Model_T10_IsModel (atom : Type) : IsModel atom (@Model_T10 atom) :=
+  {
+    to_model := base_model_T10
+  }.
+
+  Instance Model_T11_IsModel (atom : Type) : IsModel atom (@Model_T11 atom) :=
+  {
+    to_model := base_model_T11
+  }.
+
 End Semantic.
