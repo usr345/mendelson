@@ -1059,4 +1059,34 @@ Module Semantic.
     to_model := base_model_T11
   }.
 
+  Lemma A8_valid (atom : Type) (A B : @formula atom): valid (@Model_T8 atom) $(A -> ~B) -> B -> ~A$.
+  Proof.
+    unfold valid.
+    intros m w Hnormal.
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
+    simpl.
+    rewrite Hnormal.
+    intros w1 H.
+    destruct (is_normal m w1).
+    - intros w2 HB.
+      unfold not.
+      intro HAstar.
+      specialize (H (star m w2)).
+      rewrite (star_involutive m) in H.
+      specialize (H HAstar).
+      unfold not in H.
+      specialize (H HB).
+      exact H.
+    - intros x y HR HB.
+      unfold not.
+      intro HAstar.
+      apply T8 in HR.
+      specialize (H (star m y) (star m x)).
+      specialize (H HR HAstar).
+      unfold not in H.
+      rewrite star_involutive in H.
+      specialize (H HB).
+      exact H.
+  Qed.
 End Semantic.
