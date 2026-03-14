@@ -17,6 +17,7 @@ Module Semantic.
     w0 : worlds;
     is_normal : worlds -> bool;
     R : worlds -> worlds -> worlds -> Prop;
+    Rnormal : forall w x y : worlds, is_normal w = true -> (R w x y <-> x = y);
     star : worlds -> worlds;
     star_involutive : forall w : worlds, star (star w) = w;
     v : atom -> worlds -> Prop;
@@ -28,10 +29,7 @@ Module Semantic.
     | f_not f' => ~ (eval M f' (M.(star) w))
     | f_conj f g => (eval M f w) /\ (eval M g w)
     | f_disj f g => (eval M f w) \/ (eval M g w)
-    | f_imp f g =>  match (M.(is_normal) w) with
-                    | true => forall w' : M.(worlds), (eval M f w') -> (eval M g w')
-                    | false => forall x y : M.(worlds), (M.(R) w x y) -> (eval M f x) -> (eval M g y)
-                    end
+    | f_imp f g =>  forall x y : M.(worlds), (M.(R) w x y) -> (eval M f x) -> (eval M g y)
     end.
 
   Class IsModel (atom : Type) (M : Type) := {
@@ -88,128 +86,150 @@ Module Semantic.
   Proof.
     unfold Syntactic.f_identity.
     unfold valid.
-    intros M w H.
+    intros M w Hnormal.
     simpl.
-    unfold to_model in H.
-    simpl in H.
-    rewrite H.
-    intros w' H1.
-    exact H1.
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
+    intros x y HR HA.
+    specialize (Rnormal M w x y Hnormal) as Heq.
+    rewrite Heq in HR.
+    rewrite HR in HA.
+    exact HA.
   Qed.
 
   Lemma disj_intro_left_valid {atom : Type} (A B : @formula atom) : valid (@Model atom) (Syntactic.f_disj_intro_left A B).
   Proof.
     unfold Syntactic.f_disj_intro_left.
     unfold valid.
-    intros M w H.
+    intros M w Hnormal.
     simpl.
-    unfold to_model in H.
-    simpl in H.
-    rewrite H.
-    intros w' H1.
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
+    intros x y HR HA.
+    specialize (Rnormal M w x y Hnormal) as Heq.
+    rewrite Heq in HR.
+    rewrite HR in HA.
     left.
-    exact H1.
+    exact HA.
   Qed.
 
   Lemma disj_intro_right_valid {atom : Type} (A B : @formula atom) : valid (@Model atom) (Syntactic.f_disj_intro_right A B).
   Proof.
     unfold Syntactic.f_disj_intro_right.
     unfold valid.
-    intros M w H.
+    intros M w Hnormal.
     simpl.
-    unfold to_model in H.
-    simpl in H.
-    rewrite H.
-    intros w' H1.
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
+    intros x y HR HB.
+    specialize (Rnormal M w x y Hnormal) as Heq.
+    rewrite Heq in HR.
+    rewrite HR in HB.
     right.
-    exact H1.
+    exact HB.
   Qed.
 
   Lemma conj_elim_left_valid {atom : Type} (A B : @formula atom) : valid (@Model atom) (Syntactic.f_conj_elim_left A B).
   Proof.
     unfold Syntactic.f_conj_elim_left.
     unfold valid.
-    intros M w H.
+    intros M w Hnormal.
     simpl.
-    unfold to_model in H.
-    simpl in H.
-    rewrite H.
-    intros w' H1.
-    destruct H1 as [H1 _].
-    exact H1.
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
+    intros x y HR HAB.
+    destruct HAB as [HA _].
+    specialize (Rnormal M w x y Hnormal) as Heq.
+    rewrite Heq in HR.
+    clear Heq.
+    rewrite HR in HA.
+    exact HA.
   Qed.
 
   Lemma conj_elim_right_valid {atom : Type} (A B : @formula atom) : valid (@Model atom) (Syntactic.f_conj_elim_right A B).
   Proof.
     unfold Syntactic.f_conj_elim_right.
     unfold valid.
-    intros M w H.
+    intros M w Hnormal.
     simpl.
-    unfold to_model in H.
-    simpl in H.
-    rewrite H.
-    intros w' H1.
-    destruct H1 as [_ H1].
-    exact H1.
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
+    intros x y HR HAB.
+    destruct HAB as [_ HB].
+    specialize (Rnormal M w x y Hnormal) as Heq.
+    rewrite Heq in HR.
+    clear Heq.
+    rewrite HR in HB.
+    exact HB.
   Qed.
 
   Lemma conj_distrib_valid {atom : Type} (A B C : @formula atom) : valid (@Model atom) (Syntactic.f_conj_distrib A B C).
   Proof.
     unfold Syntactic.f_conj_distrib.
     unfold valid.
-    intros M w H.
+    intros M w Hnormal.
     simpl.
-    unfold to_model in H.
-    simpl in H.
-    rewrite H.
-    intros w' H1.
-    destruct H1 as [H1 H2].
-    destruct H2 as [H2 | H2].
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
+    intros x y HR Hconj.
+    destruct Hconj as [HA HB_or_C].
+    specialize (Rnormal M w x y Hnormal) as Heq.
+    rewrite Heq in HR.
+    clear Heq.
+    rewrite HR in HA, HB_or_C.
+    destruct HB_or_C as [HB | HC].
     - left.
-      exact (conj H1 H2).
+      exact (conj HA HB).
     - right.
-      exact (conj H1 H2).
+      exact (conj HA HC).
   Qed.
 
   Lemma case_analysis_valid {atom : Type} (A B C : @formula atom) : valid (@Model atom) (Syntactic.f_case_analysis A B C).
   Proof.
     unfold Syntactic.f_case_analysis.
     unfold valid.
-    intros M w H.
+    intros M w Hnormal.
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
     simpl.
-    unfold to_model in H.
-    simpl in H.
-    rewrite H.
-    intros w1 H1.
-    destruct H1 as [HAC HBC].
-    destruct (is_normal M w1) eqn:Heq.
-    - intros w2 H2.
-      destruct H2 as [HA | HB].
-      + specialize (HAC w2 HA).
-        exact HAC.
-      + specialize (HBC w2 HB).
-        exact HBC.
-    - intros x y HR H2.
-      destruct H2 as [HA | HB].
-      + specialize (HAC x y HR HA).
-        exact HAC.
-      + specialize (HBC x y HR HB).
-        exact HBC.
+    intros x y HRxy H.
+    intros u v HRuv HA_or_B.
+    specialize (Rnormal M w x y Hnormal) as Heq.
+    rewrite Heq in HRxy.
+    clear Heq.
+    rename HRxy into Heq.
+    destruct H as [HAC HBC].
+    specialize (HAC u v).
+    rewrite Heq in HAC.
+    specialize (HAC HRuv).
+    specialize (HBC u v).
+    rewrite Heq in HBC.
+    clear Heq.
+    specialize (HBC HRuv).
+    destruct HA_or_B as [HA | HB].
+    - specialize (HAC HA).
+      exact HAC.
+    - specialize (HBC HB).
+      exact HBC.
   Qed.
 
   Lemma neg_elim_valid {atom : Type} (A : @formula atom) : valid (@Model atom) (Syntactic.f_neg_elim A).
   Proof.
     unfold Syntactic.f_neg_elim.
     unfold valid.
-    intros M w H.
+    intros M w Hnormal.
     simpl.
-    unfold to_model in H.
-    simpl in H.
-    rewrite H.
-    intros w1 H1.
-    rewrite star_involutive in H1.
-    apply NNPP in H1.
-    exact H1.
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
+    intros x y HR Hneg.
+    specialize (Rnormal M w x y Hnormal) as Heq.
+    rewrite Heq in HR.
+    clear Heq.
+    rename HR into Heq.
+    rewrite star_involutive in Hneg.
+    apply NNPP in Hneg.
+    rewrite Heq in Hneg.
+    exact Hneg.
   Qed.
 
   Lemma mp_valid {atom : Type} (Γ : list (@formula atom)) :
@@ -225,8 +245,14 @@ Module Semantic.
     simpl in HAB.
     unfold to_model in Hnormal.
     simpl in Hnormal.
-    rewrite Hnormal in HAB.
-    specialize (HAB w HA).
+    specialize (Rnormal M w w w Hnormal) as Heq.
+    specialize (eq_refl w) as Hw.
+    rewrite <-Heq in Hw.
+    clear Heq.
+    rename Hw into HR.
+    specialize (HAB w w).
+    specialize (HAB HR HA).
+    simpl.
     exact HAB.
   Qed.
 
@@ -255,21 +281,26 @@ Module Semantic.
     simpl.
     unfold to_model in Hnormal.
     simpl in Hnormal.
-    rewrite Hnormal.
+    intros x y HRxy HCA.
+    intros u v HRuv HC.
     simpl in HAB.
-    rewrite Hnormal in HAB.
-    intros w1 HCA.
-    destruct (is_normal M w1) eqn:Heq.
-    - intros w2 HC.
-      specialize (HCA w2 HC).
-      rename HCA into HA.
-      specialize (HAB w2 HA).
-      exact HAB.
-    - intros x y HR HC.
-      specialize (HCA x y HR HC).
-      rename HCA into HA.
-      specialize (HAB y HA).
-      exact HAB.
+    specialize (Rnormal M w x y Hnormal) as Heq.
+    rewrite Heq in HRxy.
+    clear Heq.
+    rename HRxy into Heq.
+    specialize (HCA u v).
+    rewrite Heq in HCA.
+    specialize (HCA HRuv).
+    specialize (HCA HC).
+    clear HC Heq.
+
+    specialize (Rnormal M w v v Hnormal) as Heq.
+    specialize (eq_refl v) as Hv.
+    rewrite <-Heq in Hv.
+    clear Heq.
+    specialize (HAB v v).
+    specialize (HAB Hv HCA).
+    exact HAB.
   Qed.
 
   Lemma trans_suffix_valid {atom : Type} (Γ : list (@formula atom)) :
@@ -283,23 +314,25 @@ Module Semantic.
     simpl.
     unfold to_model in Hnormal.
     simpl in Hnormal.
-    rewrite Hnormal.
+    intros x y HRxy HBC.
+    intros u v HRuv HA.
     simpl in HAB.
-    rewrite Hnormal in HAB.
-    intros w1 HBC.
-    destruct (is_normal M w1) eqn:Heq.
-    - intros w2 HA.
-      specialize (HBC w2).
-      specialize (HAB w2 HA).
-      rename HAB into HB.
-      specialize (HBC HB).
-      exact HBC.
-    - intros x y HR HA.
-      specialize (HBC x y HR).
-      specialize (HAB x HA).
-      rename HAB into HB.
-      specialize (HBC HB).
-      exact HBC.
+    specialize (Rnormal M w x y Hnormal) as Heq.
+    rewrite Heq in HRxy.
+    clear Heq.
+    rename HRxy into Heq.
+    specialize (HBC u v).
+    rewrite Heq in HBC.
+    specialize (HBC HRuv).
+    apply HBC.
+    specialize (HAB u u).
+    clear Heq.
+    specialize (Rnormal M w u u Hnormal) as Heq.
+    specialize (eq_refl u) as Hu.
+    rewrite <-Heq in Hu.
+    clear Heq.
+    specialize (HAB Hu HA).
+    exact HAB.
   Qed.
 
   Lemma contrapos_valid {atom : Type} (Γ : list (@formula atom)) :
@@ -313,14 +346,23 @@ Module Semantic.
     simpl.
     unfold to_model in Hnormal.
     simpl in Hnormal.
-    rewrite Hnormal.
-    intros w' HB.
+    intros x y HR HB.
     unfold not.
     intro HA.
+    specialize (Rnormal M w x y Hnormal) as Heq.
+    rewrite Heq in HR.
+    clear Heq.
+    rename HR into Heq.
     simpl in HAnB.
-    rewrite Hnormal in HAnB.
-    specialize (HAnB (star M w')).
-    specialize (HAnB HA).
+    rewrite <-Heq in HA.
+    clear Heq.
+    specialize (HAnB (star M x) (star M x)).
+    specialize (Rnormal M w (star M x) (star M x) Hnormal) as Heq.
+    specialize (eq_refl (star M x)) as Hstar.
+    rewrite <-Heq in Hstar.
+    clear Heq.
+    specialize (HAnB Hstar HA).
+    unfold not in HAnB.
     apply HAnB.
     rewrite star_involutive.
     exact HB.
@@ -398,6 +440,27 @@ Module Semantic.
     Definition R1 (w1 w2 w3: worlds4) : Prop :=
       (w1 = Γ /\ w2 = w3) \/ (w1 = Δ /\ w2 = Ε /\ w3 = Ω).
 
+    Lemma Rnormal1 : forall w x y : worlds4, is_normal1 w = true -> (R1 w x y <-> x = y).
+    Proof.
+      intros w x y Hnormal.
+      split.
+      - intro HR.
+        unfold R1 in HR.
+        destruct HR as [HΓ | HΔ].
+        + destruct HΓ as [_ H].
+          exact H.
+        + destruct HΔ as [Hw _].
+          rewrite Hw in Hnormal.
+          simpl in Hnormal.
+          discriminate Hnormal.
+     - intro Heq.
+       rewrite Heq.
+       destruct w ; simpl in Hnormal ; try discriminate Hnormal.
+       unfold R1.
+       left.
+       exact (conj eq_refl eq_refl).
+    Qed.
+
     Lemma A1_neg : ~ forall (atom : Type) (A B : @formula atom), valid (@Model atom) $A -> (B -> A)$.
     Proof.
       unfold not.
@@ -419,6 +482,7 @@ Module Semantic.
         w0 := Γ;
         is_normal := is_normal1;
         R := R1;
+        Rnormal := Rnormal1;
         star := id;
         star_involutive := IdInvolutive;
         v := v1;
@@ -432,9 +496,15 @@ Module Semantic.
       cbn [is_normal1] in H.
       specialize (H eq_refl).
       simpl in H.
-      specialize (H Δ).
+      specialize (H Δ Δ).
       simpl in H.
-      specialize (H I).
+      assert (HΓ : R1 Γ Δ Δ).
+      {
+        unfold R1.
+        left.
+        exact (conj eq_refl eq_refl).
+      }
+      specialize (H HΓ I).
       specialize (H Ε Ω).
       simpl in H.
       apply H.
@@ -466,6 +536,7 @@ Module Semantic.
       w0 := Γ;
       is_normal := is_normal1;
       R := R1;
+      Rnormal := Rnormal1;
       star := id;
       star_involutive := IdInvolutive;
       v := v1;
@@ -484,6 +555,7 @@ Module Semantic.
           w0 := Γ;
           is_normal := is_normal1;
           R := R1;
+          Rnormal := Rnormal1;
           star := id;
           star_involutive := IdInvolutive;
           v := v1
@@ -495,23 +567,40 @@ Module Semantic.
       destruct Hin as [Hin | []].
       rewrite <-Hin.
       simpl.
-      intro w.
-      destruct w ; intro H1.
-      - destruct H1 as [H1 _].
-        exact H1.
-      - destruct H1 as [_ H1].
-        exact H1.
-      - destruct H1 as [_ H1].
-        exact H1.
-      - destruct H1 as [H1 _].
-        exact H1.
+      intros x y HRxy.
+      unfold R1 in HRxy.
+      destruct HRxy as [Heq | Heq].
+      - destruct Heq as [_ Heq].
+        rewrite <-Heq.
+        destruct x.
+        + intro H1.
+          destruct H1 as [H1 _].
+          exact H1.
+        + intro H1.
+          destruct H1 as [_ H1].
+          exact H1.
+        + intro H1.
+          destruct H1 as [_ H1].
+          exact H1.
+        + intro H1.
+          destruct H1 as [H1 _].
+          exact H1.
+      - destruct Heq as [Heq _].
+        discriminate Heq.
     }
 
     specialize (H Hall).
     simpl in H.
-    specialize (H Δ).
+    specialize (H Δ Δ).
     simpl in H.
-    specialize (H I).
+    assert (HΓ : R1 Γ Δ Δ).
+    {
+      unfold R1.
+      left.
+      exact (conj eq_refl eq_refl).
+    }
+
+    specialize (H HΓ I).
     specialize (H Ε Ω).
     simpl in H.
     apply H.
@@ -542,6 +631,7 @@ Module Semantic.
       w0 := Γ;
       is_normal := is_normal1;
       R := R1;
+      Rnormal := Rnormal1;
       star := id;
       star_involutive := IdInvolutive;
       v := v1;
@@ -555,8 +645,16 @@ Module Semantic.
     cbn [is_normal1] in H.
     specialize (H eq_refl).
     simpl in H.
-    specialize (H Δ).
-    cbn [is_normal1] in H.
+    specialize (H Δ Δ).
+    assert (HΓ : R1 Γ Δ Δ).
+    {
+      unfold R1.
+      left.
+      exact (conj eq_refl eq_refl).
+    }
+
+    specialize (H HΓ).
+    clear HΓ.
 
     assert (Hante : (forall x y : worlds4,
        R1 Δ x y ->
@@ -650,6 +748,7 @@ Module Semantic.
       w0 := Γ;
       is_normal := is_normal1;
       R := R1;
+      Rnormal := Rnormal1;
       star := id;
       star_involutive := IdInvolutive;
       v := v1;
@@ -663,8 +762,16 @@ Module Semantic.
     cbn [is_normal1] in H.
     specialize (H eq_refl).
     simpl in H.
-    specialize (H Δ).
-    cbn [is_normal1] in H.
+    specialize (H Δ Δ).
+    assert (HΓ : R1 Γ Δ Δ).
+    {
+      unfold R1.
+      left.
+      exact (conj eq_refl eq_refl).
+    }
+
+    specialize (H HΓ).
+    clear HΓ.
 
     assert (Hante : (forall x y : worlds4,
        R1 Δ x y ->
@@ -724,6 +831,21 @@ Module Semantic.
           fun (w1 w2 w3: worlds4) => (w1 = Γ /\ w2 = w3)
       ).
 
+    assert(Rnormal1 : forall w x y : worlds4, is_normal1 w = true -> (R1 w x y <-> x = y)).
+    {
+      intros w x y Hnormal.
+      split.
+      - intro HR.
+        unfold R1 in HR.
+        destruct HR as [_ Heq].
+        exact Heq.
+     - intro Heq.
+       rewrite Heq.
+       destruct w ; simpl in Hnormal ; try discriminate Hnormal.
+       unfold R1.
+       exact (conj eq_refl eq_refl).
+    }
+
     pose (
         star1 :=
           fun (w: worlds4) => 
@@ -756,6 +878,7 @@ Module Semantic.
       w0 := Γ;
       is_normal := is_normal1;
       R := R1;
+      Rnormal := Rnormal1;
       star := star1;
       star_involutive := Hinvolutive;
       v := v1;
@@ -775,6 +898,7 @@ Module Semantic.
           w0 := Γ;
           is_normal := is_normal1;
           R := R1;
+          Rnormal := Rnormal1;
           star := star1;
           star_involutive := Hinvolutive;
           v := v1
@@ -786,8 +910,8 @@ Module Semantic.
       destruct Hin as [Hin | []].
       rewrite <-Hin.
       simpl.
-      intro w.
-      destruct w ; intro H1.
+      intros x y HR.
+      destruct x ; intro H1.
       - destruct H1 as [H1 _].
         exact H1.
       - destruct H1 as [_ H1].
@@ -801,7 +925,15 @@ Module Semantic.
     specialize (H Hall).
     clear Hall.
     simpl in H.
-    specialize (H Δ).
+    specialize (H Δ Δ).
+    assert (HΓ : R1 Γ Δ Δ).
+    {
+      unfold R1.
+      exact (conj eq_refl eq_refl).
+    }
+
+    specialize (H HΓ).
+    clear HΓ.
     simpl in H.
     unfold not in H.
     apply H.
@@ -832,6 +964,7 @@ Module Semantic.
       w0 := Γ;
       is_normal := is_normal1;
       R := R1;
+      Rnormal := Rnormal1;
       star := id;
       star_involutive := IdInvolutive;
       v := v1;
@@ -845,82 +978,60 @@ Module Semantic.
     cbn [is_normal1] in H.
     specialize (H eq_refl).
     simpl in H.
-    specialize (H Δ).
-    cbn [is_normal1] in H.
+    specialize (H Δ Δ).
+    assert (HΓ : R1 Γ Δ Δ).
+    {
+      unfold R1.
+      left.
+      exact (conj eq_refl eq_refl).
+    }
+
+    specialize (H HΓ).
+    clear HΓ.
+
     assert (Hante : (forall x y : worlds4,
      R1 Δ x y ->
      match x with
      | Ε => True
      | _ => False
      end ->
-     if is_normal1 y
-     then
-      forall w' : worlds4,
-      match w' with
-      | Ε => True
-      | _ => False
-      end -> False
-     else
-      forall x0 y0 : worlds4,
-      R1 y x0 y0 ->
-      match x0 with
-      | Ε => True
-      | _ => False
-      end -> False)).
+     forall x0 y0 : worlds4,
+     R1 y x0 y0 ->
+     match x0 with
+     | Ε => True
+     | _ => False
+     end -> False)).
     {
-      intros x y HR.
-      destruct x, y ; unfold R1 in HR ; intro H1 ; try destruct H1 ; try apply I.
-      - destruct HR as [HR | HR].
-        + destruct HR as [HR _].
-          discriminate HR.
-        + destruct HR as [_ [_ HR]].
-          discriminate HR.
-      - destruct HR as [HR | HR].
-        + destruct HR as [HR _].
-          discriminate HR.
-        + destruct HR as [_ [_ HR]].
-          discriminate HR.
-      - destruct HR as [HR | HR].
-        + destruct HR as [HR _].
-          discriminate HR.
-        + destruct HR as [_ [_ HR]].
-          discriminate HR.
-      - destruct HR as [HR | HR].
-        + destruct HR as [HR _].
-          discriminate HR.
-        + simpl.
-          intros x1 y1 HR1.
-          destruct x1, y1 ; unfold R1 in HR1 ; intro H1 ; try exact H1.
-          * destruct HR1 as [HR1 | HR1].
-            ** destruct HR1 as [HR1 _].
-               discriminate HR1.
-            ** destruct HR1 as [HR1 _].
-               discriminate HR1.
-          * destruct HR1 as [HR1 | HR1].
-            ** destruct HR1 as [HR1 _].
-               discriminate HR1.
-            ** destruct HR1 as [HR1 _].
-               discriminate HR1.
-          * destruct HR1 as [HR1 | HR1].
-            ** destruct HR1 as [HR1 _].
-               discriminate HR1.
-            ** destruct HR1 as [HR1 _].
-               discriminate HR1.
-          * destruct HR1 as [HR1 | HR1].
-            ** destruct HR1 as [HR1 _].
-               discriminate HR1.
-            ** destruct HR1 as [HR1 _].
-               discriminate HR1.
+      intros x y HR Hx.
+      destruct x ; try destruct Hx.
+      unfold R1 in HR.
+      destruct HR as [HR | HR].
+      - destruct HR as [HR _].
+        discriminate HR.
+      - destruct HR as [_ [_ Hy]].
+        intros u v HRuv.
+        rewrite Hy in HRuv.
+        unfold R1 in HRuv.
+        destruct HRuv as [HRuv | HRuv].
+        + destruct HRuv as [HRuv _].
+          discriminate HRuv.
+        + destruct HRuv as [HRuv _].
+          discriminate HRuv.
       }
 
       specialize (H Hante).
       clear Hante.
       specialize (H Ε Ω).
-      simpl in H.
-      apply H.
-      - unfold R1.
+      simpl in H. 
+      assert (HΔ : R1 Δ Ε Ω).
+      {
+        unfold R1.
         right.
-        exact (conj eq_refl (conj eq_refl eq_refl)).
+        exact (conj eq_refl (conj  eq_refl eq_refl)).
+      }
+
+      apply H.
+      - exact HΔ.
       - exact I.
   Qed.
   End Worlds4.
@@ -935,6 +1046,21 @@ Module Semantic.
 
     Definition R1 (w1 w2 w3: worlds2) : Prop :=
       (w1 = Γ /\ w2 = w3).
+
+    Lemma Rnormal1 : forall w x y : worlds2, is_normal1 w = true -> (R1 w x y <-> x = y).
+    Proof.
+      intros w x y Hnormal.
+      destruct w ; simpl in Hnormal ; try discriminate Hnormal.
+      split.
+      - intro HR.
+        unfold R1 in HR.
+        destruct HR as [_ Heq].
+        exact Heq.
+      - intro Heq.
+        rewrite Heq.
+        unfold R1.
+        exact (conj eq_refl eq_refl).
+    Qed.
 
     Lemma T3_neg : ~ forall (atom : Type) (A B : @formula atom), valid (@Model atom) $(A /\ (A -> B)) -> B$.
      Proof.
@@ -955,6 +1081,7 @@ Module Semantic.
         w0 := Γ;
         is_normal := is_normal1;
         R := R1;
+        Rnormal := Rnormal1;
         star := id;
         star_involutive := IdInvolutive;
         v := v1;
@@ -968,8 +1095,16 @@ Module Semantic.
       cbn [is_normal1] in H.
       specialize (H eq_refl).
       simpl in H.
-      specialize (H Δ).
-      cbn [is_normal1] in H.
+      specialize (H Δ Δ).
+      assert (HΓ : R1 Γ Δ Δ).
+      {
+        unfold R1.
+        exact (conj eq_refl eq_refl).
+      }
+
+      specialize (H HΓ).
+      clear HΓ.
+
       apply H.
       split.
       - exact I.
@@ -999,16 +1134,18 @@ Module Semantic.
       simpl.
       unfold to_model in Hnormal.
       simpl in Hnormal.
-      rewrite Hnormal.
-      intros w1 H.
-      destruct H as [H1 H2].
-      destruct (is_normal M w1) eqn:Heq.
-      - specialize (H2 w1 H1).
-        exact H2.
-      - specialize (H2 w1 w1).
-        specialize (H2 (R3w M w1)).
-        specialize (H2 H1).
-        exact H2.
+      intros x y HRxy Hconj.
+      destruct Hconj as [HA HAB].
+      specialize (Rnormal M w x y Hnormal) as Heq.
+      rewrite Heq in HRxy.
+      clear Heq.
+      rename HRxy into Heq.
+      specialize (HAB y y).
+      rewrite Heq in HAB.
+      specialize (R3w M y) as Hy.
+      rewrite Heq in HA.
+      specialize (HAB Hy HA). 
+      exact HAB.
     Qed.
   End Worlds2.
 
@@ -1066,27 +1203,54 @@ Module Semantic.
     unfold to_model in Hnormal.
     simpl in Hnormal.
     simpl.
-    rewrite Hnormal.
-    intros w1 H.
-    destruct (is_normal m w1).
-    - intros w2 HB.
-      unfold not.
-      intro HAstar.
-      specialize (H (star m w2)).
-      rewrite (star_involutive m) in H.
-      specialize (H HAstar).
-      unfold not in H.
-      specialize (H HB).
-      exact H.
-    - intros x y HR HB.
-      unfold not.
-      intro HAstar.
-      apply T8 in HR.
-      specialize (H (star m y) (star m x)).
-      specialize (H HR HAstar).
-      unfold not in H.
-      rewrite star_involutive in H.
-      specialize (H HB).
-      exact H.
+    intros x y HRxy HAB.
+    intros u v HRuv HB.
+    unfold not.
+    intro HAstar.
+    specialize (Rnormal m w x y Hnormal) as Heq.
+    rewrite Heq in HRxy.
+    clear Heq.
+    rename HRxy into Heq.
+    rewrite <-Heq in HRuv.
+    specialize (HAB (star m v) (star m u)).
+    rewrite (star_involutive m) in HAB.
+    specialize (T8 m x u v) as HT8.
+    specialize (HT8 HRuv).
+    specialize (HAB HT8).
+    specialize (HAB HAstar).
+    unfold not in HAB.
+    apply HAB.
+    exact HB.
   Qed.
+
+  Lemma A9_valid (atom : Type) (A B C : @formula atom): valid (@Model_T9 atom) $(A -> B) -> ((B -> C) -> (A -> C))$.
+  Proof.
+    unfold valid.
+    intros m w Hnormal.
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
+    simpl.
+    intros x y HRxy.
+    specialize (Rnormal m w x y Hnormal) as Heq.
+    rewrite Heq in HRxy.
+    clear Heq.
+    rename HRxy into Heq.
+    intro HAB.
+    intros u v HRuv HBC.
+    intros j k HRjk HA.
+    specialize (T9 m y u v j k) as HT9.
+    specialize (HT9 HRuv HRjk).
+    destruct HT9 as [i [HRji HRik]].
+    specialize (HBC i k).
+    specialize (HBC HRik).
+    apply HBC.
+    specialize (HAB j i).
+    rewrite Heq in HAB.
+    specialize (HAB HRji).
+    apply HAB.
+    exact HA.
+  Qed.
+
+  Lemma A10_valid (atom : Type) (A B C : @formula atom): valid (@Model_T10 atom) $(A -> B) -> ((C ->A) -> (C -> B))$.
+  Proof.
 End Semantic.
