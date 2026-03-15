@@ -13,4 +13,7 @@ Syntactic.vo: Syntactic.v Formula.vo
 Semantic.vo: Semantic.v Formula.vo
 	$(COQC) Semantic.v
 
+Meta.vo: Meta.v Semantic.vo Syntactic.vo
+	$(COQC) Meta.v
+
 include ../clean.mk

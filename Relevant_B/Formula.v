@@ -1,4 +1,4 @@
-From Basis Require Import FSignature.
+From Basis Require Export FSignature.
 Open Scope formula_scope.
 
 Module FormulaDef <: TFormula.

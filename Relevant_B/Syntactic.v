@@ -1,4 +1,3 @@
-From Basis Require Import FSignature.
 From Relevant_B Require Import Formula.
 Import FormulaDef.
 Import Relevant_B_Formula.
