@@ -1,8 +1,9 @@
-From Basis Require Import FSignature.
 From Relevant_B Require Import Formula.
 From Relevant_B Require Import Syntactic.
 From Relevant_B Require Import Semantic.
 
+Import FormulaDef.
+Import Relevant_B_Formula.
 Import Semantic.
 Import Syntactic.
 
