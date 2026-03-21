@@ -10,12 +10,13 @@ Import FormulaDef.
 Import Relevant_B_Formula.
 Import Semantic.
 Import Syntactic.
+Import Functions.
 
 Local Open Scope formula_scope.
 Module Meta.
-  Lemma identity_valid {atom : Type} (A : @formula atom) : valid (@Model atom) (Syntactic.f_identity A).
+  Lemma identity_valid {atom : Type} (A : @formula atom) : valid (@Model atom) (f_identity A).
   Proof.
-    unfold Syntactic.f_identity.
+    unfold f_identity.
     unfold valid.
     intros M w Hnormal.
     simpl.
@@ -28,9 +29,9 @@ Module Meta.
     exact HA.
   Qed.
 
-  Lemma disj_intro_left_valid {atom : Type} (A B : @formula atom) : valid (@Model atom) (Syntactic.f_disj_intro_left A B).
+  Lemma disj_intro_left_valid {atom : Type} (A B : @formula atom) : valid (@Model atom) (f_disj_intro_left A B).
   Proof.
-    unfold Syntactic.f_disj_intro_left.
+    unfold f_disj_intro_left.
     unfold valid.
     intros M w Hnormal.
     simpl.
@@ -44,9 +45,9 @@ Module Meta.
     exact HA.
   Qed.
 
-  Lemma disj_intro_right_valid {atom : Type} (A B : @formula atom) : valid (@Model atom) (Syntactic.f_disj_intro_right A B).
+  Lemma disj_intro_right_valid {atom : Type} (A B : @formula atom) : valid (@Model atom) (f_disj_intro_right A B).
   Proof.
-    unfold Syntactic.f_disj_intro_right.
+    unfold f_disj_intro_right.
     unfold valid.
     intros M w Hnormal.
     simpl.
@@ -60,9 +61,9 @@ Module Meta.
     exact HB.
   Qed.
 
-  Lemma conj_elim_left_valid {atom : Type} (A B : @formula atom) : valid (@Model atom) (Syntactic.f_conj_elim_left A B).
+  Lemma conj_elim_left_valid {atom : Type} (A B : @formula atom) : valid (@Model atom) (f_conj_elim_left A B).
   Proof.
-    unfold Syntactic.f_conj_elim_left.
+    unfold f_conj_elim_left.
     unfold valid.
     intros M w Hnormal.
     simpl.
@@ -77,9 +78,9 @@ Module Meta.
     exact HA.
   Qed.
 
-  Lemma conj_elim_right_valid {atom : Type} (A B : @formula atom) : valid (@Model atom) (Syntactic.f_conj_elim_right A B).
+  Lemma conj_elim_right_valid {atom : Type} (A B : @formula atom) : valid (@Model atom) (f_conj_elim_right A B).
   Proof.
-    unfold Syntactic.f_conj_elim_right.
+    unfold f_conj_elim_right.
     unfold valid.
     intros M w Hnormal.
     simpl.
@@ -94,9 +95,9 @@ Module Meta.
     exact HB.
   Qed.
 
-  Lemma conj_distrib_valid {atom : Type} (A B C : @formula atom) : valid (@Model atom) (Syntactic.f_conj_distrib A B C).
+  Lemma conj_distrib_valid {atom : Type} (A B C : @formula atom) : valid (@Model atom) (f_conj_distrib A B C).
   Proof.
-    unfold Syntactic.f_conj_distrib.
+    unfold f_conj_distrib.
     unfold valid.
     intros M w Hnormal.
     simpl.
@@ -115,9 +116,31 @@ Module Meta.
       exact (conj HA HC).
   Qed.
 
-  Lemma case_analysis_valid {atom : Type} (A B C : @formula atom) : valid (@Model atom) (Syntactic.f_case_analysis A B C).
+  Lemma impl_conj_right_valid {atom : Type} (A B C : @formula atom) : valid (@Model atom) (f_impl_conj_right A B C).
   Proof.
-    unfold Syntactic.f_case_analysis.
+    unfold f_impl_conj_right.
+    unfold valid.
+    intros M w Hnormal.
+    simpl.
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
+    intros x y Rxy Hconj.
+    intros u v Ruv Au.
+    destruct Hconj as [HAB HAC].
+    specialize (HAB u v).
+    specialize (HAC u v).
+    specialize (Rnormal M w x y Hnormal) as Heq.
+    rewrite Heq in Rxy.
+    clear Heq.
+    rewrite Rxy in HAB, HAC.
+    specialize (HAB Ruv Au).
+    specialize (HAC Ruv Au).
+    exact (conj HAB HAC).
+  Qed.
+
+  Lemma case_analysis_valid {atom : Type} (A B C : @formula atom) : valid (@Model atom) (f_case_analysis A B C).
+  Proof.
+    unfold f_case_analysis.
     unfold valid.
     intros M w Hnormal.
     unfold to_model in Hnormal.
@@ -144,9 +167,9 @@ Module Meta.
       exact HBC.
   Qed.
 
-  Lemma neg_elim_valid {atom : Type} (A : @formula atom) : valid (@Model atom) (Syntactic.f_neg_elim A).
+  Lemma neg_elim_valid {atom : Type} (A : @formula atom) : valid (@Model atom) (f_neg_elim A).
   Proof.
-    unfold Syntactic.f_neg_elim.
+    unfold f_neg_elim.
     unfold valid.
     intros M w Hnormal.
     simpl.
@@ -329,6 +352,9 @@ Module Meta.
       exact H.
     - specialize (case_analysis_valid A0 B C) as Hvalid.
       specialize (valid_forall_consequence (f_case_analysis A0 B C) Hvalid [A]) as H.
+      exact H.
+    - specialize (impl_conj_right_valid A0 B C) as Hvalid.
+      specialize (valid_forall_consequence (f_impl_conj_right A0 B C) Hvalid [A]) as H.
       exact H.
     - specialize (neg_elim_valid A0) as Hvalid.
       specialize (valid_forall_consequence (f_neg_elim A0) Hvalid [A]) as H.

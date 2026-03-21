@@ -2,7 +2,7 @@ include ../common.mk
 
 COQC := $(COQC) -Q . Relevant_B -Q ../Basis Basis
 
-all: Semantic.vo Syntactic.vo
+all: Semantic.vo Syntactic.vo Meta.vo
 
 Formula.vo: Formula.v
 	$(COQC) Formula.v

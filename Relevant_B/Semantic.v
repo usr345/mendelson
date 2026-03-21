@@ -1259,4 +1259,56 @@ Module Semantic.
     - specialize (inclusion_eval m A u v Huv HAu) as HAv.
       exact HAv.
   Qed.
+
+  Record Model_R {atom : Type} :=
+  {
+    base_model_R :> @Model_inclusion atom;
+    A8 : forall x y z : base_model_R.(worlds), base_model_R.(R) x y z -> base_model_R.(R) x (base_model_R.(star) z) (base_model_R.(star) y);
+    A9 : forall x y z u v : base_model_R.(worlds), base_model_R.(R) x y z -> base_model_R.(R) z u v -> 
+          exists j : base_model_R.(worlds), base_model_R.(R) x u j /\ base_model_R.(R) y j v;
+    A10 : forall x y z u v : base_model_R.(worlds), base_model_R.(R) x y z -> base_model_R.(R) z u v -> 
+          exists j : base_model_R.(worlds), base_model_R.(R) y u j /\ base_model_R.(R) x j v;
+    A11 : forall x y z : base_model_R.(worlds), base_model_R.(R) x y z -> 
+          exists j : base_model_R.(worlds), base_model_R.(R) x y j /\ base_model_R.(R) j y z;
+    A12 : forall x y z : base_model_R.(worlds), base_model_R.(R) x y z -> 
+      exists j : base_model_R.(worlds), base_model_R.(inclusion) x j /\ base_model_R.(R) y j z;
+  }.
+
+  Instance Model_R_IsModel (atom : Type) : IsModel atom (@Model_R atom) :=
+  {
+    to_model :=  fun (m : @Model_R atom) => m;
+  }.
+
+  Lemma flip_valid {atom : Type} (A B C : @formula atom): consequence (@Model_R atom) [$A -> (B -> C)$] $B -> (A -> C)$.
+  Proof.
+    unfold consequence.
+    intros m w Hnormal Hall.
+    apply holds_all_single in Hall.
+    simpl in Hall.
+    simpl.
+    intros x y HRxy HB.
+    intros u v.
+    intros HRuv HA.
+    specialize (Hall u).
+    specialize (Rnormal m w x y Hnormal) as Heq.
+    apply Heq in HRxy as Heq1.
+    clear Heq.
+    rename Heq1 into Heq.
+    rewrite Heq in HRxy.
+    rewrite Heq in HB.
+    specialize (A12 m y u v) as H12.
+    specialize (H12 HRuv).
+    destruct H12 as [j [Hincl HRjv]].
+    specialize (inclusion_eval m B) as HBj.
+    specialize (HBj y j Hincl HB) as HBj.
+    specialize (Rnormal m w u u Hnormal) as HRuu.
+    specialize (eq_refl u) as HRu.
+    apply HRuu in HRu.
+    clear HRuu.
+    specialize (Hall u HRu HA).
+    specialize (Hall j v).
+    specialize (Hall HRjv HBj).
+    exact Hall.
+  Qed.
+
 End Semantic.

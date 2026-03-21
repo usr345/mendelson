@@ -3,7 +3,7 @@ Import FormulaDef.
 Import Relevant_B_Formula.
 Local Open Scope formula_scope.
 
-Module Syntactic.
+Module Functions.
   Definition f_identity {atom : Type} (A : @formula atom) : formula :=
     $A -> A$.
 
@@ -25,8 +25,28 @@ Module Syntactic.
   Definition f_case_analysis {atom : Type} (A B C: @formula atom) : formula :=
     $(A -> C) /\ (B -> C) -> (A \/ B) -> C$.
 
+  Definition f_impl_conj_right {atom : Type} (A B C: @formula atom) : formula :=
+    $(A -> B) /\ (A -> C) -> (A -> (B /\ C))$.
+
   Definition f_neg_elim {atom : Type} (A: @formula atom) : formula :=
     $~~A -> A$.
+
+  Definition f_contrapos {atom : Type} (A B: @formula atom) : formula :=
+    $(A -> ~B) -> (B -> ~A)$.
+
+  Definition f_trans_suffix {atom : Type} (A B C: @formula atom) : formula :=
+    $(A -> B) -> (B -> C) -> (A -> C)$.
+
+  Definition f_trans_prefix {atom : Type} (A B C: @formula atom) : formula :=
+    $(A -> B) -> (C -> A) -> (C -> B)$.
+
+  Definition f_mp_surreal {atom : Type} (A B C: @formula atom) : formula :=
+    $(A -> (A -> B)) -> (A -> B)$.
+
+End Functions.
+
+Module Syntactic.
+  Import Functions.
 
   #[global] Reserved Notation "A |- B" (at level 98).
   Inductive entails {atom : Type} (Γ : @formula atom -> Prop) : @formula atom -> Type :=
@@ -38,6 +58,7 @@ Module Syntactic.
     | conj_elim_right : forall A B, Γ |- f_conj_elim_right A B
     | conj_distrib : forall A B C, Γ |- f_conj_distrib A B C
     | case_analysis : forall A B C, Γ |- f_case_analysis A B C
+    | impl_conj_right : forall A B C, Γ |- f_impl_conj_right A B C
     | neg_elim : forall A, Γ |- f_neg_elim A
     | mp : forall A B, Γ |- $A -> B$ -> Γ |- A -> Γ |- B (* modus ponens *)
     | conj_intro : forall A B, Γ |- A -> Γ |- B -> Γ |- $A /\ B$
@@ -53,6 +74,7 @@ Arguments disj_intro_right {atom} {Γ} A B.
 Arguments conj_elim_left {atom} {Γ} A B.
 Arguments conj_elim_right {atom} {Γ} A B.
 Arguments conj_distrib {atom} {Γ} A B C.
+Arguments impl_conj_right {atom} {Γ} A B C.
 Arguments case_analysis {atom} {Γ} A B C.
 Arguments neg_elim {atom} {Γ} A.
 Arguments mp {atom} {Γ} {A} {B} _ _.
@@ -70,6 +92,7 @@ Ltac specialize_axiom A H :=
   | (_ |- f_conj_elim_left _ _) => unfold f_conj_elim_left in H
   | (_ |- f_conj_elim_right _ _) => unfold f_conj_elim_right in H
   | (_ |- f_conj_distrib _ _ _) => unfold f_conj_distrib in H
+  | (_ |- f_impl_conj_right _ _ _) => unfold f_impl_conj_right in H
   | (_ |- f_case_analysis _ _ _) => unfold f_case_analysis in H
   | (_ |- f_neg_elim _) => unfold f_neg_elim in H
   end.
@@ -80,6 +103,5 @@ Proof.
   specialize_axiom (contrapos (Γ:=Γ) H1) H2.
   exact H2.
 Qed.
-
 
 End Syntactic.
