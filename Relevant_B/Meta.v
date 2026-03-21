@@ -1,6 +1,10 @@
+From Basis Require Export MSets.
 From Relevant_B Require Import Formula.
 From Relevant_B Require Import Syntactic.
 From Relevant_B Require Import Semantic.
+From Coq Require Import Classical_Prop.
+From Coq Require Import Lists.List.
+Import ListNotations.
 
 Import FormulaDef.
 Import Relevant_B_Formula.
@@ -295,7 +299,7 @@ Module Meta.
     exact HB.
   Qed.
 
-  Theorem soundness {atom : Type} : forall (A B : @formula atom), (fun x => x = A) |- B -> consequence (@Model atom) [A] B.
+  Theorem soundness {atom : Type} : forall (A B : @formula atom), Syntactic.entails (fun x => x = A) B  -> Semantic.consequence (@Model atom) [A] B.
   Proof.
     intros A B.
     intro H.
@@ -340,6 +344,5 @@ Module Meta.
     - specialize (contrapos_valid [A] A0 B IHentails) as Hvalid.
       exact Hvalid.
   Qed.
-
 
 End Meta.
