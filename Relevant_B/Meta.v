@@ -9,7 +9,6 @@ Import ListNotations.
 Import FormulaDef.
 Import Relevant_B_Formula.
 Import Semantic.
-Import Syntactic.
 Import Functions.
 
 Local Open Scope formula_scope.
@@ -608,4 +607,33 @@ Module Meta.
       exact HAv.
   Qed.
 
+  Theorem entails_B_R {atom : Type} (Γ : @formula atom -> Prop) (A : @formula atom) :
+    Syntactic.entails Γ A -> Syntactic_R.entails Γ A.
+  Proof.
+    intro H.
+    induction H as [ A Γ_A | A | A B | A B | A B | A B | A B C | A B C
+                     | A B C | A | A B _ IHimp _ IHA
+                     | A B _ IHA _ IHB | A B C _ IH | A B C _ IH
+                     | A B _ IH ].
+    - apply (Syntactic_R.hypo A Γ_A).
+    - apply (Syntactic_R.identity A).
+    - apply (Syntactic_R.disj_intro_left A B).
+    - apply (Syntactic_R.disj_intro_right A B).
+    - apply (Syntactic_R.conj_elim_left A B).
+    - apply (Syntactic_R.conj_elim_right A B).
+    - apply (Syntactic_R.conj_distrib A B C).
+    - apply (Syntactic_R.case_analysis A B C).
+    - apply (Syntactic_R.impl_conj_right A B C).
+    - apply (Syntactic_R.neg_elim A).
+    - apply (Syntactic_R.mp IHimp IHA).
+    - apply (Syntactic_R.conj_intro IHA IHB).
+    - Syntactic_R.specialize_axiom (Syntactic_R.trans_prefix (Γ := Γ) A B C) Himp.
+      specialize (Syntactic_R.mp Himp IH) as H.
+      exact H.
+    - Syntactic_R.specialize_axiom (Syntactic_R.trans_suffix (Γ := Γ) A B C) Himp.
+      specialize (Syntactic_R.mp Himp IH) as H.
+      exact H.
+    - specialize (Syntactic_R.contrapos_rule IH) as H.
+      exact H.
+  Qed.
 End Meta.
