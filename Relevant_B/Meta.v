@@ -371,4 +371,241 @@ Module Meta.
       exact Hvalid.
   Qed.
 
+  Lemma A8_valid (atom : Type) (A B : @formula atom): valid (@Model_T8 atom) $(A -> ~B) -> B -> ~A$.
+  Proof.
+    unfold valid.
+    intros m w Hnormal.
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
+    simpl.
+    intros x y HRxy HAB.
+    intros u v HRuv HB.
+    unfold not.
+    intro HAstar.
+    specialize (Rnormal m w x y Hnormal) as Heq.
+    rewrite Heq in HRxy.
+    clear Heq.
+    rename HRxy into Heq.
+    rewrite <-Heq in HRuv.
+    specialize (HAB (star m v) (star m u)).
+    rewrite (star_involutive m) in HAB.
+    specialize (T8 m x u v) as HT8.
+    specialize (HT8 HRuv).
+    specialize (HAB HT8).
+    specialize (HAB HAstar).
+    unfold not in HAB.
+    apply HAB.
+    exact HB.
+  Qed.
+
+  Lemma A9_valid (atom : Type) (A B C : @formula atom): valid (@Model_T9 atom) $(A -> B) -> ((B -> C) -> (A -> C))$.
+  Proof.
+    unfold valid.
+    intros m w Hnormal.
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
+    simpl.
+    intros x y HRxy.
+    specialize (Rnormal m w x y Hnormal) as Heq.
+    rewrite Heq in HRxy.
+    clear Heq.
+    rename HRxy into Heq.
+    intro HAB.
+    intros u v HRuv HBC.
+    intros j k HRjk HA.
+    specialize (T9 m y u v j k) as HT9.
+    specialize (HT9 HRuv HRjk).
+    destruct HT9 as [i [HRji HRik]].
+    specialize (HBC i k).
+    specialize (HBC HRik).
+    apply HBC.
+    specialize (HAB j i).
+    rewrite Heq in HAB.
+    specialize (HAB HRji).
+    apply HAB.
+    exact HA.
+  Qed.
+
+  Lemma A10_valid (atom : Type) (A B C : @formula atom): valid (@Model_T10 atom) $(A -> B) -> ((C ->A) -> (C -> B))$.
+  Proof.
+    unfold valid.
+    intros m w Hnormal.
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
+    simpl.
+    intros x y HRxy.
+    specialize (Rnormal m w x y Hnormal) as Heq.
+    rewrite Heq in HRxy.
+    clear Heq.
+    rename HRxy into Heq.
+    intro HAB.
+    intros u v HRuv HCA.
+    intros j k HRjk HC.
+    specialize (T10 m y u v j k) as HT10.
+    specialize (HT10 HRuv HRjk).
+    destruct HT10 as [i [HRji HRik]].
+    specialize (HCA j i).
+    specialize (HCA HRji).
+    specialize (HCA HC).
+    rename HCA into HA.
+    specialize (HAB i k).
+    rewrite Heq in HAB.
+    specialize (HAB HRik).
+    specialize (HAB HA).
+    exact HAB.
+  Qed.
+
+  Lemma A11_valid (atom : Type) (A B C : @formula atom): valid (@Model_T11 atom) $(A -> (A -> B)) -> (A -> B)$.
+  Proof.
+    unfold valid.
+    intros m w Hnormal.
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
+    simpl.
+    intros x y HRxy.
+    specialize (Rnormal m w x y Hnormal) as Heq.
+    rewrite Heq in HRxy.
+    clear Heq.
+    rename HRxy into Heq.
+    intro HAAB.
+    intros u v HRuv HA.
+    specialize (T11 m y u v) as HT11.
+    specialize (HT11 HRuv).
+    destruct HT11 as [j [HRuj HRjuv]].
+    specialize (HAAB u j).
+    rewrite Heq in HAAB.
+    specialize (HAAB HRuj).
+    specialize (HAAB HA).
+    specialize (HAAB u v).
+    specialize (HAAB HRjuv).
+    specialize (HAAB HA).
+    exact HAAB.
+  Qed.
+
+  Lemma A12_valid {atom : Type} (A B : @formula atom): valid (@Model_T12 atom) $A -> ((A -> B) -> B)$.
+  Proof.
+    unfold valid.
+    intros m w Hnormal.
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
+    simpl.
+    intros x y Rxy.
+    specialize (Rnormal m w x y Hnormal) as Heq.
+    rewrite Heq in Rxy.
+    clear Heq.
+    rename Rxy into Heq.
+    intro HA.
+    intros u v Ruv HAB.
+    rewrite Heq in HA.
+    specialize (T12 m y u v) as HT12.
+    specialize (HT12 Ruv).
+    destruct HT12 as [j [Hincl Rjv]].
+    specialize (HAB j v).
+    specialize (HAB Rjv).
+    apply HAB.
+    clear HAB.
+    specialize (inclusion_eval m A y j Hincl HA) as HAj.
+    exact HAj.
+  Qed.
+
+  Lemma A13_valid {atom : Type} (A : @formula atom): valid (@Model_T13 atom) $A \/ ~A$.
+  Proof.
+    unfold valid.
+    intros m w Hnormal.
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
+    simpl.
+    specialize (T13 m w Hnormal) as HT13.
+    specialize (inclusion_eval m A (star m w) w HT13) as Heval.
+    specialize (classic (eval m A (star m w))) as Hstar.
+    destruct Hstar as [True | False].
+    - apply Heval in True.
+      left.
+      exact True.
+    - right.
+      exact False.
+  Qed.
+
+  Lemma A14_valid {atom : Type} (A : @formula atom): valid (@Model_T14 atom) $(A -> ~A) -> ~A$.
+  Proof.
+    unfold valid.
+    intros m w Hnormal.
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
+    simpl.
+    intros x y Rxy.
+    specialize (Rnormal m w x y Hnormal) as Heq.
+    rewrite Heq in Rxy.
+    clear Heq.
+    rename Rxy into Heq.
+    intro HA_starA.
+    unfold not.
+    intro HA_star.
+    unfold not in HA_starA.
+    specialize (T14 m y) as HT14.
+    destruct (is_normal m y) eqn:Hy.
+    - specialize (Rnormal m y y y Hy) as HRy.
+      specialize (eq_refl y) as Heq1.
+      apply HRy in Heq1.
+      clear HRy.
+      rename Heq1 into Ry.
+      specialize (HA_starA y y).
+      rewrite Heq in HA_starA.
+      specialize (HA_starA Ry).
+      specialize (inclusion_eval m A (star m y) y HT14 HA_star) as HAy.
+      specialize (HA_starA HAy).
+      specialize (HA_starA HA_star).
+      exact HA_starA.
+    - specialize (HA_starA (star m y) y).
+      rewrite Heq in HA_starA.
+      specialize (HA_starA HT14 HA_star HA_star).
+      exact HA_starA.
+  Qed.
+
+  Lemma A15_valid {atom : Type} (A B : @formula atom): valid (@Model_T15 atom) $A -> (B -> A)$.
+  Proof.
+    unfold valid.
+    intros m w Hnormal.
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
+    simpl.
+    intros x y Rxy.
+    specialize (Rnormal m w x y Hnormal) as Heq.
+    rewrite Heq in Rxy.
+    clear Heq.
+    rename Rxy into Heq.
+    intro HA.
+    intros u v Ruv Hbu.
+    specialize (T15 m y u v) as HT15.
+    specialize (HT15 Ruv).
+    rewrite Heq in HA.
+    specialize (inclusion_eval m A y v HT15 HA) as HAv.
+    exact HAv.
+  Qed.
+
+  Lemma A16_valid {atom : Type} (A : @formula atom): valid (@Model_T16 atom) $A -> (A -> A)$.
+  Proof.
+    unfold valid.
+    intros m w Hnormal.
+    unfold to_model in Hnormal.
+    simpl in Hnormal.
+    simpl.
+    intros x y Rxy HAx.
+    specialize (Rnormal m w x y Hnormal) as Heq.
+    rewrite Heq in Rxy.
+    clear Heq.
+    rename Rxy into Heq.
+    intros u v Ruv HAu.
+    rewrite Heq in HAx.
+    clear Heq.
+    rename HAx into HAy.
+    specialize (T16 m y u v) as HT16.
+    specialize (HT16 Ruv).
+    destruct HT16 as [Hyv | Huv].
+    - specialize (inclusion_eval m A y v Hyv HAy) as HAv.
+      exact HAv.
+    - specialize (inclusion_eval m A u v Huv HAu) as HAv.
+      exact HAv.
+  Qed.
+
 End Meta.
