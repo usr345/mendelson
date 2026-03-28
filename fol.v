@@ -2,6 +2,9 @@ From Basis Require Import EqDec.
 From Coq Require Import Lists.List.
 Import ListNotations.
 
+Set Implicit Arguments.
+Generalizable All Variables.
+
 Module FOL.
   #[projections(primitive)]
   Record language : Type :=
@@ -14,79 +17,202 @@ Module FOL.
     pred_arity : pred_symbols -> nat
   }.
 
-  Section FOL_def.
-    Context { lang : language }.
-    Context `{Heqd : EqDec (var_symbols lang)}.  (* assume decidable equality for variables *)
+  Inductive term (lang : language) : Type :=
+  | t_const : constant_symbols lang -> term lang
+  | t_var : var_symbols lang -> term lang
+  | t_func_app : func_symbols lang -> list (term lang) -> term lang.
 
-    Inductive term : Type :=
-    | const : (constant_symbols lang) -> term
-    | var : (var_symbols lang) -> term
-    | func_app : forall (f : (func_symbols lang)),
-        (* ensure the number of arguments matches arity *)
-        list term -> term.
+  Arguments t_const {lang} _.
+  Arguments t_var {lang} _.
+  Arguments t_func_app {lang} _ _.
 
-    Inductive wf_term : term -> Prop :=
-    | wf_const : forall c : (constant_symbols lang), wf_term (const c)
-    | wf_var : forall v : (var_symbols lang), wf_term (var v)
-    | wf_func_app : forall (f : (func_symbols lang)) (args : list term),
+  Inductive wf_term (lang : language) : term lang -> Prop :=
+    | wf_const : forall c : (constant_symbols lang), wf_term (t_const c)
+    | wf_var : forall v : (var_symbols lang), wf_term (t_var v)
+    | wf_func_app : forall (f : (func_symbols lang)) (args : list (term lang)),
         length args = func_arity lang f ->
-        Forall wf_term args ->
-        wf_term (func_app f args).
+        Forall (@wf_term lang) args ->
+        wf_term (t_func_app f args).
 
-    Inductive formula : Type :=
-    | pred_app : forall (p : pred_symbols lang),
-        list term -> formula
-    | f_not  : formula -> formula
-    | f_conj  : formula -> formula -> formula
-    | f_disj  : formula -> formula -> formula
-    | f_imp  : formula -> formula -> formula
-    | f_forall : (var_symbols lang) -> formula -> formula
-    | f_exists : (var_symbols lang) -> formula -> formula.
-
-    Inductive wf_formula : formula -> Prop :=
-    | wf_pred_app : forall (p : (pred_symbols lang)) (args : list term),
-        length args = pred_arity lang p ->
-        Forall wf_term args ->
-        wf_formula (pred_app p args)
-    | wf_not  : forall f : formula, wf_formula f -> wf_formula (f_not f)
-    | wf_conj  : forall f g : formula, wf_formula f -> wf_formula g -> wf_formula (f_conj f g)
-    | wf_disj  : forall f g : formula, wf_formula f -> wf_formula g -> wf_formula (f_disj f g)
-    | wf_imp  : forall f g : formula, wf_formula f -> wf_formula g -> wf_formula (f_imp f g)
-    | wf_forall : forall (v : var_symbols lang) (f : formula), wf_formula f -> wf_formula (f_forall v f)
-    | wf_exists : forall (v : var_symbols lang) (f : formula), wf_formula f -> wf_formula (f_exists v f).
-
-    Fixpoint occurrences_in_term (t : term) (bound : list (var_symbols lang)) (v : var_symbols lang) : list bool :=
+  Fixpoint vars_occurence_term (lang : language) (t : term lang) : list (var_symbols lang) :=
     match t with
-    | const _ => []
-    | var v' =>
-        if eqb v v'
-        then [existsb (fun b => eqb b v) bound]
-        else []
-    | func_app _ args =>
-        let rec aux (lst : list term) : list bool :=
-          match lst with
-          | [] => []
-          | t' :: ts => occurrences_in_term t' bound v ++ aux ts
-          end
-        in aux args
+    | t_const _ => []
+    | t_var v => [v]
+    | t_func_app _ lst => fold_right (fun t accum => (vars_occurence_term t) ++ accum) [] lst
     end.
 
-    Module Test1.
-      Variant const3 : Type := a | b | c.
-      Variant funcs2 : Type := f | g.
-      Variant var3 : Type := x | y | z.
+  Inductive formula (lang : language) : Type :=
+    | pred_app : forall (p : pred_symbols lang),
+        list (term lang) -> formula lang
+    | f_not  : formula lang -> formula lang
+    | f_conj  : formula lang -> formula lang -> formula lang
+    | f_disj  : formula lang -> formula lang -> formula lang
+    | f_imp  : formula lang -> formula lang -> formula lang
+    | f_forall : (var_symbols lang) -> formula lang -> formula lang
+    | f_exists : (var_symbols lang) -> formula lang -> formula lang.
 
-      Definition var3_arity (f1 : ) -> nat
-      Definition language1 : Type :=
-      { |
-        constant_symbols : const3;
-        func_symbols : funcs2;
-        pred_symbols : False;
-        var_symbols : var3;
-        func_arity : func_symbols -> nat;
-        pred_arity : fun _ => 0
-      | }.
-    End Test.
+  Theorem var_symbols_dec (lang : language) `{Heqd : EqDec (var_symbols lang)} : 
+    forall x y : var_symbols lang, {x = y} + {x <> y}.
+  Proof.
+    intros x y.
+    destruct (eqb x y) eqn:Heq.
+    - rewrite eqb_eq in Heq.
+      exact (left Heq).
+    - apply right.
+      unfold not.
+      intro Heq1.
+      rewrite <-eqb_eq in Heq1.
+      rewrite Heq1 in Heq.
+      discriminate Heq.
+  Qed.
+
+  Fixpoint free_vars_formula (lang : language) `{Heqd : EqDec (var_symbols lang)} (f : formula lang) : list (var_symbols lang) :=
+    match f with
+    | pred_app _ arg => fold_right (fun t accum => (vars_occurence_term t) ++ accum) [] arg
+    | f_not f' => free_vars_formula f'
+    | f_conj f1 f2 => (free_vars_formula f1) ++ (free_vars_formula f2)
+    | f_disj f1 f2 => (free_vars_formula f1) ++ (free_vars_formula f2)
+    | f_imp f1 f2 => (free_vars_formula f1) ++ (free_vars_formula f2)
+    | f_forall x f' => remove (var_symbols_dec lang) x (free_vars_formula f')
+    | f_exists x f' => remove (var_symbols_dec lang) x (free_vars_formula f')
+    end.
+
+  (* x имеет свободное вхождение в формуле f *)
+  Fixpoint free_var_in_formula (lang : language)
+    (x : var_symbols lang) (f : formula lang) : Prop :=
+    match f with
+    | pred_app _ args =>
+        exists t, In t args /\ In x (vars_occurence_term t)
+    | f_not f' => free_var_in_formula x f'
+    | f_conj f1 f2 =>
+        free_var_in_formula x f1 \/ free_var_in_formula x f2
+    | f_disj f1 f2 =>
+        free_var_in_formula x f1 \/ free_var_in_formula x f2
+    | f_imp f1 f2 =>
+        free_var_in_formula x f1 \/ free_var_in_formula x f2
+    | f_forall y f' =>
+        x <> y /\ free_var_in_formula x f'
+    | f_exists y f' =>
+        x <> y /\ free_var_in_formula x f'
+    end.
+
+  Theorem free_vars_formula_correct (lang : language) `{Heqd : EqDec (var_symbols lang)} (f : formula lang) (x : var_symbols lang):
+      In x (free_vars_formula f) <-> free_var_in_formula x f.
+  Proof.
+    split ; intro H.
+    - induction f as [
+        p args
+      | f' IHf'
+      | f1 IHf1 f2 IHf2
+      | f1 IHf1 f2 IHf2
+      | f1 IHf1 f2 IHf2
+      | y f' IHf'
+      | y f' IHf'
+      ].
+      + simpl.
+
+  Inductive wf_formula (lang : language) : formula lang -> Prop :=
+    | wf_pred_app : forall (p : pred_symbols lang) (args : list (term lang)),
+        length args = pred_arity lang p ->
+        Forall (@wf_term lang) args ->
+        wf_formula (pred_app p args)
+    | wf_not  : forall f : formula lang, wf_formula f -> wf_formula (f_not f)
+    | wf_conj  : forall f g : formula lang, wf_formula f -> wf_formula g -> wf_formula (f_conj f g)
+    | wf_disj  : forall f g : formula lang, wf_formula f -> wf_formula g -> wf_formula (f_disj f g)
+    | wf_imp  : forall f g : formula lang, wf_formula f -> wf_formula g -> wf_formula (f_imp f g)
+    | wf_forall : forall (v : var_symbols lang) (f : formula lang), wf_formula f -> wf_formula (f_forall v f)
+    | wf_exists : forall (v : var_symbols lang) (f : formula lang), wf_formula f -> wf_formula (f_exists v f).
+
+  Fixpoint substitute (lang : language) `{Heqd : EqDec (var_symbols lang)} (t : term lang) (v : var_symbols lang) (t' : term lang) : term lang :=
+      match t with
+      | t_const a => t_const a
+      | t_var w => if (eqb w v) then t' else t
+      | t_func_app f args => t_func_app f (map (fun x => substitute x v t') args)
+      end.
+
+  Fixpoint substitute_f (lang : language) `{Heqd : EqDec (var_symbols lang)} (f : formula lang) (v : var_symbols lang) (t' : term lang) : formula lang :=
+      match f with
+      | pred_app p args => pred_app p (map (fun x => substitute x v t') args)
+      | f_not f' => f_not (substitute_f f' v t')
+      | f_conj f1 f2 => f_conj (substitute_f f1 v t') (substitute_f f2 v t')
+      | f_disj f1 f2 => f_disj (substitute_f f1 v t') (substitute_f f2 v t')
+      | f_imp f1 f2 => f_imp (substitute_f f1 v t') (substitute_f f2 v t')
+      | f_forall x f' => if (eqb v x) then f else f_forall x (substitute_f f' v t')
+      | f_exists x f' => if (eqb v x) then f else f_exists x (substitute_f f' v t')
+      end.
+
+    Definition well_substitute 
+
+  Module Test1.
+    Variant const : Type := a | b | c.
+    Variant funcs : Type := f | g.
+    Variant pred : Type := P | Q | R.
+    Variant var : Type := x | y | z.
+
+    Definition funcs_arity1 (f : funcs): nat :=
+    match f with
+    | f => 3
+    | g => 2
+    end.
+
+    Definition pred_arity1 (p : pred): nat :=
+    match p with
+    | P => 1
+    | Q => 2
+    | R => 3
+    end.
+
+    Definition test_language : language :=
+    {|
+      constant_symbols := const;
+      func_symbols := funcs;
+      pred_symbols := pred;
+      var_symbols := var;
+      func_arity := funcs_arity1;
+      pred_arity := pred_arity1
+    |}.
+
+    Definition vars_eqb (v1 v2 : var) : bool :=
+    match v1, v2 with
+    | x, x => true
+    | y, y => true
+    | z, z => true
+    | _, _ => false
+    end.
+
+    Theorem vars_eqb_eq : forall x y : var, (vars_eqb x y) = true <-> x = y.
+    Proof.
+      intros x0 y0.
+      split ; intro H.
+      - destruct x0, y0 ; simpl in H ; try discriminate H ; reflexivity.
+      - rewrite H.
+        destruct x0, y0 ; simpl ; try discriminate H ; reflexivity.
+    Qed.
+
+    Instance EqDec_var : EqDec var :=
+    {
+      eqb := vars_eqb;
+      eqb_eq := vars_eqb_eq
+    }.
+
+    #[local] Notation termL := (FOL.term test_language).
+
+    #[local] Notation "'const_' c" := (FOL.t_const (lang := test_language) c) (at level 50).
+    #[local] Notation "'var_' v" := (FOL.t_var (lang := test_language) v) (at level 50).
+    #[local] Notation "'app_' f ',' args" := (FOL.t_func_app (lang := test_language) f args) (at level 50).
+
+    Definition term1 : FOL.term test_language :=
+      app_ g , [const_ a; app_ f , [var_ x; var_ y; const_ b] ].
+
+    Example test1 : 
+        vars_occurence_term term1 = [x; y].
+    Proof.
+      cbn.
+      reflexivity.
+    Qed.
+
+    Compute (substitute term1 x (const_ c)).
+  End Test1.
 
     Fixpoint occurs_in_term (t : term) (v : var_symbols lang) : bool :=
       match t with
@@ -122,6 +248,5 @@ Module FOL.
    (* Wrapper: start with an empty bound list *)
     Definition is_bound (f : { f : formula | wf_formula f }) (v : var_symbols lang) : bool :=
       bound_occurrence (proj1_sig f) [] v.
-  End FOL_def.
 End FOL.
 
