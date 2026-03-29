@@ -2,9 +2,6 @@ From Basis Require Import EqDec.
 From Coq Require Import Lists.List.
 Import ListNotations.
 
-Set Implicit Arguments.
-Generalizable All Variables.
-
 Module FOL.
   #[projections(primitive)]
   Record language : Type :=
@@ -26,7 +23,7 @@ Module FOL.
   Arguments t_var {lang} _.
   Arguments t_func_app {lang} _ _.
 
-  Inductive wf_term (lang : language) : term lang -> Prop :=
+  Inductive wf_term {lang : language} : term lang -> Prop :=
     | wf_const : forall c : (constant_symbols lang), wf_term (t_const c)
     | wf_var : forall v : (var_symbols lang), wf_term (t_var v)
     | wf_func_app : forall (f : (func_symbols lang)) (args : list (term lang)),
@@ -34,22 +31,22 @@ Module FOL.
         Forall (@wf_term lang) args ->
         wf_term (t_func_app f args).
 
-  Fixpoint vars_occurence_term (lang : language) (t : term lang) : list (var_symbols lang) :=
+  Fixpoint vars_occurence_term {lang : language} (t : term lang) : list (var_symbols lang) :=
     match t with
     | t_const _ => []
     | t_var v => [v]
     | t_func_app _ lst => fold_right (fun t accum => (vars_occurence_term t) ++ accum) [] lst
     end.
 
-  Inductive formula (lang : language) : Type :=
+  Inductive formula {lang : language} : Type :=
     | pred_app : forall (p : pred_symbols lang),
-        list (term lang) -> formula lang
-    | f_not  : formula lang -> formula lang
-    | f_conj  : formula lang -> formula lang -> formula lang
-    | f_disj  : formula lang -> formula lang -> formula lang
-    | f_imp  : formula lang -> formula lang -> formula lang
-    | f_forall : (var_symbols lang) -> formula lang -> formula lang
-    | f_exists : (var_symbols lang) -> formula lang -> formula lang.
+        list (term lang) -> formula
+    | f_not  : formula -> formula
+    | f_conj  : formula -> formula -> formula
+    | f_disj  : formula -> formula -> formula
+    | f_imp  : formula -> formula -> formula
+    | f_forall : (var_symbols lang) -> formula -> formula
+    | f_exists : (var_symbols lang) -> formula -> formula.
 
   Theorem var_symbols_dec (lang : language) `{Heqd : EqDec (var_symbols lang)} : 
     forall x y : var_symbols lang, {x = y} + {x <> y}.
@@ -66,7 +63,7 @@ Module FOL.
       discriminate Heq.
   Qed.
 
-  Fixpoint free_vars_formula (lang : language) `{Heqd : EqDec (var_symbols lang)} (f : formula lang) : list (var_symbols lang) :=
+  Fixpoint free_vars_formula {lang : language} `{Heqd : EqDec (var_symbols lang)} (f : @formula lang) : list (var_symbols lang) :=
     match f with
     | pred_app _ arg => fold_right (fun t accum => (vars_occurence_term t) ++ accum) [] arg
     | f_not f' => free_vars_formula f'
@@ -78,8 +75,7 @@ Module FOL.
     end.
 
   (* x имеет свободное вхождение в формуле f *)
-  Fixpoint free_var_in_formula (lang : language)
-    (x : var_symbols lang) (f : formula lang) : Prop :=
+  Fixpoint free_var_in_formula {lang : language} (x : var_symbols lang) (f : @formula lang) : Prop :=
     match f with
     | pred_app _ args =>
         exists t, In t args /\ In x (vars_occurence_term t)
@@ -96,41 +92,190 @@ Module FOL.
         x <> y /\ free_var_in_formula x f'
     end.
 
-  Theorem free_vars_formula_correct (lang : language) `{Heqd : EqDec (var_symbols lang)} (f : formula lang) (x : var_symbols lang):
+  Lemma pred_app_list_prop {lang : language} `{Heqd : EqDec (var_symbols lang)} (x : var_symbols lang) (p : pred_symbols lang) (args : list (term lang)):
+      In x (free_vars_formula (pred_app p args)) ->
+      free_var_in_formula x (pred_app p args).
+  Proof.
+    intro H.
+    simpl.
+    simpl in H.
+    induction args as [|a args IH]; simpl.
+    - destruct H.
+    - apply in_app_or in H as [H | H].
+      + exists a.
+        split.
+        * left.
+          reflexivity.
+        * exact H.
+      + apply IH in H.
+        destruct H as [t [H1 H2]].
+        exists t.
+        split.
+        * right.
+          exact H1.
+        * exact H2.
+  Qed.
+
+  Lemma pred_app_prop_list {lang : language} `{Heqd : EqDec (var_symbols lang)} (x : var_symbols lang) (p : pred_symbols lang) (args : list (term lang)):
+      free_var_in_formula x (pred_app p args) ->
+      In x (free_vars_formula (pred_app p args)).
+  Proof.
+    intro H.
+    simpl.
+    simpl in H.
+    induction args as [|a args IH]; simpl.
+    - destruct H as [t [H1 _]].
+      simpl in H1.
+      exact H1.
+    - apply in_or_app.
+      destruct H as [t [H1 H2]].
+      simpl in H1.
+      destruct H1 as [H1 | H1].
+      + left.
+        rewrite <-H1 in H2.
+        exact H2.
+      + right.
+        apply IH.
+        exists t.
+        exact (conj H1 H2).
+  Qed.
+
+  Theorem free_vars_formula_correct {lang : language} `{Heqd : EqDec (var_symbols lang)} (f : @formula lang) (x : var_symbols lang):
       In x (free_vars_formula f) <-> free_var_in_formula x f.
   Proof.
     split ; intro H.
     - induction f as [
         p args
-      | f' IHf'
+      | f' IH
       | f1 IHf1 f2 IHf2
       | f1 IHf1 f2 IHf2
       | f1 IHf1 f2 IHf2
-      | y f' IHf'
-      | y f' IHf'
+      | y f' IH
+      | y f' IH
       ].
-      + simpl.
+      + exact (pred_app_list_prop x p args H).
+      + simpl in H.
+        specialize (IH H).
+        exact IH.
+      + simpl in H.
+        simpl.
+        apply in_app_or in H.
+        destruct H as [H | H].
+        * specialize (IHf1 H).
+          left.
+          exact IHf1.
+        * specialize (IHf2 H).
+          right.
+          exact IHf2.
+      + simpl in H.
+        simpl.
+        apply in_app_or in H.
+        destruct H as [H | H].
+        * specialize (IHf1 H).
+          left.
+          exact IHf1.
+        * specialize (IHf2 H).
+          right.
+          exact IHf2.
+      + simpl in H.
+        simpl.
+        apply in_app_or in H.
+        destruct H as [H | H].
+        * specialize (IHf1 H).
+          left.
+          exact IHf1.
+        * specialize (IHf2 H).
+          right.
+          exact IHf2.
+      + simpl in H.
+        simpl.
+        apply in_remove in H.
+        destruct H as [H1 H2].
+        specialize (IH H1).
+        exact (conj H2 IH).
+      + simpl in H.
+        simpl.
+        apply in_remove in H.
+        destruct H as [H1 H2].
+        specialize (IH H1).
+        exact (conj H2 IH).
+    - induction f as [
+        p args
+      | f' IH
+      | f1 IHf1 f2 IHf2
+      | f1 IHf1 f2 IHf2
+      | f1 IHf1 f2 IHf2
+      | y f' IH
+      | y f' IH
+      ].
+      + exact (pred_app_prop_list x p args H).
+      + simpl in H.
+        specialize (IH H).
+        exact IH.
+      + simpl in H.
+        simpl.
+        apply in_or_app.
+        destruct H as [H | H].
+        * specialize (IHf1 H).
+          left.
+          exact IHf1.
+        * specialize (IHf2 H).
+          right.
+          exact IHf2.
+      + simpl in H.
+        simpl.
+        apply in_or_app.
+        destruct H as [H | H].
+        * specialize (IHf1 H).
+          left.
+          exact IHf1.
+        * specialize (IHf2 H).
+          right.
+          exact IHf2.
+      + simpl in H.
+        simpl.
+        apply in_or_app.
+        destruct H as [H | H].
+        * specialize (IHf1 H).
+          left.
+          exact IHf1.
+        * specialize (IHf2 H).
+          right.
+          exact IHf2.
+      + simpl in H.
+        simpl.
+        destruct H as [H1 H2].
+        specialize (IH H2).
+        specialize (in_in_remove (var_symbols_dec lang) (free_vars_formula f') H1 IH) as H3.
+        exact H3.
+      + simpl in H.
+        simpl.
+        destruct H as [H1 H2].
+        specialize (IH H2).
+        specialize (in_in_remove (var_symbols_dec lang) (free_vars_formula f') H1 IH) as H3.
+        exact H3.
+  Qed.
 
-  Inductive wf_formula (lang : language) : formula lang -> Prop :=
+  Inductive wf_formula {lang : language} : @formula lang -> Prop :=
     | wf_pred_app : forall (p : pred_symbols lang) (args : list (term lang)),
         length args = pred_arity lang p ->
         Forall (@wf_term lang) args ->
         wf_formula (pred_app p args)
-    | wf_not  : forall f : formula lang, wf_formula f -> wf_formula (f_not f)
-    | wf_conj  : forall f g : formula lang, wf_formula f -> wf_formula g -> wf_formula (f_conj f g)
-    | wf_disj  : forall f g : formula lang, wf_formula f -> wf_formula g -> wf_formula (f_disj f g)
-    | wf_imp  : forall f g : formula lang, wf_formula f -> wf_formula g -> wf_formula (f_imp f g)
-    | wf_forall : forall (v : var_symbols lang) (f : formula lang), wf_formula f -> wf_formula (f_forall v f)
-    | wf_exists : forall (v : var_symbols lang) (f : formula lang), wf_formula f -> wf_formula (f_exists v f).
+    | wf_not  : forall f : @formula lang, wf_formula f -> wf_formula (f_not f)
+    | wf_conj  : forall f g : @formula lang, wf_formula f -> wf_formula g -> wf_formula (f_conj f g)
+    | wf_disj  : forall f g : @formula lang, wf_formula f -> wf_formula g -> wf_formula (f_disj f g)
+    | wf_imp  : forall f g : @formula lang, wf_formula f -> wf_formula g -> wf_formula (f_imp f g)
+    | wf_forall : forall (v : var_symbols lang) (f : @formula lang), wf_formula f -> wf_formula (f_forall v f)
+    | wf_exists : forall (v : var_symbols lang) (f : @formula lang), wf_formula f -> wf_formula (f_exists v f).
 
-  Fixpoint substitute (lang : language) `{Heqd : EqDec (var_symbols lang)} (t : term lang) (v : var_symbols lang) (t' : term lang) : term lang :=
+  Fixpoint substitute {lang : language} `{Heqd : EqDec (var_symbols lang)} (t : term lang) (v : var_symbols lang) (t' : term lang) : term lang :=
       match t with
       | t_const a => t_const a
       | t_var w => if (eqb w v) then t' else t
       | t_func_app f args => t_func_app f (map (fun x => substitute x v t') args)
       end.
 
-  Fixpoint substitute_f (lang : language) `{Heqd : EqDec (var_symbols lang)} (f : formula lang) (v : var_symbols lang) (t' : term lang) : formula lang :=
+  Fixpoint substitute_f {lang : language} `{Heqd : EqDec (var_symbols lang)} (f : @formula lang) (v : var_symbols lang) (t' : term lang) : @formula lang :=
       match f with
       | pred_app p args => pred_app p (map (fun x => substitute x v t') args)
       | f_not f' => f_not (substitute_f f' v t')
@@ -140,6 +285,34 @@ Module FOL.
       | f_forall x f' => if (eqb v x) then f else f_forall x (substitute_f f' v t')
       | f_exists x f' => if (eqb v x) then f else f_exists x (substitute_f f' v t')
       end.
+
+  Theorem substitute_wf_term {lang : language} `{Heqd : EqDec (var_symbols lang)} (t t' : term lang) (v : var_symbols lang):
+      wf_term t ->
+      wf_term t' ->
+      wf_term (substitute t v t').
+  Proof.
+    intros Ht Ht'.
+    induction t as [c | x | f args].
+    - simpl.
+      apply wf_const.
+    - simpl.
+      destruct (eqb x v) eqn:Heq.
+      + exact Ht'.
+      + apply wf_var.
+    - induction args as [|x args IH].
+      + simpl.
+        exact Ht.
+      + inversion Ht ; subst.
+        simpl in H1.
+        simpl.
+        apply wf_func_app.
+        * simpl.
+          rewrite <-H1.
+          rewrite map_length.
+          reflexivity.
+        * apply Forall_cons.
+          ** 
+
 
     Definition well_substitute 
 
