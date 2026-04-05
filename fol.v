@@ -1,5 +1,6 @@
 From Basis Require Import EqDec.
 From Coq Require Import Lists.List.
+From Coq Require Import Vector.
 From Coq Require Import Fin.
 Import ListNotations.
 
@@ -8,29 +9,61 @@ Module FOL.
   Record language : Type :=
   {
     constant_symbols : Type;
-    func_symbols : Type;
+    func_symbols : nat -> Type;
     pred_symbols : Type;
     var_symbols : Type;
-    func_arity : func_symbols -> nat;
     pred_arity : pred_symbols -> nat
   }.
 
   Inductive term (lang : language) : Type :=
   | t_const : constant_symbols lang -> term lang
   | t_var : var_symbols lang -> term lang
-  | t_func_app : func_symbols lang -> list (term lang) -> term lang.
+  | t_func_app : forall (n : nat), func_symbols lang n -> (Fin.t n -> term lang) -> term lang.
 
   Arguments t_const {lang} _.
   Arguments t_var {lang} _.
   Arguments t_func_app {lang} _ _.
 
-  Inductive wf_term {lang : language} : term lang -> Prop :=
-    | wf_const : forall c : (constant_symbols lang), wf_term (t_const c)
-    | wf_var : forall v : (var_symbols lang), wf_term (t_var v)
-    | wf_func_app : forall (f : (func_symbols lang)) (args : list (term lang)),
-        length args = func_arity lang f ->
-        Forall (@wf_term lang) args ->
-        wf_term (t_func_app f args).
+  Fixpoint vars_occurrence_terms {lang : language}
+           (n : nat) (f : Fin.t n -> term lang) {struct n}
+    : list (var_symbols lang) :=
+    match n as m return (Fin.t m -> term lang -> list (var_symbols lang)) with
+    | 0 => fun _ _ => []
+    | S n' =>
+        fun f' _ =>
+          vars_occurence_term (f' Fin.F1)
+          ++ vars_occurrence_terms n' (fun i => f' (Fin.FS i))
+    end f tt
+
+  with vars_occurence_term {lang : language} (t : term lang) : list (var_symbols lang) :=
+    match t with
+    | t_const _ => []
+    | t_var v => [v]
+    | t_func_app n _ f => vars_occurrence_terms n f
+    end.
+
+  Fixpoint vars_occurence_terms {lang : language}
+           {n : nat} (f : Fin.t n -> term lang) : list (var_symbols lang) :=
+    match n with
+    | 0 => []
+    | S n' =>
+        vars_occurence_term (f Fin.F1)
+        ++ vars_occurence_terms n' (fun i => f (Fin.FS i))
+    end
+
+  with vars_occurence_term {lang : language} (t : term lang) : list (var_symbols lang) :=
+    match t with
+    | t_const _ => []
+    | t_var v => [v]
+    | t_func_app n _ f => vars_occurence_terms n f
+    end.
+
+
+  Fixpoint fold_tuple {T : Type} {n : nat} (f: Fin.t n -> T) (accum : list T) : list T :=
+    match n with
+    | 0 => accum
+    | S n' => match n' with
+      | 0 => 
 
   Fixpoint vars_occurence_term {lang : language} (t : term lang) : list (var_symbols lang) :=
     match t with
