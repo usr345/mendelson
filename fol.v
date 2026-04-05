@@ -1,5 +1,6 @@
 From Basis Require Import EqDec.
 From Coq Require Import Lists.List.
+From Coq Require Import Fin.
 Import ListNotations.
 
 Module FOL.
@@ -261,18 +262,24 @@ Module FOL.
         length args = pred_arity lang p ->
         Forall (@wf_term lang) args ->
         wf_formula (pred_app p args)
-    | wf_not  : forall f : @formula lang, wf_formula f -> wf_formula (f_not f)
-    | wf_conj  : forall f g : @formula lang, wf_formula f -> wf_formula g -> wf_formula (f_conj f g)
-    | wf_disj  : forall f g : @formula lang, wf_formula f -> wf_formula g -> wf_formula (f_disj f g)
-    | wf_imp  : forall f g : @formula lang, wf_formula f -> wf_formula g -> wf_formula (f_imp f g)
-    | wf_forall : forall (v : var_symbols lang) (f : @formula lang), wf_formula f -> wf_formula (f_forall v f)
-    | wf_exists : forall (v : var_symbols lang) (f : @formula lang), wf_formula f -> wf_formula (f_exists v f).
+    | wf_not  : forall f : @formula lang, 
+        wf_formula f -> wf_formula (f_not f)
+    | wf_conj  : forall f g : @formula lang, 
+        wf_formula f -> wf_formula g -> wf_formula (f_conj f g)
+    | wf_disj  : forall f g : @formula lang, 
+        wf_formula f -> wf_formula g -> wf_formula (f_disj f g)
+    | wf_imp   : forall f g : @formula lang, 
+        wf_formula f -> wf_formula g -> wf_formula (f_imp f g)
+    | wf_forall : forall (x : var_symbols lang) (f : @formula lang), 
+        wf_formula f -> wf_formula (f_forall x f)
+    | wf_exists : forall (x : var_symbols lang) (f : @formula lang), 
+        wf_formula f -> wf_formula (f_exists x f).
 
-  Fixpoint substitute {lang : language} `{Heqd : EqDec (var_symbols lang)} (t : term lang) (v : var_symbols lang) (t' : term lang) : term lang :=
+  Fixpoint substitute {lang : language} `{Heqd : EqDec (var_symbols lang)} (t : term lang) (x : var_symbols lang) (t' : term lang) : term lang :=
       match t with
       | t_const a => t_const a
-      | t_var w => if (eqb w v) then t' else t
-      | t_func_app f args => t_func_app f (map (fun x => substitute x v t') args)
+      | t_var y => if (eqb y x) then t' else t
+      | t_func_app f args => t_func_app f (map (fun y => substitute y x t') args)
       end.
 
   Fixpoint substitute_f {lang : language} `{Heqd : EqDec (var_symbols lang)} (f : @formula lang) (v : var_symbols lang) (t' : term lang) : @formula lang :=
@@ -285,6 +292,78 @@ Module FOL.
       | f_forall x f' => if (eqb v x) then f else f_forall x (substitute_f f' v t')
       | f_exists x f' => if (eqb v x) then f else f_exists x (substitute_f f' v t')
       end.
+
+Theorem substitute_wf_term
+  {lang : language} `{Heqd : EqDec (var_symbols lang)}
+  (t t' : term lang) (x : var_symbols lang) :
+  wf_term t ->
+  wf_term t' ->
+  wf_term (substitute t x t').
+Proof.
+  revert t' x.
+  induction t using term_ind.
+  - intros t' x Ht' Hwf.
+    simpl.
+    apply wf_const.
+  - (* t_var *)
+    intros t' x Ht' Hwf.
+    destruct (eqb v x) eqn:Heq.
+    + apply eqb_eq in Heq. 
+      rewrite <-Heq.
+      simpl.
+      rewrite eqb_reflexive.
+      exact Hwf.
+    + simpl.
+      rewrite Heq.
+      apply wf_var.
+  - (* t_func_app *)
+    intros t x Hwf Ht.
+    inversion Hwf; subst.
+    simpl.
+    apply wf_func_app.
+    + rewrite map_length. 
+      exact H1.
+    + induction l as [|a l'].
+      * apply Forall_nil.
+      * apply Forall_cons.
+        ** inversion H2; subst.
+
+      * intros Ht Hwf H1.
+        apply Forall_nil.
+      * intros Ht Hwf H1.
+        apply Forall_cons.
+        -- simpl in Hwf.
+
+           [left; reflexivity | exact Ht' | exact Ha].
+        -- (* tail *)
+           exact IHargs.
+Qed.
+
+  Theorem substitute_wf_term
+    {lang : language} `{Heqd : EqDec (var_symbols lang)}
+    (t t' : term lang) (v : var_symbols lang) :
+    wf_term t ->
+    wf_term t' ->
+    wf_term (substitute t v t').
+  Proof.
+    intros Hwf.
+    revert t' v.
+    induction Hwf as
+      [c
+      |x
+      |f args Hlen Hargs IHargs]; intros t' v Ht'; simpl.
+    - constructor.
+    - destruct (eqb x v) eqn:Heq.
+      + apply eqb_eq in Heq. subst. exact Ht'.
+      + constructor.
+    - constructor.
+      + rewrite map_length. exact Hlen.
+      + induction IHargs as [|a args Ha Hrest IHrest]; simpl.
+        * constructor.
+        * constructor.
+          -- apply Ha. exact Ht'.
+          -- exact IHrest.
+  Qed.
 
   Theorem substitute_wf_term {lang : language} `{Heqd : EqDec (var_symbols lang)} (t t' : term lang) (v : var_symbols lang):
       wf_term t ->
