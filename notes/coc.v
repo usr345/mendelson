@@ -244,6 +244,14 @@ Section CoC_theorems.
         fun (Hor : Or_CoC A B) =>
           Hor False_CoC (and_elim1 Hand) (and_elim2 Hand).
 
+  Definition frobenius_1 (A : Type) (P : A -> Prop) (Q : Prop) :
+  Ex A (fun x => And_CoC (P x) Q) -> And_CoC (Ex A P) Q :=
+  fun (Hex : Ex A (fun x => And_CoC (P x) Q)) =>
+    Hex (And_CoC (Ex A P) Q)
+      (fun x (Hpq : And_CoC (P x) Q) =>
+        let px := and_elim1 Hpq in
+        let q := and_elim2 Hpq in
+        and_intro (ex_intro A P x px) q).
 (*
   Definition and_or_distr (A B C : Prop) : And_CoC A (Or_CoC B C) -> Or_CoC (And_CoC A B) (And_CoC A C)
   Definition f_equal_CoC (U V : Type) (f : U -> V) (x y : U) :
