@@ -29,6 +29,20 @@ Module CoC.
     (H_exists : Ex A P)                    (* Γ ⊢ ∃x:A, P x *)
     (H_goal : forall x : A, P x -> C)      (* Γ ⊢ ∀x:A, P x → C *)
     : C := H_exists C H_goal.
+
+  Definition Bool_CoC : Type := forall P : Type, P -> P -> P.
+
+  Definition true_CoC : Bool_CoC := fun (P : Type) (t f : P) => t.
+  Definition false_CoC : Bool_CoC := fun (P : Type) (t f : P) => f.
+
+  Definition andb_CoC (b1 b2 : Bool_CoC) : Bool_CoC :=
+    fun (P : Type) (t f : P) => b1 P (b2 P t f) f.
+
+  Definition orb_CoC (b1 b2 : Bool_CoC) : Bool_CoC :=
+    fun (P : Type) (t f : P) => b1 P t (b2 P t f).
+
+  Definition notb_CoC (b : Bool_CoC) : Bool_CoC :=
+    fun (P : Type) (t f : P) => b P f t.
 End CoC.
 
 Section CoC_example.
@@ -221,8 +235,7 @@ Section CoC_theorems.
       fun (C : Prop) (H : (not_CoC A) -> (not_CoC B) -> C) =>
         H
           (fun (a : A) => NotOr (or_intro_left A B a))
-          (fun (b : B) => NotOr (or_intro_right A B b))
-        .
+          (fun (b : B) => NotOr (or_intro_right A B b)).
 
   Definition deMorgan_disj_back : forall (A B : Prop),
     And_CoC (not_CoC A) (not_CoC B) -> not_CoC (Or_CoC A B) :=
@@ -230,4 +243,21 @@ Section CoC_theorems.
       fun (Hand : And_CoC (not_CoC A) (not_CoC B)) =>
         fun (Hor : Or_CoC A B) =>
           Hor False_CoC (and_elim1 Hand) (and_elim2 Hand).
+
+(*
+  Definition and_or_distr (A B C : Prop) : And_CoC A (Or_CoC B C) -> Or_CoC (And_CoC A B) (And_CoC A C)
+  Definition f_equal_CoC (U V : Type) (f : U -> V) (x y : U) :
+    Eq_CoC U x y -> Eq_CoC V (f x) (f y) :=
+
+Задача: Докажи через терм инволютивность отрицания для булевых значений: forall b : Bool_CoC, Eq_CoC Bool_CoC (notb_CoC (notb_CoC b)) b. Это потребует аккуратного применения b к соответствующим аргументам.
+4. Закон Фробениуса (Часть 1)
+
+Это классическая теорема из логики предикатов, которая в CoC доказывается напрямую.
+
+Теорема: (∃x:A,P(x)∧Q)→(∃x:A,P(x))∧Q
+Coq
+
+  Следующий вызов: Попробуй формализовать числа Чёрча (Nat_CoC) и операцию plus_CoC. Доказательство того, что plus_CoC zero n = n через прямой терм — это отличная тренировка «умственной выносливости».
+ *)
+
 End CoC_theorems.
