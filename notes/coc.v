@@ -18,14 +18,14 @@ Module CoC.
   Definition Ex (A : Type) (B : A -> Prop) : Prop :=
     forall C : Prop, (forall x : A, B x -> C) -> C.
 
-  Definition ex_intro (A : Type) (B : A -> Prop) (t : A) (p : B t) : Ex A B :=
+  Definition ex_intro {A : Type} {B : A -> Prop} (t : A) (p : B t) : Ex A B :=
     fun (C : Prop) => fun (H : forall x : A, B x -> C) => H t p.
 
 (*
   Γ ⊢ t : ∃x : A, B Γ, x : A, p : B ⊢ u : C x !∈ Γ, C
   Γ ⊢ t C (fun (x : A)(p : B) ⇒ u) : C
 *)
-  Definition ex_elim (A : Type) (P : A -> Prop) (C : Prop)
+  Definition ex_elim {A : Type} {P : A -> Prop} {C : Prop}
     (H_exists : Ex A P)                    (* Γ ⊢ ∃x:A, P x *)
     (H_goal : forall x : A, P x -> C)      (* Γ ⊢ ∀x:A, P x → C *)
     : C := H_exists C H_goal.
@@ -66,7 +66,7 @@ Section CoC_example.
   Lemma someone_is_happy : Ex Person is_happy.
   Proof.
     (* This is exactly applying the term: fun C H => H bob bob_is_happy *)
-    apply (ex_intro Person is_happy bob bob_is_happy).
+    apply (@ex_intro Person is_happy bob bob_is_happy).
   Qed.
 End CoC_example.
 
@@ -244,8 +244,85 @@ Section CoC_theorems.
         fun (Hor : Or_CoC A B) =>
           Hor False_CoC (and_elim1 Hand) (and_elim2 Hand).
 
-  Definition frobenius_1 (A : Type) (P : A -> Prop) (Q : Prop) :
-  Ex A (fun x => And_CoC (P x) Q) -> And_CoC (Ex A P) Q :=
+  Theorem frobenius (A : Type) (P : A -> Prop) (Q : Prop) :
+    Ex A (fun x => And_CoC (P x) Q) -> And_CoC (Ex A P) Q.
+  Proof.
+    intro Hex.
+    unfold And_CoC.
+    refine (fun (C : Prop) (g : Ex A P -> Q -> C) => ?[C]).
+    unfold Ex in Hex.
+    specialize (Hex C).
+    unfold Ex in g.
+    refine (Hex _).
+    refine (fun (x : A) (Hand : And_CoC (P x) Q) => _).
+    unfold And_CoC in Hand.
+    specialize (Hand C).
+    refine (Hand _).
+    refine (fun (Hp : P x) (Hq : Q) => _).
+    apply g.
+    - intros C0 H1.
+      specialize (H1 x).
+      specialize (H1 Hp).
+      exact H1.
+    - exact Hq.
+  Qed.
+ 
+ Definition frobenius_dir (A : Type) (P : A -> Prop) (Q : Prop) :
+    Ex A (fun x => And_CoC (P x) Q) -> And_CoC (Ex A P) Q :=
+    fun (Hex : Ex A (fun x : A => And_CoC (P x) Q)) =>
+      Hex (And_CoC (Ex A P) Q)
+        (fun (x : A) (Hpq : And_CoC (P x) Q) =>
+           let px := and_elim1 Hpq in
+           let q := and_elim2 Hpq in
+           and_intro (ex_intro x px) q).
+
+ Definition frobenius_dir1 (A : Type) (P : A -> Prop) (Q : Prop) :
+   Ex A (fun x => And_CoC (P x) Q) -> And_CoC (Ex A P) Q :=
+   fun (Hex : Ex A (fun x : A => And_CoC (P x) Q)) =>
+     Hex (And_CoC (Ex A P) Q) (
+         fun (x : A) (Hpq : And_CoC (P x) Q) =>
+           let Px := and_elim1 Hpq in
+           let q := and_elim2 Hpq in
+           let exP := ex_intro x Px in
+           and_intro exP q
+       ).
+
+ Definition and_or_distr (A B C : Prop) : And_CoC A (Or_CoC B C) -> Or_CoC (And_CoC A B) (And_CoC A C) :=
+   
+ 
+Definition Ex (A : Type) (B : A -> Prop) : Prop :=
+    forall C : Prop, (forall x : A, B x -> C) -> C.
+
+  
+Definition ex_intro {A : Type} {B : A -> Prop} (t : A) (p : B t) : Ex A B :=
+    fun (C : Prop) => fun (H : forall x : A, B x -> C) => H t p.
+                          
+Definition and_elim1 : forall {A B : Prop}, And_CoC A B -> A :=
+    fun (A B : Prop) =>
+      fun (Hand : And_CoC A B) => Hand A (fun (a : A) (b : B) => a).
+
+  Lemma and_proj2 (A B : Prop) : And_CoC A B -> B.
+  Proof.
+    intro Hand.
+    unfold And_CoC in Hand.
+    specialize (Hand B).
+    apply Hand.
+    intros _ HB.
+    exact HB.
+  Qed.
+
+  Definition and_elim2 : forall {A B : Prop}, And_CoC A B -> B :=
+    fun (A B : Prop) =>
+     fun (Hand : And_CoC A B) => Hand B (fun (a : A) (b : B) => b).
+
+  Definition and_intro : forall {A B : Prop}, A -> B -> And_CoC A B :=
+    fun (A B : Prop) =>
+      fun (a : A) (b : B) =>
+        fun (C : Prop) (HAB_C : A -> B -> C) => HAB_C a b.
+
+  
+
+    
   fun (Hex : Ex A (fun x => And_CoC (P x) Q)) =>
     Hex (And_CoC (Ex A P) Q)
       (fun x (Hpq : And_CoC (P x) Q) =>
