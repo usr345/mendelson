@@ -11,7 +11,7 @@ Module CoC.
   Definition Or_CoC (A B : Prop) : Prop :=
     forall (C : Prop), (A -> C) -> (B -> C) -> C.
 
-  Definition Eq_CoC (A : Type) (x y : A) : Prop :=
+  Definition Eq_CoC {A : Type} (x y : A) : Prop :=
     forall (P : A -> Prop), P x -> P y.
 
   (* Ex - это свойство предиката B на универсуме A, что B не пусто *)
@@ -43,6 +43,32 @@ Module CoC.
 
   Definition notb_CoC (b : Bool_CoC) : Bool_CoC :=
     fun (P : Type) (t f : P) => b P f t.
+
+  Lemma Eq_CoC_subst :
+    forall (A : Type) (x y : A) (P : A -> Prop),
+      Eq_CoC x y ->
+      P x ->
+      P y.
+  Proof.
+    intros A x y P H Px.
+    apply H.
+    exact Px.
+  Qed.
+
+  Definition eq_trans {U : Type} {x y z : U} :
+    Eq_CoC x y -> Eq_CoC y z -> Eq_CoC x z :=
+    fun (Heq1 : Eq_CoC x y) (Heq2 : Eq_CoC y z) =>
+    fun (P : U -> Prop) (Px : P x) => Heq2 P (Heq1 P Px).
+
+  Lemma eq_congr :
+    forall {A B : Type} (f : A -> B) x y,
+      Eq_CoC x y -> Eq_CoC (f x) (f y).
+  Proof.
+    intros A B f x y H P Hfx.
+    apply (H (fun a : A => P (f a))).
+    exact Hfx.
+  Qed.
+ 
 End CoC.
 
 Section CoC_example.
@@ -124,7 +150,7 @@ Section CoC_theorems.
       fun (a : A) (b : B) =>
         fun (C : Prop) (HAB_C : A -> B -> C) => HAB_C a b.
 
-  Lemma and_comm (A B : Prop) : And_CoC A B -> And_CoC B A.
+  Lemma and_comm {A B : Prop} : And_CoC A B -> And_CoC B A.
   Proof.
     intro Hand.
     unfold And_CoC in Hand.
@@ -136,7 +162,11 @@ Section CoC_theorems.
     exact H.
   Qed.
 
-  Definition and_comm_dir (A B : Prop) : And_CoC A B -> And_CoC B A :=
+  Definition ex_falso (A : Prop) : A -> not_CoC A -> False_CoC :=
+    fun (a : A) (na : not_CoC A) =>
+      na a.
+  
+  Definition and_comm_dir {A B : Prop} : And_CoC A B -> And_CoC B A :=
     fun (Hand : And_CoC A B) =>
       fun (C : Prop) (f : B -> A -> C) =>
         Hand C (fun (a : A) (b : B) => f b a).
@@ -188,7 +218,7 @@ Section CoC_theorems.
     fun (A : Prop) (Hand : And_CoC A A) =>
       Hand A (fun (a _ : A) => a).
 
-  Lemma eq_sym (U : Type) (x y : U) : Eq_CoC U x y -> Eq_CoC U y x.
+  Lemma eq_sym (U : Type) (x y : U) : Eq_CoC x y -> Eq_CoC y x.
   Proof.
     unfold Eq_CoC.
     intros Hxy P Py.
@@ -197,11 +227,6 @@ Section CoC_theorems.
       exact H.
     - exact Py.
   Qed.
-
-  Definition eq_trans_dir (U : Type) (x y z : U) :
-    Eq_CoC U x y -> Eq_CoC U y z -> Eq_CoC U x z :=
-    fun (Heq1 : Eq_CoC U x y) (Heq2 : Eq_CoC U y z) =>
-      fun (P : U -> Prop) (Px : P x) => Heq2 P (Heq1 P Px).
 
   Definition contrapos (A B : Prop) : (A -> B) -> not_CoC B -> not_CoC A :=
     fun (Impl : A -> B) (notB : not_CoC B) =>
@@ -229,7 +254,7 @@ Section CoC_theorems.
       exact B_C0.
   Qed.
 
-  Definition deMorgan_disj_dir (A B : Prop) :
+  Definition deMorgan_disj_dir {A B : Prop} :
     not_CoC (Or_CoC A B) -> And_CoC (not_CoC A) (not_CoC B) :=
     fun (NotOr : not_CoC (Or_CoC A B)) =>
       fun (C : Prop) (H : (not_CoC A) -> (not_CoC B) -> C) =>
@@ -237,7 +262,7 @@ Section CoC_theorems.
           (fun (a : A) => NotOr (or_intro_left A B a))
           (fun (b : B) => NotOr (or_intro_right A B b)).
 
-  Definition deMorgan_disj_back : forall (A B : Prop),
+  Definition deMorgan_disj_back : forall {A B : Prop},
     And_CoC (not_CoC A) (not_CoC B) -> not_CoC (Or_CoC A B) :=
     fun (A B : Prop) =>
       fun (Hand : And_CoC (not_CoC A) (not_CoC B)) =>
@@ -288,47 +313,22 @@ Section CoC_theorems.
        ).
 
  Definition and_or_distr (A B C : Prop) : And_CoC A (Or_CoC B C) -> Or_CoC (And_CoC A B) (And_CoC A C) :=
-   
+   fun (H : And_CoC A (Or_CoC B C)) =>
+          let a := and_elim1 H in
+          let b_or_c := and_elim2 H in
+          let case1 := (fun b : B =>
+                         let a_and_b := and_intro a b in
+                         or_intro_left (And_CoC A B) (And_CoC A C) a_and_b
+                      ) in
+          let case2 := (fun c : C =>
+                         let a_and_c := and_intro a c in
+                         or_intro_right (And_CoC A B) (And_CoC A C) a_and_c
+                      ) in
+          b_or_c (Or_CoC (And_CoC A B) (And_CoC A C)) case1 case2.
  
-Definition Ex (A : Type) (B : A -> Prop) : Prop :=
-    forall C : Prop, (forall x : A, B x -> C) -> C.
-
-  
-Definition ex_intro {A : Type} {B : A -> Prop} (t : A) (p : B t) : Ex A B :=
-    fun (C : Prop) => fun (H : forall x : A, B x -> C) => H t p.
-                          
-Definition and_elim1 : forall {A B : Prop}, And_CoC A B -> A :=
-    fun (A B : Prop) =>
-      fun (Hand : And_CoC A B) => Hand A (fun (a : A) (b : B) => a).
-
-  Lemma and_proj2 (A B : Prop) : And_CoC A B -> B.
-  Proof.
-    intro Hand.
-    unfold And_CoC in Hand.
-    specialize (Hand B).
-    apply Hand.
-    intros _ HB.
-    exact HB.
-  Qed.
-
-  Definition and_elim2 : forall {A B : Prop}, And_CoC A B -> B :=
-    fun (A B : Prop) =>
-     fun (Hand : And_CoC A B) => Hand B (fun (a : A) (b : B) => b).
-
-  Definition and_intro : forall {A B : Prop}, A -> B -> And_CoC A B :=
-    fun (A B : Prop) =>
-      fun (a : A) (b : B) =>
-        fun (C : Prop) (HAB_C : A -> B -> C) => HAB_C a b.
-
-  
-
-    
-  fun (Hex : Ex A (fun x => And_CoC (P x) Q)) =>
-    Hex (And_CoC (Ex A P) Q)
-      (fun x (Hpq : And_CoC (P x) Q) =>
-        let px := and_elim1 Hpq in
-        let q := and_elim2 Hpq in
-        and_intro (ex_intro A P x px) q).
+  Definition ex1 (A : Prop) : not_CoC (not_CoC (Or_CoC (not_CoC A) A)) := fun (H : not_CoC (Or_CoC (not_CoC A) A)) =>
+                                                                           let conj1 := (deMorgan_disj_dir H) in                                                            (uncurry (ex_falso (not_CoC A))) (and_comm_dir conj1).
+ 
 (*
   Definition and_or_distr (A B C : Prop) : And_CoC A (Or_CoC B C) -> Or_CoC (And_CoC A B) (And_CoC A C)
   Definition f_equal_CoC (U V : Type) (f : U -> V) (x y : U) :
@@ -346,3 +346,67 @@ Coq
  *)
 
 End CoC_theorems.
+
+Section Peano.
+  Import CoC.
+  
+  Variable N : Type.
+  Variable O : N.
+  Variable S : N -> N.
+  Variable add : N -> N -> N.
+  Variable mul : N -> N -> N.
+
+  Variable N_ind :
+    forall P : N -> Prop, P O -> (forall n : N, P n -> P (S n)) -> forall n : N, P n.
+  Variable S_not_O : forall n : N, not_CoC (Eq_CoC O (S n)).
+  Variable S_inj :  forall n m : N, Eq_CoC (S n) (S m) -> Eq_CoC n m.
+  Variable add_O_right : forall n : N,  Eq_CoC (add n O) n.
+  Variable add_S_right : forall n m : N, Eq_CoC (add n (S m)) (S (add n m)).
+  Variable mul_O_right : forall n : N, Eq_CoC (mul n O) O.
+  Variable mul_S_right : forall n m : N, Eq_CoC (mul n (S m)) (add (mul n m) n).
+
+  (* Lemma Eq_CoC_subst : *)
+  (*   forall (A : Type) (x y : A) (P : A -> Prop), *)
+  (*     Eq_CoC x y -> *)
+  (*     P x -> *)
+  (*     P y. *)
+  
+  Theorem add_0_left : forall n : N,  Eq_CoC (add O n) n.
+  Proof.
+    apply N_ind.
+    - specialize (add_O_right O) as H0.
+      exact H0.
+    - intros n H0n.
+      specialize (add_S_right O n) as H.
+      specialize (eq_congr S (add O n) n H0n) as Heq1.
+      specialize (eq_congr S (add O n) n H0n) as Heq2.
+      Check eq_trans.
+      specialize (eq_trans ).
+
+End Peano.
+
+Module ChurchBool.
+  Import CoC.
+
+  Theorem and_comm (b1 b2 : Bool_CoC) : Eq_CoC Bool_CoC (andb_CoC b1 b2) (andb_CoC b2 b1).
+  Proof.
+    unfold Eq_CoC.
+    intros P Hand.
+    unfold andb_CoC in Hand.
+    unfold andb_CoC.
+    unfold Bool_CoC in P.
+End ChurchBool.
+
+  Definition Bool_CoC : Type := forall P : Type, P -> P -> P.
+
+  Definition true_CoC : Bool_CoC := fun (P : Type) (t f : P) => t.
+  Definition false_CoC : Bool_CoC := fun (P : Type) (t f : P) => f.
+
+  Definition andb_CoC (b1 b2 : Bool_CoC) : Bool_CoC :=
+    fun (P : Type) (t f : P) => b1 P (b2 P t f) f.
+
+  Definition orb_CoC (b1 b2 : Bool_CoC) : Bool_CoC :=
+    fun (P : Type) (t f : P) => b1 P t (b2 P t f).
+
+  Definition notb_CoC (b : Bool_CoC) : Bool_CoC :=
+    fun (P : Type) (t f : P) => b P f t.
