@@ -68,7 +68,7 @@ Module CoC.
     apply (H (fun a : A => P (f a))).
     exact Hfx.
   Qed.
- 
+
 End CoC.
 
 Section CoC_example.
@@ -165,7 +165,7 @@ Section CoC_theorems.
   Definition ex_falso (A : Prop) : A -> not_CoC A -> False_CoC :=
     fun (a : A) (na : not_CoC A) =>
       na a.
-  
+
   Definition and_comm_dir {A B : Prop} : And_CoC A B -> And_CoC B A :=
     fun (Hand : And_CoC A B) =>
       fun (C : Prop) (f : B -> A -> C) =>
@@ -291,7 +291,7 @@ Section CoC_theorems.
       exact H1.
     - exact Hq.
   Qed.
- 
+
  Definition frobenius_dir (A : Type) (P : A -> Prop) (Q : Prop) :
     Ex A (fun x => And_CoC (P x) Q) -> And_CoC (Ex A P) Q :=
     fun (Hex : Ex A (fun x : A => And_CoC (P x) Q)) =>
@@ -325,10 +325,10 @@ Section CoC_theorems.
                          or_intro_right (And_CoC A B) (And_CoC A C) a_and_c
                       ) in
           b_or_c (Or_CoC (And_CoC A B) (And_CoC A C)) case1 case2.
- 
+
   Definition ex1 (A : Prop) : not_CoC (not_CoC (Or_CoC (not_CoC A) A)) := fun (H : not_CoC (Or_CoC (not_CoC A) A)) =>
                                                                            let conj1 := (deMorgan_disj_dir H) in                                                            (uncurry (ex_falso (not_CoC A))) (and_comm_dir conj1).
- 
+
 (*
   Definition and_or_distr (A B C : Prop) : And_CoC A (Or_CoC B C) -> Or_CoC (And_CoC A B) (And_CoC A C)
   Definition f_equal_CoC (U V : Type) (f : U -> V) (x y : U) :
@@ -347,19 +347,29 @@ Coq
 
 End CoC_theorems.
 
-Section Peano.
+Module PeanoNat.
   Import CoC.
-  
+
   Variable N : Type.
+  (* 0 есть натуральное число *)
   Variable O : N.
+  (* Для любого натурального числа n существует другое натуральное число (S n), называемое
+     непосредственно следующим за n *)
   Variable S : N -> N.
+  (* Для любого натурального n, 0 != S n *)
+  Variable S_not_O : forall n : N, not_CoC (Eq_CoC O (S n)).
+
+  (* S инъективна *)
+  Variable S_inj :
+    forall x y : N, Eq_CoC (S x) (S y) -> Eq_CoC x y.
+
+  (* Принцип индукции *)
+  Variable N_ind :
+    forall P : N -> Prop, P O -> (forall n : N, P n -> P (S n)) -> forall n : N, P n.
+
   Variable add : N -> N -> N.
   Variable mul : N -> N -> N.
 
-  Variable N_ind :
-    forall P : N -> Prop, P O -> (forall n : N, P n -> P (S n)) -> forall n : N, P n.
-  Variable S_not_O : forall n : N, not_CoC (Eq_CoC O (S n)).
-  Variable S_inj :  forall n m : N, Eq_CoC (S n) (S m) -> Eq_CoC n m.
   Variable add_O_right : forall n : N,  Eq_CoC (add n O) n.
   Variable add_S_right : forall n m : N, Eq_CoC (add n (S m)) (S (add n m)).
   Variable mul_O_right : forall n : N, Eq_CoC (mul n O) O.
@@ -370,7 +380,7 @@ Section Peano.
   (*     Eq_CoC x y -> *)
   (*     P x -> *)
   (*     P y. *)
-  
+
   Theorem add_0_left : forall n : N,  Eq_CoC (add O n) n.
   Proof.
     apply N_ind.
@@ -383,7 +393,7 @@ Section Peano.
       Check eq_trans.
       specialize (eq_trans ).
 
-End Peano.
+End PeanoNat.
 
 Module ChurchBool.
   Import CoC.
