@@ -55,6 +55,21 @@ Module CoC.
     exact Px.
   Qed.
 
+  Definition eq_refl {U : Type} {x : U} : Eq_CoC x x :=
+    fun (P : U -> Prop) (Px : P x) => Px.
+
+  Lemma eq_symm {U : Type} {x y : U} : Eq_CoC x y -> Eq_CoC y x.
+  Proof.
+    unfold Eq_CoC.
+    intro Heq.
+    intros P Py.
+    specialize (Heq (fun z => P z -> P x)).
+    simpl in Heq.
+    specialize (Heq (fun x => x)).
+    specialize (Heq Py).
+    exact Heq.
+  Qed.
+  
   Definition eq_trans {U : Type} {x y z : U} :
     Eq_CoC x y -> Eq_CoC y z -> Eq_CoC x z :=
     fun (Heq1 : Eq_CoC x y) (Heq2 : Eq_CoC y z) =>
@@ -347,7 +362,7 @@ Coq
 
 End CoC_theorems.
 
-Module PeanoNat.
+Section PeanoNat.
   Import CoC.
 
   Variable N : Type.
@@ -375,13 +390,36 @@ Module PeanoNat.
   Variable mul_O_right : forall n : N, Eq_CoC (mul n O) O.
   Variable mul_S_right : forall n m : N, Eq_CoC (mul n (S m)) (add (mul n m) n).
 
+  Declare Scope peano_nat_scope.
+  Declare Custom Entry peano_nat_view.
+
+  Notation "x" := x (x global, in custom peano_nat_view at level 0).
+  Notation "( p )" := p (p custom peano_nat_view at level 5, in custom peano_nat_view at level 0).
+  Notation "'$' p '$'" := p (format "'$' p '$'", p custom peano_nat_view at level 5).
+  Notation "'0'" := O (in custom peano_nat_view at level 0, format "0").
+
+  Notation "'+1' x" := (S x)
+                        (in custom peano_nat_view at level 2,
+                            x custom peano_nat_view at level 2,
+                            format "+1  x").
+  
+  Notation "x + y" := (add x y)
+                        (in custom peano_nat_view at level 1,
+                            y custom peano_nat_view at level 1,
+                            format "x  +  y").
+
+  Notation "x * y" := (mul x y)
+                        (in custom peano_nat_view at level 2,
+                            y custom peano_nat_view at level 2,
+                            format "x  *  y").
+  
   (* Lemma Eq_CoC_subst : *)
   (*   forall (A : Type) (x y : A) (P : A -> Prop), *)
   (*     Eq_CoC x y -> *)
   (*     P x -> *)
   (*     P y. *)
 
-  Theorem add_0_left : forall n : N,  Eq_CoC (add O n) n.
+  Theorem add_0_left : forall n : N, Eq_CoC $0 + n$ n.
   Proof.
     apply N_ind.
     - specialize (add_O_right O) as H0.
@@ -389,10 +427,128 @@ Module PeanoNat.
     - intros n H0n.
       specialize (add_S_right O n) as H.
       specialize (eq_congr S (add O n) n H0n) as Heq1.
-      specialize (eq_congr S (add O n) n H0n) as Heq2.
-      Check eq_trans.
-      specialize (eq_trans ).
+      specialize (eq_trans H Heq1) as Heq2.
+      exact Heq2.
+  Qed.
 
+  Theorem add_S_left : forall x y : N, Eq_CoC (add (S x) y) (S (add x y)).
+  Proof.
+    intros x y.
+    revert x.
+    apply N_ind with
+      (P := fun y => forall x : N, Eq_CoC (add (S x) y) (S $x+y$))
+      (n := y).
+    - intro x.
+      specialize (add_O_right x) as Heq1.
+      specialize (eq_congr S $x + O$ x Heq1) as Heq2.
+      apply eq_symm in Heq2.
+      apply @eq_trans with
+        (y := (S x)).
+      2 : { exact Heq2. }
+      specialize (add_O_right (S x)) as Heq3.
+      exact Heq3.
+    - intros n IH.
+      intro x.
+      specialize (add_S_right (S x) n) as Heq1.
+      apply eq_symm.
+      apply @eq_trans with
+        (y := (S (add (S x) n))).
+      2 : {
+        apply eq_symm.
+        exact Heq1.
+      }
+      specialize (IH x).
+      apply eq_symm in IH.
+      specialize (eq_congr S (add x (S n)) (add (S x) n)) as Himpl.
+      apply Himpl.
+      apply @eq_trans with
+        (y := S $x+n$).
+      2 : {
+        exact IH.
+      }
+      specialize (add_S_right x n) as Heq2.
+      exact Heq2.
+  Qed.
+      
+  Theorem add_comm : forall x y : N, Eq_CoC $x + y$ $y + x$.
+  Proof.
+    intro x.
+    apply N_ind with
+      (P := fun x => forall y : N, Eq_CoC $x+y$ $y+x$)
+      (n := x).
+    - intro y.
+      unfold Eq_CoC.
+      intros P H0y.
+      specialize (add_O_right y) as Heq1.
+      apply eq_symm in Heq1.
+      apply Heq1.
+      specialize (add_0_left y) as Heq2.
+      unfold Eq_CoC in Heq2.
+      specialize (Heq2 P H0y).
+      exact Heq2.
+    - intros n IH.
+      intro y.
+      specialize (add_S_right y n) as Heq1.
+      apply eq_symm in Heq1.
+      apply @eq_trans with
+        (y := S $y+n$).
+      2 : { exact Heq1. }
+      specialize (add_S_left n y) as Heq2.
+      apply @eq_trans with
+        (y := S $n+y$).
+      1 : { exact Heq2. }
+      specialize (IH y).
+      apply eq_congr.
+      exact IH.
+  Qed.
+  
+  (* Variable N_ind : *)
+    (* forall P : N -> Prop, P O -> (forall n : N, P n -> P (S n)) -> forall n : N, P n. *)
+  Unset Printing Notations.
+  Theorem add_assoc : forall x y z : N, Eq_CoC $(x + y) + z$ $x + (y + z)$.
+  Proof.
+    intro x.
+    apply N_ind with
+      (P := fun x => forall y z : N, Eq_CoC $(x + y) + z$ $x + (y + z)$)
+      (n := x).
+    - (* x = O *)
+      intros y z.
+      unfold Eq_CoC.
+      intros P H.
+      specialize (add_0_left y) as Heq1.
+      specialize (eq_congr (fun n : N => add n z) (add O y) y) as Heq2.
+      specialize (Heq2 Heq1).
+      cbn in Heq2.
+      specialize (add_0_left (add y z)) as Heq3.
+      apply eq_symm in Heq3.
+      unfold Eq_CoC in Heq3.
+      specialize (Heq3 P).
+      apply Heq3.
+      apply Heq2.
+      exact H.
+    - (* x = S x *)
+      intros n IH.
+      intros y z.
+      specialize (IH y z).
+      specialize (add_S_left n (add y z)) as Heq1.
+      apply eq_symm in Heq1.
+      apply @eq_trans with
+        (y := S (add n (add y z))).
+      2 : exact Heq1.
+      specialize (add_S_left n y) as H2.
+      specialize (eq_congr (fun n : N => add n z) (add (S n) y) (S (add n y))) as H3.
+      cbn in H3.
+      specialize (H3 H2).
+      apply @eq_trans with
+        (y := add (S (add n y)) z).
+      1 : exact H3.
+      specialize (add_S_left (add n y) z) as H4.
+      apply @eq_trans with
+        (y := S (add (add n y) z)).
+      1 : exact H4.
+      apply eq_congr.
+      exact IH.
+  Qed.
 End PeanoNat.
 
 Module ChurchBool.
