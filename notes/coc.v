@@ -1,19 +1,31 @@
 Module CoC.
+
+  Notation "A -> B" := (forall (_ : A), B)
+                         (right associativity, at level 99).
+  
   Definition False_CoC : Prop :=
     forall P : Prop, P.
 
   Definition not_CoC (P : Prop) : Prop :=
     P -> False_CoC.
 
+  Notation "~ A" := (not_CoC A) (at level 75, right associativity).
+  
   Definition And_CoC (A B : Prop) : Prop :=
     forall (C : Prop), (A -> B -> C) -> C.
+
+  Notation "A /\ B" := (And_CoC A B) (at level 80, right associativity).
 
   Definition Or_CoC (A B : Prop) : Prop :=
     forall (C : Prop), (A -> C) -> (B -> C) -> C.
 
+  Notation "A \/ B" := (Or_CoC A B) (at level 85, right associativity).
+
   Definition Eq_CoC {A : Type} (x y : A) : Prop :=
     forall (P : A -> Prop), P x -> P y.
 
+  (* Notation "x == y" := (Eq_CoC x y) *)
+  (*                       (at level 70, no associativity). *)
   (* Ex - это свойство предиката B на универсуме A, что B не пусто *)
   Definition Ex (A : Type) (B : A -> Prop) : Prop :=
     forall C : Prop, (forall x : A, B x -> C) -> C.
@@ -398,14 +410,14 @@ Section PeanoNat.
   Notation "'$' p '$'" := p (format "'$' p '$'", p custom peano_nat_view at level 5).
   Notation "'0'" := O (in custom peano_nat_view at level 0, format "0").
 
-  Notation "'+1' x" := (S x)
-                        (in custom peano_nat_view at level 2,
-                            x custom peano_nat_view at level 2,
-                            format "+1  x").
+  Notation "'Succ' x" := (S x)
+                        (in custom peano_nat_view at level 1,
+                            x custom peano_nat_view at level 1,
+                            format "Succ  x").
   
   Notation "x + y" := (add x y)
-                        (in custom peano_nat_view at level 1,
-                            y custom peano_nat_view at level 1,
+                        (in custom peano_nat_view at level 3,
+                            y custom peano_nat_view at level 3,
                             format "x  +  y").
 
   Notation "x * y" := (mul x y)
@@ -474,7 +486,7 @@ Section PeanoNat.
   Proof.
     intro x.
     apply N_ind with
-      (P := fun x => forall y : N, Eq_CoC $x+y$ $y+x$)
+      (P := fun x => forall y : N, Eq_CoC $x + y$ $y + x$)
       (n := x).
     - intro y.
       unfold Eq_CoC.
@@ -492,7 +504,7 @@ Section PeanoNat.
       apply eq_symm in Heq1.
       apply @eq_trans with
         (y := S $y+n$).
-      2 : { exact Heq1. }
+      2 : exact Heq1.
       specialize (add_S_left n y) as Heq2.
       apply @eq_trans with
         (y := S $n+y$).
@@ -502,9 +514,6 @@ Section PeanoNat.
       exact IH.
   Qed.
   
-  (* Variable N_ind : *)
-    (* forall P : N -> Prop, P O -> (forall n : N, P n -> P (S n)) -> forall n : N, P n. *)
-  Unset Printing Notations.
   Theorem add_assoc : forall x y z : N, Eq_CoC $(x + y) + z$ $x + (y + z)$.
   Proof.
     intro x.
@@ -549,30 +558,131 @@ Section PeanoNat.
       apply eq_congr.
       exact IH.
   Qed.
+ 
+  Lemma mul_O_left : forall x : N, Eq_CoC O (mul O x).
+  Proof.
+    intro x.
+    apply N_ind with
+      (P := fun x => Eq_CoC O (mul O x))
+      (n := x).
+    - specialize (mul_O_right O) as H0.
+      apply eq_symm in H0.
+      exact H0.
+    - intros n IH.
+      specialize (mul_S_right O n) as H1.
+      specialize (add_O_right (mul O n)) as H2.
+      specialize (eq_trans H1 H2) as H3.
+      apply eq_symm in H3.
+      specialize (eq_trans IH H3) as H4.
+      exact H4.
+  Qed.
+
+  Theorem distributivity : forall a b c : N, Eq_CoC $a * (b + c)$ $a*b + a*c$.
+  Proof.
+    intros a b c.
+    apply N_ind with
+      (P := fun x => Eq_CoC $a * (b + x)$ $a*b + a*x$)
+      (n := c).
+    - specialize (add_O_right b) as H1.
+      specialize (eq_congr (fun n : N => mul a n) $b + 0$ b) as H2.
+      cbn in H2.
+      specialize (H2 H1).
+  (* Variable add_O_right : forall n : N,  Eq_CoC (add n O) n. *)
+  (* Variable add_S_right : forall n m : N, Eq_CoC (add n (S m)) (S (add n m)). *)
+  (* Variable mul_O_right : forall n : N, Eq_CoC (mul n O) O. *)
+  (* Variable mul_S_right : forall n m : N, Eq_CoC (mul n (S m)) (add (mul n m) n). *)
+  (* add_S_left : forall x y : N, Eq_CoC (add (S x) y) (S (add x y)). *)
+  
+  Theorem mul_S_left : forall n m : N, Eq_CoC $(Succ m) * n$ $n + (n * m)$.
+  Proof.
+    intro n.
+    apply N_ind with
+      (P := fun x => forall m : N, Eq_CoC $Succ m * x$ $x + x * m$)
+      (n := n).
+    - intro m.
+      specialize (mul_O_right (S m)) as H1.
+      specialize (mul_O_left m) as H2.
+      specialize (add_0_left $0 * m$) as H3.
+      apply eq_symm in H3.
+      specialize (eq_trans H2 H3) as H4.
+      specialize (eq_trans H1 H4) as H5.
+      exact H5.
+    - intros x IH.
+      intro m.
+      specialize (IH m).
+      specialize (mul_S_right (S m) x) as H1.
+      specialize (add_S_left x $Succ x * m$) as H2.
+      specialize (add_comm $Succ x * m$ $Succ x$) as H3.
+      apply @eq_trans with
+        (y := $Succ x * m + Succ x$).
+      2: exact H3.
+      
+      
+      $Succ m * x + Succ m$
+      specialize (eq_congr (fun n : N => S n) $Succ m * x$ $x + x * m$) as H2.
+      cbn in H2.
+      specialize (H2 IH).
+      
+    (* intros n m. *)
+    (* revert n. *)
+    (* apply N_ind with *)
+    (*   (P := fun x => forall n : N, Eq_CoC $Succ x * n$ $n + n * x$) *)
+    (*   (n := m). *)
+    (* - admit. *)
+    (* - intros x IH. *)
+    (*   intro n. *)
+    (*   specialize (mul_S_right n (S x)) as H1. *)
+    (*   specialize (add_comm $n * Succ x$ n) as H2. *)
+    (*   specialize (eq_trans H1 H2) as H3. *)
+    (*   clear H2. *)
+    (*   (1 + (1 + x)) * n = n + (1 + x) * n *)
+    (*   (1 + x) * (1 + n) = (1 + x) * n + (1 + n) *)
+  
+  Theorem mul_comm : forall x y : N, Eq_CoC $x * y$ $y * x$.
+  Proof.
+    intro x.
+    apply N_ind with
+      (P := fun x => forall y : N, Eq_CoC $x * y$ $y * x$)
+      (n := x).
+    - intro y.
+      specialize (mul_O_right y) as H0_right.
+      specialize (mul_O_left y) as H0_left.
+      specialize (eq_trans H0_right H0_left) as H.
+      apply eq_symm.
+      exact H.
+    - intros n IH.
+      intro y.
+      specialize (mul_S_right y n) as H1.
+      
 End PeanoNat.
 
-Module ChurchBool.
-  Import CoC.
 
-  Theorem and_comm (b1 b2 : Bool_CoC) : Eq_CoC Bool_CoC (andb_CoC b1 b2) (andb_CoC b2 b1).
-  Proof.
-    unfold Eq_CoC.
-    intros P Hand.
-    unfold andb_CoC in Hand.
-    unfold andb_CoC.
-    unfold Bool_CoC in P.
-End ChurchBool.
+(* Module ChurchBool. *)
+(*   Import CoC. *)
 
-  Definition Bool_CoC : Type := forall P : Type, P -> P -> P.
+(*   Theorem and_comm (b1 b2 : Bool_CoC) : Eq_CoC Bool_CoC (andb_CoC b1 b2) (andb_CoC b2 b1). *)
+(*   Proof. *)
+(*     unfold Eq_CoC. *)
+(*     intros P Hand. *)
+(*     unfold andb_CoC in Hand. *)
+(*     unfold andb_CoC. *)
+(*     unfold Bool_CoC in P. *)
+(* End ChurchBool. *)
 
-  Definition true_CoC : Bool_CoC := fun (P : Type) (t f : P) => t.
-  Definition false_CoC : Bool_CoC := fun (P : Type) (t f : P) => f.
+(*   Definition Bool_CoC : Type := forall P : Type, P -> P -> P. *)
 
-  Definition andb_CoC (b1 b2 : Bool_CoC) : Bool_CoC :=
-    fun (P : Type) (t f : P) => b1 P (b2 P t f) f.
+(*   Definition true_CoC : Bool_CoC := fun (P : Type) (t f : P) => t. *)
+(*   Definition false_CoC : Bool_CoC := fun (P : Type) (t f : P) => f. *)
 
-  Definition orb_CoC (b1 b2 : Bool_CoC) : Bool_CoC :=
-    fun (P : Type) (t f : P) => b1 P t (b2 P t f).
+(*   Definition andb_CoC (b1 b2 : Bool_CoC) : Bool_CoC := *)
+(*     fun (P : Type) (t f : P) => b1 P (b2 P t f) f. *)
 
-  Definition notb_CoC (b : Bool_CoC) : Bool_CoC :=
-    fun (P : Type) (t f : P) => b P f t.
+(*   Definition orb_CoC (b1 b2 : Bool_CoC) : Bool_CoC := *)
+(*     fun (P : Type) (t f : P) => b1 P t (b2 P t f). *)
+
+(*   Definition notb_CoC (b : Bool_CoC) : Bool_CoC := *)
+(*     fun (P : Type) (t f : P) => b P f t. *)
+
+(* Local Variables: *)
+(* coq-prog-args: ("-noinit") *)
+(* End: *)
