@@ -2,30 +2,33 @@ Module CoC.
 
   Notation "A -> B" := (forall (_ : A), B)
                          (right associativity, at level 99).
-  
-  Definition False_CoC : Prop :=
+
+  Definition False : Prop :=
     forall P : Prop, P.
 
   Definition not_CoC (P : Prop) : Prop :=
-    P -> False_CoC.
+    P -> False.
 
   Notation "~ A" := (not_CoC A) (at level 75, right associativity).
-  
-  Definition And_CoC (A B : Prop) : Prop :=
+
+  Definition And (A B : Prop) : Prop :=
     forall (C : Prop), (A -> B -> C) -> C.
 
-  Notation "A /\ B" := (And_CoC A B) (at level 80, right associativity).
+  Notation "A /\ B" := (And A B) (at level 80, right associativity).
 
-  Definition Or_CoC (A B : Prop) : Prop :=
+  Definition Or (A B : Prop) : Prop :=
     forall (C : Prop), (A -> C) -> (B -> C) -> C.
 
-  Notation "A \/ B" := (Or_CoC A B) (at level 85, right associativity).
+  Notation "A \/ B" := (Or A B) (at level 85, right associativity).
 
-  Definition Eq_CoC {A : Type} (x y : A) : Prop :=
-    forall (P : A -> Prop), P x -> P y.
+  (* Эквивалентность на универсуме: два объекта эквивалентны,
+     если они обладают одинаковыми свойствами
+  *)
+  Definition Eq {A : Type} (x y : A) : Prop :=
+    forall P : A -> Prop, P x -> P y.
 
-  (* Notation "x == y" := (Eq_CoC x y) *)
-  (*                       (at level 70, no associativity). *)
+  Notation "x = y" := (Eq x y) (at level 70, no associativity).
+
   (* Ex - это свойство предиката B на универсуме A, что B не пусто *)
   Definition Ex (A : Type) (B : A -> Prop) : Prop :=
     forall C : Prop, (forall x : A, B x -> C) -> C.
@@ -42,61 +45,59 @@ Module CoC.
     (H_goal : forall x : A, P x -> C)      (* Γ ⊢ ∀x:A, P x → C *)
     : C := H_exists C H_goal.
 
-  Definition Bool_CoC : Type := forall P : Type, P -> P -> P.
+  Definition Eq_CoC_subst :
+    forall (A : Type) (x y : A) (P : A -> Prop), x = y -> P x -> P y :=
+    fun (A : Type) (x y : A) (P : A -> Prop) (Heq : x = y) (Px : P x) =>
+      Heq P Px.
 
-  Definition true_CoC : Bool_CoC := fun (P : Type) (t f : P) => t.
-  Definition false_CoC : Bool_CoC := fun (P : Type) (t f : P) => f.
-
-  Definition andb_CoC (b1 b2 : Bool_CoC) : Bool_CoC :=
-    fun (P : Type) (t f : P) => b1 P (b2 P t f) f.
-
-  Definition orb_CoC (b1 b2 : Bool_CoC) : Bool_CoC :=
-    fun (P : Type) (t f : P) => b1 P t (b2 P t f).
-
-  Definition notb_CoC (b : Bool_CoC) : Bool_CoC :=
-    fun (P : Type) (t f : P) => b P f t.
-
-  Lemma Eq_CoC_subst :
-    forall (A : Type) (x y : A) (P : A -> Prop),
-      Eq_CoC x y ->
-      P x ->
-      P y.
-  Proof.
-    intros A x y P H Px.
-    apply H.
-    exact Px.
-  Qed.
-
-  Definition eq_refl {U : Type} {x : U} : Eq_CoC x x :=
+  Definition eq_refl {U : Type} {x : U} : x = x :=
     fun (P : U -> Prop) (Px : P x) => Px.
 
-  Lemma eq_symm {U : Type} {x y : U} : Eq_CoC x y -> Eq_CoC y x.
-  Proof.
-    unfold Eq_CoC.
-    intro Heq.
-    intros P Py.
-    specialize (Heq (fun z => P z -> P x)).
-    simpl in Heq.
-    specialize (Heq (fun x => x)).
-    specialize (Heq Py).
-    exact Heq.
-  Qed.
-  
-  Definition eq_trans {U : Type} {x y z : U} :
-    Eq_CoC x y -> Eq_CoC y z -> Eq_CoC x z :=
-    fun (Heq1 : Eq_CoC x y) (Heq2 : Eq_CoC y z) =>
-    fun (P : U -> Prop) (Px : P x) => Heq2 P (Heq1 P Px).
+  Definition eq_symm {U : Type} {x y : U} : x = y -> y = x :=
+    fun (Heq : x = y) =>
+    fun (P : U -> Prop) (Py : P y) =>
+      let HPz : U -> Prop := (fun z : U => P z -> P x) in
+      let H1 : HPz x -> HPz y := (Heq HPz) in
+      let PxPx : P x -> P x := (fun h : P x => h) in
+      let H2 := H1 PxPx in                (* H2 : PHz y = P y -> P x *)
+      H2 Py.
 
-  Lemma eq_congr :
-    forall {A B : Type} (f : A -> B) x y,
-      Eq_CoC x y -> Eq_CoC (f x) (f y).
-  Proof.
-    intros A B f x y H P Hfx.
-    apply (H (fun a : A => P (f a))).
-    exact Hfx.
-  Qed.
+  Definition eq_trans {U : Type} {x y z : U} :
+    x = y -> y = z -> x = z :=
+    fun
+      (Heq1 : x = y)
+      (Heq2 : y = z)
+      (P : U -> Prop)
+      (Px : P x) => Heq2 P (Heq1 P Px).
+
+  Definition eq_congr :
+    forall (A B : Type) (f : A -> B) (x y : A),
+      x = y -> (f x) = (f y) :=
+    fun (A B : Type) (f : A -> B) (x y : A) (Heq : x = y) =>
+    fun (P : B -> Prop) (Pfx : P (f x)) =>
+      Heq (fun z : A => P (f z)) Pfx.
 
 End CoC.
+
+Module Bool.
+  Import CoC.
+  Definition bool : Type := forall P : Type, P -> P -> P.
+
+  Definition true : bool := fun (P : Type) (t f : P) => t.
+  Definition false : bool := fun (P : Type) (t f : P) => f.
+
+  Definition andb (b1 b2 : bool) : bool :=
+    fun (P : Type) (t f : P) => b1 P (b2 P t f) f.
+
+  Definition orb (b1 b2 : bool) : bool :=
+    fun (P : Type) (t f : P) => b1 P t (b2 P t f).
+
+  Definition notb_CoC (b : bool) : bool :=
+    fun (P : Type) (t f : P) => b P f t.
+
+  Definition true_ne_false : ~ (true = false) :=
+    _.
+End Bool.
 
 Section CoC_example.
   Import CoC.
@@ -414,7 +415,7 @@ Section PeanoNat.
                         (in custom peano_nat_view at level 1,
                             x custom peano_nat_view at level 1,
                             format "Succ  x").
-  
+
   Notation "x + y" := (add x y)
                         (in custom peano_nat_view at level 3,
                             y custom peano_nat_view at level 3,
@@ -424,7 +425,7 @@ Section PeanoNat.
                         (in custom peano_nat_view at level 2,
                             y custom peano_nat_view at level 2,
                             format "x  *  y").
-  
+
   (* Lemma Eq_CoC_subst : *)
   (*   forall (A : Type) (x y : A) (P : A -> Prop), *)
   (*     Eq_CoC x y -> *)
@@ -481,7 +482,7 @@ Section PeanoNat.
       specialize (add_S_right x n) as Heq2.
       exact Heq2.
   Qed.
-      
+
   Theorem add_comm : forall x y : N, Eq_CoC $x + y$ $y + x$.
   Proof.
     intro x.
@@ -513,7 +514,7 @@ Section PeanoNat.
       apply eq_congr.
       exact IH.
   Qed.
-  
+
   Theorem add_assoc : forall x y z : N, Eq_CoC $(x + y) + z$ $x + (y + z)$.
   Proof.
     intro x.
@@ -558,7 +559,7 @@ Section PeanoNat.
       apply eq_congr.
       exact IH.
   Qed.
- 
+
   Lemma mul_O_left : forall x : N, Eq_CoC O (mul O x).
   Proof.
     intro x.
@@ -592,7 +593,7 @@ Section PeanoNat.
   (* Variable mul_O_right : forall n : N, Eq_CoC (mul n O) O. *)
   (* Variable mul_S_right : forall n m : N, Eq_CoC (mul n (S m)) (add (mul n m) n). *)
   (* add_S_left : forall x y : N, Eq_CoC (add (S x) y) (S (add x y)). *)
-  
+
   Theorem mul_S_left : forall n m : N, Eq_CoC $(Succ m) * n$ $n + (n * m)$.
   Proof.
     intro n.
@@ -616,13 +617,13 @@ Section PeanoNat.
       apply @eq_trans with
         (y := $Succ x * m + Succ x$).
       2: exact H3.
-      
-      
+
+
       $Succ m * x + Succ m$
       specialize (eq_congr (fun n : N => S n) $Succ m * x$ $x + x * m$) as H2.
       cbn in H2.
       specialize (H2 IH).
-      
+
     (* intros n m. *)
     (* revert n. *)
     (* apply N_ind with *)
@@ -637,7 +638,7 @@ Section PeanoNat.
     (*   clear H2. *)
     (*   (1 + (1 + x)) * n = n + (1 + x) * n *)
     (*   (1 + x) * (1 + n) = (1 + x) * n + (1 + n) *)
-  
+
   Theorem mul_comm : forall x y : N, Eq_CoC $x * y$ $y * x$.
   Proof.
     intro x.
@@ -653,7 +654,7 @@ Section PeanoNat.
     - intros n IH.
       intro y.
       specialize (mul_S_right y n) as H1.
-      
+
 End PeanoNat.
 
 
