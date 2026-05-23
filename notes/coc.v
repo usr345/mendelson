@@ -6,34 +6,36 @@ Module CoC.
   Definition False : Prop :=
     forall P : Prop, P.
 
-  Definition not_CoC (P : Prop) : Prop :=
+  Definition not (P : Prop) : Prop :=
     P -> False.
 
-  Notation "~ A" := (not_CoC A) (at level 75, right associativity).
+  Notation "~ A" := (not A) (at level 75, right associativity).
 
-  Definition And (A B : Prop) : Prop :=
-    forall (C : Prop), (A -> B -> C) -> C.
+  (* Смысл определения: если высказывание C следует из A и B, и у нас есть оба конъюнкта, то мы можем получить C. *)
+  Definition and (A B : Prop) : Prop :=
+    forall C : Prop, (A -> B -> C) -> C.
 
-  Notation "A /\ B" := (And A B) (at level 80, right associativity).
+  Notation "A /\ B" := (and A B) (at level 80, right associativity).
 
-  Definition Or (A B : Prop) : Prop :=
+  (* Закон исключения дизъюнкции *)
+  Definition or (A B : Prop) : Prop :=
     forall (C : Prop), (A -> C) -> (B -> C) -> C.
 
-  Notation "A \/ B" := (Or A B) (at level 85, right associativity).
+  Notation "A \/ B" := (or A B) (at level 85, right associativity).
 
   (* Эквивалентность на универсуме: два объекта эквивалентны,
      если они обладают одинаковыми свойствами
   *)
-  Definition Eq {A : Type} (x y : A) : Prop :=
+  Definition eq {A : Type} (x y : A) : Prop :=
     forall P : A -> Prop, P x -> P y.
 
-  Notation "x = y" := (Eq x y) (at level 70, no associativity).
+  Notation "x = y" := (eq x y) (at level 70, no associativity).
 
-  (* Ex - это свойство предиката B на универсуме A, что B не пусто *)
-  Definition Ex (A : Type) (B : A -> Prop) : Prop :=
+  (* exists - это свойство предиката B на универсуме A, что B не пусто *)
+  Definition exists (A : Type) (B : A -> Prop) : Prop :=
     forall C : Prop, (forall x : A, B x -> C) -> C.
 
-  Definition ex_intro {A : Type} {B : A -> Prop} (t : A) (p : B t) : Ex A B :=
+  Definition ex_intro {A : Type} {B : A -> Prop} (t : A) (p : B t) : exists A B :=
     fun (C : Prop) => fun (H : forall x : A, B x -> C) => H t p.
 
 (*
@@ -41,11 +43,11 @@ Module CoC.
   Γ ⊢ t C (fun (x : A)(p : B) ⇒ u) : C
 *)
   Definition ex_elim {A : Type} {P : A -> Prop} {C : Prop}
-    (H_exists : Ex A P)                    (* Γ ⊢ ∃x:A, P x *)
+    (H_exists : exists A P)                    (* Γ ⊢ ∃x:A, P x *)
     (H_goal : forall x : A, P x -> C)      (* Γ ⊢ ∀x:A, P x → C *)
     : C := H_exists C H_goal.
 
-  Definition Eq_CoC_subst :
+  Definition eq_subst :
     forall (A : Type) (x y : A) (P : A -> Prop), x = y -> P x -> P y :=
     fun (A : Type) (x y : A) (P : A -> Prop) (Heq : x = y) (Px : P x) =>
       Heq P Px.
@@ -54,12 +56,12 @@ Module CoC.
     fun (P : U -> Prop) (Px : P x) => Px.
 
   Definition eq_symm {U : Type} {x y : U} : x = y -> y = x :=
-    fun (Heq : x = y) =>
+    fun Heq : x = y =>
     fun (P : U -> Prop) (Py : P y) =>
       let HPz : U -> Prop := (fun z : U => P z -> P x) in
       let H1 : HPz x -> HPz y := (Heq HPz) in
       let PxPx : P x -> P x := (fun h : P x => h) in
-      let H2 := H1 PxPx in                (* H2 : PHz y = P y -> P x *)
+      let H2 : P y -> P x := H1 PxPx in
       H2 Py.
 
   Definition eq_trans {U : Type} {x y z : U} :
@@ -71,7 +73,7 @@ Module CoC.
       (Px : P x) => Heq2 P (Heq1 P Px).
 
   Definition eq_congr :
-    forall (A B : Type) (f : A -> B) (x y : A),
+    forall {A B : Type} (f : A -> B) (x y : A),
       x = y -> (f x) = (f y) :=
     fun (A B : Type) (f : A -> B) (x y : A) (Heq : x = y) =>
     fun (P : B -> Prop) (Pfx : P (f x)) =>
@@ -95,8 +97,8 @@ Module Bool.
   Definition notb_CoC (b : bool) : bool :=
     fun (P : Type) (t f : P) => b P f t.
 
-  Definition true_ne_false : ~ (true = false) :=
-    _.
+  (* Definition true_ne_false : ~ (true = false) := *)
+  (*   _. *)
 End Bool.
 
 Section CoC_example.
@@ -117,259 +119,123 @@ Section CoC_example.
   Variable bob_is_happy : is_happy bob.
 
   (* Proving that someone is happy using our manual Ex *)
-  Lemma someone_is_happy : Ex Person is_happy.
-  Proof.
-    (* This is exactly applying the term: fun C H => H bob bob_is_happy *)
-    apply (@ex_intro Person is_happy bob bob_is_happy).
-  Qed.
+  Definition someone_is_happy : exists Person is_happy :=
+      @ex_intro Person is_happy bob bob_is_happy.
+
 End CoC_example.
 
 Section CoC_theorems.
   Import CoC.
 
-  Lemma ex_not_forall (A : Type) (P : A -> Prop) (C : Prop) :
-    Ex A P -> not_CoC (forall x : A, not_CoC (P x)).
-  Proof.
-    intro Hex.
-    unfold not_CoC.
-    intro Hwit.
-    unfold False_CoC.
-    intro P0.
-    unfold Ex in Hex.
-    specialize (Hex P0).
-    apply Hex.
-    intros x Px.
-    specialize (Hwit x Px).
-    unfold False_CoC in Hwit.
-    specialize (Hwit P0).
-    exact Hwit.
-  Qed.
+  Definition ex_not_forall (A : Type) (P : A -> Prop) (C : Prop) :
+    exists A P -> ~ (forall x : A, ~ (P x)) :=
+      fun (Hex : exists A P) (Hcontra : (forall x : A, ~ (P x))) =>
+        let false : False := ex_elim Hex Hcontra in
+      false.
 
-  Lemma and_proj1 (A B : Prop) : And_CoC A B -> A.
-  Proof.
-    intro Hand.
-    unfold And_CoC in Hand.
-    specialize (Hand A).
-    apply Hand.
-    intros HA _.
-    exact HA.
-  Qed.
+  Definition and_elim1 : forall {A B : Prop}, A /\ B -> A :=
+    fun A B : Prop =>
+      fun Hand : A /\ B => Hand A (fun (a : A) (b : B) => a).
 
-  Definition and_elim1 : forall {A B : Prop}, And_CoC A B -> A :=
+  Definition and_elim2 : forall {A B : Prop}, A /\ B -> B :=
     fun (A B : Prop) =>
-      fun (Hand : And_CoC A B) => Hand A (fun (a : A) (b : B) => a).
+     fun (Hand : A /\ B) => Hand B (fun (a : A) (b : B) => b).
 
-  Lemma and_proj2 (A B : Prop) : And_CoC A B -> B.
-  Proof.
-    intro Hand.
-    unfold And_CoC in Hand.
-    specialize (Hand B).
-    apply Hand.
-    intros _ HB.
-    exact HB.
-  Qed.
-
-  Definition and_elim2 : forall {A B : Prop}, And_CoC A B -> B :=
-    fun (A B : Prop) =>
-     fun (Hand : And_CoC A B) => Hand B (fun (a : A) (b : B) => b).
-
-  Definition and_intro : forall {A B : Prop}, A -> B -> And_CoC A B :=
-    fun (A B : Prop) =>
+  Definition and_intro : forall {A B : Prop}, A -> B -> A /\ B :=
+    fun A B : Prop =>
       fun (a : A) (b : B) =>
         fun (C : Prop) (HAB_C : A -> B -> C) => HAB_C a b.
 
-  Lemma and_comm {A B : Prop} : And_CoC A B -> And_CoC B A.
-  Proof.
-    intro Hand.
-    unfold And_CoC in Hand.
-    unfold And_CoC.
-    intros C H.
-    apply Hand.
-    intros HA HB.
-    specialize (H HB HA).
-    exact H.
-  Qed.
-
-  Definition ex_falso (A : Prop) : A -> not_CoC A -> False_CoC :=
-    fun (a : A) (na : not_CoC A) =>
-      na a.
-
-  Definition and_comm_dir {A B : Prop} : And_CoC A B -> And_CoC B A :=
-    fun (Hand : And_CoC A B) =>
+  Definition and_comm {A B : Prop} : A /\ B -> B /\ A :=
+    fun (Hand : A /\ B) =>
       fun (C : Prop) (f : B -> A -> C) =>
         Hand C (fun (a : A) (b : B) => f b a).
+  
+  Definition ex_falso (A : Prop) : A -> ~ A -> False :=
+    fun (a : A) (na : ~ A) =>
+      na a.
 
-  Theorem and_comm_refine (A B : Prop) : And_CoC A B -> And_CoC B A.
-  Proof.
-    refine (fun Hand : And_CoC A B =>
-      fun (C : Prop) (f : B -> A -> C) => Hand C
-        (fun (a : A) (b : B) => _)).
-    exact (f b a).
-  Qed.
-
-  Definition or_intro_left : forall (A B : Prop), A -> Or_CoC A B :=
+  Definition or_intro_left : forall (A B : Prop), A -> A \/ B :=
     fun (A B : Prop) (Ha : A) =>
       fun (C : Prop) (Hac : A -> C) (Hbc : B -> C) => Hac Ha.
 
-  Definition or_intro_right : forall (A B : Prop), B -> Or_CoC A B :=
+  Definition or_intro_right : forall (A B : Prop), B -> A \/ B :=
     fun (A B : Prop) (Hb : B) =>
       fun (C : Prop) (Hac : A -> C) (Hbc : B -> C) => Hbc Hb.
 
-  Lemma or_comm (A B : Prop) : Or_CoC A B -> Or_CoC B A.
-  Proof.
-    intro Hor.
-    unfold Or_CoC in Hor.
-    unfold Or_CoC.
-    intros C HBC HAC.
-    specialize (Hor C HAC HBC).
-    exact Hor.
-  Qed.
-
-  Definition or_comm_dir (A B : Prop) : Or_CoC A B -> Or_CoC B A :=
-    fun (Hor : Or_CoC A B) =>
+  Definition or_comm (A B : Prop) : A \/ B -> B \/ A :=
+    fun (Hor : A \/ B) =>
       fun (C : Prop) (fB : B -> C) (fA : A -> C) =>
         Hor C fA fB.
 
-  Definition uncurry : forall {A B C : Prop}, (A -> B -> C) -> (And_CoC A B) -> C :=
-    fun (A B C : Prop) =>
-      fun (f_abc : A -> B -> C) (Hconj : And_CoC A B) =>
-        f_abc (and_elim1 Hconj) (and_elim2 Hconj).
-
   Definition id : forall A : Type, A -> A :=
     fun (A : Type) (a : A) => a.
-
-  Definition or_idempotent : forall {A : Prop}, Or_CoC A A -> A :=
-    fun (A : Prop) (Hor : Or_CoC A A) =>
+  
+  Definition or_idempotent : forall {A : Prop}, A \/ A -> A :=
+    fun (A : Prop) (Hor : A \/ A) =>
       Hor A (id A) (id A).
 
-  Definition and_idempotent : forall {A : Prop}, And_CoC A A -> A :=
-    fun (A : Prop) (Hand : And_CoC A A) =>
+  Definition and_idempotent : forall {A : Prop}, A /\ A -> A :=
+    fun (A : Prop) (Hand : A /\ A) =>
       Hand A (fun (a _ : A) => a).
+  
+  Definition uncurry: forall {A B C : Prop}, (A -> B -> C) -> (A /\ B) -> C :=
+    fun (A B C : Prop) (HAB_C : A -> B -> C) (Hconj : A /\ B) =>
+      Hconj C HAB_C.
 
-  Lemma eq_sym (U : Type) (x y : U) : Eq_CoC x y -> Eq_CoC y x.
-  Proof.
-    unfold Eq_CoC.
-    intros Hxy P Py.
-    apply (Hxy (fun z => P z -> P x)).
-    - intro H.
-      exact H.
-    - exact Py.
-  Qed.
+  Definition curry : forall {A B C : Prop}, (A /\ B -> C) -> A -> B -> C :=
+    fun (A B C : Prop) =>
+      fun (f : (A /\ B) -> C) (a : A) (b : B) =>
+        let Hconj : A /\ B := and_intro a b in
+        f Hconj.
 
-  Definition contrapos (A B : Prop) : (A -> B) -> not_CoC B -> not_CoC A :=
-    fun (Impl : A -> B) (notB : not_CoC B) =>
-      fun (Ha : A) => notB (Impl Ha).
+  Definition contrapos : forall P Q : Prop, (P -> Q) -> ~Q -> ~P :=
+    fun (P Q : Prop) (HP_Q : P -> Q) (nQ : ~Q) (p : P) => nQ (HP_Q p).
 
-  Theorem deMorgan_disj : forall A B : Prop, not_CoC (Or_CoC A B) -> And_CoC (not_CoC A) (not_CoC B).
-  Proof.
-    intros A B H.
-    unfold And_CoC.
-    intros C H1.
-    unfold not_CoC in H.
-    unfold Or_CoC in H.
-    apply H1.
-    - unfold not_CoC.
-      intro a.
-      apply H.
-      intros C0 A_C0 B_C0.
-      specialize (A_C0 a).
-      exact A_C0.
-    - unfold not_CoC.
-      intro b.
-      apply H.
-      intros C0 A_C0 B_C0.
-      specialize (B_C0 b).
-      exact B_C0.
-  Qed.
-
-  Definition deMorgan_disj_dir {A B : Prop} :
-    not_CoC (Or_CoC A B) -> And_CoC (not_CoC A) (not_CoC B) :=
-    fun (NotOr : not_CoC (Or_CoC A B)) =>
-      fun (C : Prop) (H : (not_CoC A) -> (not_CoC B) -> C) =>
+  Definition deMorgan_disj {A B : Prop} :
+    ~ (A \/ B) -> ~ A /\ ~ B :=
+    fun (NotOr : ~ (A \/ B)) =>
+      fun (C : Prop) (H : ~ A -> ~ B -> C) =>
         H
           (fun (a : A) => NotOr (or_intro_left A B a))
           (fun (b : B) => NotOr (or_intro_right A B b)).
 
   Definition deMorgan_disj_back : forall {A B : Prop},
-    And_CoC (not_CoC A) (not_CoC B) -> not_CoC (Or_CoC A B) :=
+    ~ A /\ ~ B -> ~ (A \/ B) :=
     fun (A B : Prop) =>
-      fun (Hand : And_CoC (not_CoC A) (not_CoC B)) =>
-        fun (Hor : Or_CoC A B) =>
-          Hor False_CoC (and_elim1 Hand) (and_elim2 Hand).
+      fun (Hand : ~ A /\ ~ B) =>
+        fun (Hor : A \/ B) =>
+          Hor False (and_elim1 Hand) (and_elim2 Hand).
 
-  Theorem frobenius (A : Type) (P : A -> Prop) (Q : Prop) :
-    Ex A (fun x => And_CoC (P x) Q) -> And_CoC (Ex A P) Q.
-  Proof.
-    intro Hex.
-    unfold And_CoC.
-    refine (fun (C : Prop) (g : Ex A P -> Q -> C) => ?[C]).
-    unfold Ex in Hex.
-    specialize (Hex C).
-    unfold Ex in g.
-    refine (Hex _).
-    refine (fun (x : A) (Hand : And_CoC (P x) Q) => _).
-    unfold And_CoC in Hand.
-    specialize (Hand C).
-    refine (Hand _).
-    refine (fun (Hp : P x) (Hq : Q) => _).
-    apply g.
-    - intros C0 H1.
-      specialize (H1 x).
-      specialize (H1 Hp).
-      exact H1.
-    - exact Hq.
-  Qed.
-
- Definition frobenius_dir (A : Type) (P : A -> Prop) (Q : Prop) :
-    Ex A (fun x => And_CoC (P x) Q) -> And_CoC (Ex A P) Q :=
-    fun (Hex : Ex A (fun x : A => And_CoC (P x) Q)) =>
-      Hex (And_CoC (Ex A P) Q)
-        (fun (x : A) (Hpq : And_CoC (P x) Q) =>
-           let px := and_elim1 Hpq in
-           let q := and_elim2 Hpq in
-           and_intro (ex_intro x px) q).
-
- Definition frobenius_dir1 (A : Type) (P : A -> Prop) (Q : Prop) :
-   Ex A (fun x => And_CoC (P x) Q) -> And_CoC (Ex A P) Q :=
-   fun (Hex : Ex A (fun x : A => And_CoC (P x) Q)) =>
-     Hex (And_CoC (Ex A P) Q) (
-         fun (x : A) (Hpq : And_CoC (P x) Q) =>
-           let Px := and_elim1 Hpq in
-           let q := and_elim2 Hpq in
-           let exP := ex_intro x Px in
+  Definition frobenius_dir (A : Type) (P : A -> Prop) (Q : Prop) :
+    exists A (fun x => (P x) /\ Q) -> (exists A P) /\ Q :=
+    fun (Hex : exists A (fun x : A => (P x) /\ Q)) =>
+     Hex ((exists A P) /\ Q) (
+         fun (x : A) (Hpq : (P x) /\ Q) =>
+           let Px : P x := and_elim1 Hpq in
+           let q : Q := and_elim2 Hpq in
+           let exP : exists A P := ex_intro x Px in
            and_intro exP q
        ).
 
- Definition and_or_distr (A B C : Prop) : And_CoC A (Or_CoC B C) -> Or_CoC (And_CoC A B) (And_CoC A C) :=
-   fun (H : And_CoC A (Or_CoC B C)) =>
-          let a := and_elim1 H in
-          let b_or_c := and_elim2 H in
-          let case1 := (fun b : B =>
-                         let a_and_b := and_intro a b in
-                         or_intro_left (And_CoC A B) (And_CoC A C) a_and_b
-                      ) in
-          let case2 := (fun c : C =>
-                         let a_and_c := and_intro a c in
-                         or_intro_right (And_CoC A B) (And_CoC A C) a_and_c
-                      ) in
-          b_or_c (Or_CoC (And_CoC A B) (And_CoC A C)) case1 case2.
+  Definition and_or_distr (A B C : Prop) : A /\ (B \/ C) -> (A /\ B) \/ (A /\ C) :=
+    fun (H : A /\ (B \/ C)) =>
+      let a := and_elim1 H in
+      let b_or_c := and_elim2 H in
+      let case1 := (fun b : B =>
+                      let a_and_b := and_intro a b in
+                      or_intro_left (A /\ B) (A /\ C) a_and_b
+                   ) in
+      let case2 := (fun c : C =>
+                      let a_and_c := and_intro a c in
+                      or_intro_right (A /\ B) (A /\ C) a_and_c
+                   ) in
+      b_or_c (A /\ B \/ A /\ C) case1 case2.
 
-  Definition ex1 (A : Prop) : not_CoC (not_CoC (Or_CoC (not_CoC A) A)) := fun (H : not_CoC (Or_CoC (not_CoC A) A)) =>
-                                                                           let conj1 := (deMorgan_disj_dir H) in                                                            (uncurry (ex_falso (not_CoC A))) (and_comm_dir conj1).
+  Definition ex1 (A : Prop) : ~ ~ (~ A \/ A) := fun (H : ~ ((~ A) \/ A)) =>
+                                                                           let conj1 := (deMorgan_disj H) in                                                            (uncurry (ex_falso (~ A))) (and_comm conj1).
 
 (*
-  Definition and_or_distr (A B C : Prop) : And_CoC A (Or_CoC B C) -> Or_CoC (And_CoC A B) (And_CoC A C)
-  Definition f_equal_CoC (U V : Type) (f : U -> V) (x y : U) :
-    Eq_CoC U x y -> Eq_CoC V (f x) (f y) :=
-
-Задача: Докажи через терм инволютивность отрицания для булевых значений: forall b : Bool_CoC, Eq_CoC Bool_CoC (notb_CoC (notb_CoC b)) b. Это потребует аккуратного применения b к соответствующим аргументам.
-4. Закон Фробениуса (Часть 1)
-
-Это классическая теорема из логики предикатов, которая в CoC доказывается напрямую.
-
-Теорема: (∃x:A,P(x)∧Q)→(∃x:A,P(x))∧Q
-Coq
-
   Следующий вызов: Попробуй формализовать числа Чёрча (Nat_CoC) и операцию plus_CoC. Доказательство того, что plus_CoC zero n = n через прямой терм — это отличная тренировка «умственной выносливости».
  *)
 
@@ -378,72 +244,49 @@ End CoC_theorems.
 Section PeanoNat.
   Import CoC.
 
-  Variable N : Type.
+  Variable nat : Type.
   (* 0 есть натуральное число *)
-  Variable O : N.
+  Variable O : nat.
+
+  Notation "'0'" := O (at level 0, format "0").
   (* Для любого натурального числа n существует другое натуральное число (S n), называемое
      непосредственно следующим за n *)
-  Variable S : N -> N.
+  Variable S : nat -> nat.
   (* Для любого натурального n, 0 != S n *)
-  Variable S_not_O : forall n : N, not_CoC (Eq_CoC O (S n)).
+  Variable S_not_O : forall n : nat, ~ (0 = (S n)).
 
   (* S инъективна *)
   Variable S_inj :
-    forall x y : N, Eq_CoC (S x) (S y) -> Eq_CoC x y.
+    forall x y : nat, (S x) = (S y) -> x = y.
 
   (* Принцип индукции *)
   Variable N_ind :
-    forall P : N -> Prop, P O -> (forall n : N, P n -> P (S n)) -> forall n : N, P n.
+    forall P : nat -> Prop, P 0 -> (forall n : nat, P n -> P (S n)) -> forall n : nat, P n.
 
-  Variable add : N -> N -> N.
-  Variable mul : N -> N -> N.
+  Variable add : nat -> nat -> nat.
+  Variable mul : nat -> nat -> nat.
 
-  Variable add_O_right : forall n : N,  Eq_CoC (add n O) n.
-  Variable add_S_right : forall n m : N, Eq_CoC (add n (S m)) (S (add n m)).
-  Variable mul_O_right : forall n : N, Eq_CoC (mul n O) O.
-  Variable mul_S_right : forall n m : N, Eq_CoC (mul n (S m)) (add (mul n m) n).
+  Notation "x + y" := (add x y) (at level 50, left associativity).
+  Notation "x * y" := (mul x y) (at level 40, left associativity).
 
-  Declare Scope peano_nat_scope.
-  Declare Custom Entry peano_nat_view.
+  Variable add_O_right : forall n : nat,  n + 0 = n.
+  Variable add_S_right : forall n m : nat, n + (S m) = S (n + m).
+  Variable mul_O_right : forall n : nat, n * O = O.
+  Variable mul_S_right : forall n m : nat, n * (S m) = (n * m) + n.
 
-  Notation "x" := x (x global, in custom peano_nat_view at level 0).
-  Notation "( p )" := p (p custom peano_nat_view at level 5, in custom peano_nat_view at level 0).
-  Notation "'$' p '$'" := p (format "'$' p '$'", p custom peano_nat_view at level 5).
-  Notation "'0'" := O (in custom peano_nat_view at level 0, format "0").
-
-  Notation "'Succ' x" := (S x)
-                        (in custom peano_nat_view at level 1,
-                            x custom peano_nat_view at level 1,
-                            format "Succ  x").
-
-  Notation "x + y" := (add x y)
-                        (in custom peano_nat_view at level 3,
-                            y custom peano_nat_view at level 3,
-                            format "x  +  y").
-
-  Notation "x * y" := (mul x y)
-                        (in custom peano_nat_view at level 2,
-                            y custom peano_nat_view at level 2,
-                            format "x  *  y").
-
-  (* Lemma Eq_CoC_subst : *)
-  (*   forall (A : Type) (x y : A) (P : A -> Prop), *)
-  (*     Eq_CoC x y -> *)
-  (*     P x -> *)
-  (*     P y. *)
-
-  Theorem add_0_left : forall n : N, Eq_CoC $0 + n$ n.
-  Proof.
-    apply N_ind.
-    - specialize (add_O_right O) as H0.
-      exact H0.
-    - intros n H0n.
-      specialize (add_S_right O n) as H.
-      specialize (eq_congr S (add O n) n H0n) as Heq1.
-      specialize (eq_trans H Heq1) as Heq2.
-      exact Heq2.
-  Qed.
-
+  Definition add_0_left : forall n : nat, 0 + n = n :=
+    fun (n : nat) =>
+      let Base : 0 + 0 = 0 := add_O_right 0 in
+      let Step : forall n : nat, 0 + n = n -> 0 + S n = S n :=
+        (fun (n : nat) (IH : 0 + n = n) =>
+        let H : 0 + (S n) = S (0 + n) := add_S_right O n in
+        let H1 : 0 + n = n -> S (0 + n) = S n := eq_congr S (O + n) n in
+        let H2 : S (0 + n) = S n := H1 IH in
+        let H3 : 0 + S n = S n := eq_trans H H2 in
+        H3)
+          in
+      N_ind (fun n : nat => 0 + n = n) Base Step n.
+         
   Theorem add_S_left : forall x y : N, Eq_CoC (add (S x) y) (S (add x y)).
   Proof.
     intros x y.
