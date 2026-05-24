@@ -98,6 +98,22 @@ Module Bool.
     fun (P : Type) (t f : P) => b P f t.
 
   (* Definition true_ne_false : ~ (true = false) := *)
+  (* fun (Heq : true = false) => *)
+
+  (*   (* 1. Define a predicate that evaluates to True_CoC if given true, *)
+  (*         and False if given false. *) *)
+  (*   let P_disc : bool -> Prop := *)
+  (*     fun (b : bool) => b Prop True_CoC False in *)
+
+  (*   (* 2. Apply your equality hypothesis to your custom predicate. *)
+   (*         Because Coq beta-reduces silently, the type of H_impl *)
+   (*         is exactly: True_CoC -> False *) *)
+  (*   let H_impl : P_disc true -> P_disc false := *)
+  (*     Heq P_disc in *)
+
+  (*   (* You now have H_impl, which expects a proof of True_CoC. *)
+   (*      You also have I_CoC. *)
+   (*      The rest is up to you. *) *)
   (*   _. *)
 End Bool.
 
@@ -150,7 +166,7 @@ Section CoC_theorems.
     fun (Hand : A /\ B) =>
       fun (C : Prop) (f : B -> A -> C) =>
         Hand C (fun (a : A) (b : B) => f b a).
-  
+
   Definition ex_falso (A : Prop) : A -> ~ A -> False :=
     fun (a : A) (na : ~ A) =>
       na a.
@@ -170,7 +186,7 @@ Section CoC_theorems.
 
   Definition id : forall A : Type, A -> A :=
     fun (A : Type) (a : A) => a.
-  
+
   Definition or_idempotent : forall {A : Prop}, A \/ A -> A :=
     fun (A : Prop) (Hor : A \/ A) =>
       Hor A (id A) (id A).
@@ -178,7 +194,7 @@ Section CoC_theorems.
   Definition and_idempotent : forall {A : Prop}, A /\ A -> A :=
     fun (A : Prop) (Hand : A /\ A) =>
       Hand A (fun (a _ : A) => a).
-  
+
   Definition uncurry: forall {A B C : Prop}, (A -> B -> C) -> (A /\ B) -> C :=
     fun (A B C : Prop) (HAB_C : A -> B -> C) (Hconj : A /\ B) =>
       Hconj C HAB_C.
@@ -292,7 +308,7 @@ Section PeanoNat.
         let H1 : x + 0 = x := add_0_right x in
         let Heq2 : S (x + 0) = S x := eq_congr S H1 in
         let Heq3 : S x = S (x + 0) := eq_symm Heq2 in
-        let Heq4 : S x + 0 = S x := add_0_right (S x) in 
+        let Heq4 : S x + 0 = S x := add_0_right (S x) in
         let Heq5 : S x + 0 = S (x + 0) := eq_trans Heq4 Heq3 in
         Heq5
       in
@@ -391,9 +407,8 @@ Section PeanoNat.
         let H4 : a * b + a * 0 = a * b + 0 := eq_congr (fun n => a * b + n) H3 in
         let H5 : a * b + 0 = a * b := add_0_right (a * b) in
         let H6 : a * b + a * 0 = a * b := eq_trans H4 H5 in
-        let H7 : a * b = a * b + a * 0 := eq_symm H6 in
-        let H8 : a * (b + 0) = a * b + a * 0 := eq_trans H2 H7 in
-        H8
+        let H7 : a * (b + 0) = a * b + a * 0 := eq_trans H2 (eq_symm H6) in
+        H7
       in
       let Step : forall n : nat,
           (a * (b + n) = a*b + a*n) ->
@@ -417,68 +432,40 @@ Section PeanoNat.
       N_ind (fun n : nat => a * (b + n) = a*b + a* n)
         Base
         Step.
-  
-  
-  Theorem distributivity : forall a b c : N, Eq_CoC $a * (b + c)$ $a*b + a*c$.
-  Proof.
-    intros a b c.
-    apply N_ind with
-      (P := fun x => Eq_CoC $a * (b + x)$ $a*b + a*x$)
-      (n := c).
-    - specialize (add_O_right b) as H1.
-      specialize (eq_congr (fun n : N => mul a n) $b + 0$ b) as H2.
-      cbn in H2.
-      specialize (H2 H1).
-  (* Variable add_O_right : forall n : N,  Eq_CoC (add n O) n. *)
-  (* Variable add_S_right : forall n m : N, Eq_CoC (add n (S m)) (S (add n m)). *)
-  (* Variable mul_O_right : forall n : N, Eq_CoC (mul n O) O. *)
-  (* Variable mul_S_right : forall n m : N, Eq_CoC (mul n (S m)) (add (mul n m) n). *)
-  (* add_S_left : forall x y : N, Eq_CoC (add (S x) y) (S (add x y)). *)
 
-  Theorem mul_S_left : forall n m : N, Eq_CoC $(Succ m) * n$ $n + (n * m)$.
-  Proof.
-    intro n.
-    apply N_ind with
-      (P := fun x => forall m : N, Eq_CoC $Succ m * x$ $x + x * m$)
-      (n := n).
-    - intro m.
-      specialize (mul_O_right (S m)) as H1.
-      specialize (mul_O_left m) as H2.
-      specialize (add_0_left $0 * m$) as H3.
-      apply eq_symm in H3.
-      specialize (eq_trans H2 H3) as H4.
-      specialize (eq_trans H1 H4) as H5.
-      exact H5.
-    - intros x IH.
-      intro m.
-      specialize (IH m).
-      specialize (mul_S_right (S m) x) as H1.
-      specialize (add_S_left x $Succ x * m$) as H2.
-      specialize (add_comm $Succ x * m$ $Succ x$) as H3.
-      apply @eq_trans with
-        (y := $Succ x * m + Succ x$).
-      2: exact H3.
+  Definition mul_S_left : forall a b : nat, (S a)*b = b + a*b :=
+    fun (a : nat) =>
+      let Base : (S a)*0 = 0 + a*0 :=
+        let H1 : (S a)*0 = 0 := mul_0_right (S a) in
+        let H2 : a*0 = 0 := mul_0_right a in
+        let H3 : 0 + a*0 = a*0 := add_0_left (a*0) in
+        let H4 : 0 + a*0 = 0 := eq_trans H3 H2 in
+        let H5 : (S a)*0 = 0 + a*0 := eq_trans H1 (eq_symm H4) in
+        H5
+      in
+      let Step : forall n : nat,
+          ((S a)*n = n + a*n) ->
+          ((S a)*(S n) = (S n) + a*(S n)) :=
+          fun (n : nat) (IH : (S a)*n = n + a*n) =>
+            let H1 : (S a)*(S n) = (S a)*n + S a := mul_S_right (S a) n in
+            let H2 : (S a)*n + S a = (n + a*n) + S a := eq_congr (fun n : nat => n + S a) IH in
+            let H3 : a*(S n) = a*n + a := mul_S_right a n in
+            let H4 : S n + a*(S n) = S n + (a*n + a) := eq_congr (fun k : nat => S n + k) H3 in
+            let H5 : (n + a*n) + S a = S (n + a*n + a) := add_S_right (n + a*n) a in
+            let H6 : S n + (a*n + a) = S (n + (a*n + a)) := add_S_left n (a*n + a) in
+            let H7 : S n + a*(S n) = S (n + (a*n + a)) := eq_trans H4 H6 in
+            let H8 : (S a)*(S n) = (n + a*n) + S a := eq_trans H1 H2 in
+            let H9 : (S a)*(S n) = S (n + a*n + a) := eq_trans H8 H5 in
+            let H10 : (n + a*n) + a = n + (a*n + a) := add_assoc n (a*n) a in
+            let H11 : S ((n + a*n) + a) = S (n + (a*n + a)) := eq_congr S H10 in
+            let H12 : (S a)*(S n) = S (n + (a*n + a)) := eq_trans H9 H11 in
+            let H13 : (S a)*(S n) = S n + a*(S n) := eq_trans H12 (eq_symm H7) in
+            H13
+      in
+      N_ind (fun n : nat => (S a)*n = n + a*n)
+        Base
+        Step.
 
-
-      $Succ m * x + Succ m$
-      specialize (eq_congr (fun n : N => S n) $Succ m * x$ $x + x * m$) as H2.
-      cbn in H2.
-      specialize (H2 IH).
-
-    (* intros n m. *)
-    (* revert n. *)
-    (* apply N_ind with *)
-    (*   (P := fun x => forall n : N, Eq_CoC $Succ x * n$ $n + n * x$) *)
-    (*   (n := m). *)
-    (* - admit. *)
-    (* - intros x IH. *)
-    (*   intro n. *)
-    (*   specialize (mul_S_right n (S x)) as H1. *)
-    (*   specialize (add_comm $n * Succ x$ n) as H2. *)
-    (*   specialize (eq_trans H1 H2) as H3. *)
-    (*   clear H2. *)
-    (*   (1 + (1 + x)) * n = n + (1 + x) * n *)
-    (*   (1 + x) * (1 + n) = (1 + x) * n + (1 + n) *)
 
   Theorem mul_comm : forall x y : N, Eq_CoC $x * y$ $y * x$.
   Proof.
