@@ -368,25 +368,57 @@ Section PeanoNat.
       (fun x : nat => forall y z : nat, (x + y) + z = x + (y + z))
       Base
       Step.
-  
-  Lemma mul_O_left : forall x : N, Eq_CoC O (mul O x).
-  Proof.
-    intro x.
-    apply N_ind with
-      (P := fun x => Eq_CoC O (mul O x))
-      (n := x).
-    - specialize (mul_O_right O) as H0.
-      apply eq_symm in H0.
-      exact H0.
-    - intros n IH.
-      specialize (mul_S_right O n) as H1.
-      specialize (add_O_right (mul O n)) as H2.
-      specialize (eq_trans H1 H2) as H3.
-      apply eq_symm in H3.
-      specialize (eq_trans IH H3) as H4.
-      exact H4.
-  Qed.
 
+  Definition mul_O_left : forall x : nat, 0 * x = 0 :=
+    fun (n : nat) =>
+      let Base : 0 * 0 = 0 := mul_0_right 0 in
+      let Step : forall n : nat, 0 * n = 0 -> 0 * S n = 0 :=
+        fun (n : nat) (IH : 0 * n = 0) =>
+          let H1 : 0 * S n = 0 * n + 0 := mul_S_right 0 n in
+          let H2 : 0 * n + 0 = 0 * n := add_0_right (0 * n) in
+          let H3 : 0 * S n = 0 * n := eq_trans H1 H2 in
+          let H4 : 0 * S n = 0 := eq_trans H3 IH in
+          H4
+      in
+      N_ind (fun n : nat => 0 * n = 0) Base Step n.
+
+  Definition distributivity_left : forall a b c : nat, a * (b + c) = a*b + a*c :=
+    fun (a b : nat) =>
+      let Base : a * (b + 0) = a*b + a*0 :=
+        let H1 : b + 0 = b := add_0_right b in
+        let H2 : a * (b + 0) = a * b := eq_congr (fun n => a * n) H1 in
+        let H3 : a * 0 = 0 := mul_0_right a in
+        let H4 : a * b + a * 0 = a * b + 0 := eq_congr (fun n => a * b + n) H3 in
+        let H5 : a * b + 0 = a * b := add_0_right (a * b) in
+        let H6 : a * b + a * 0 = a * b := eq_trans H4 H5 in
+        let H7 : a * b = a * b + a * 0 := eq_symm H6 in
+        let H8 : a * (b + 0) = a * b + a * 0 := eq_trans H2 H7 in
+        H8
+      in
+      let Step : forall n : nat,
+          (a * (b + n) = a*b + a*n) ->
+          (a * (b + S n) = a*b + a* (S n)) :=
+        fun (n : nat) (IH : a * (b + n) = a*b + a*n) =>
+          let H1 : b + S n = S (b + n) := add_S_right b n in
+          let H2 : a * (b + S n) = a * S (b + n) := eq_congr (fun n : nat => a * n) H1 in
+          let H3 : a * S (b + n) = a * (b + n) + a := mul_S_right a (b + n) in
+          let H4 : a * (b + n) + a = (a * b + a * n) + a := eq_congr (fun n : nat => n + a) IH in
+          let H5 : a * S n = a * n + a := mul_S_right a n in
+          let H6 : a * b + a * S n = a * b + (a * n + a) := eq_congr (fun n => a * b + n) H5 in
+          let H7 : (a * b + a * n) + a = a * b + (a * n + a) := add_assoc (a * b) (a * n) a in
+          let H8 : a * b + (a * n + a) = (a * b + a * n) + a := eq_symm H7 in
+          let H9 : a * b + a * S n = (a * b + a * n) + a := eq_trans H6 H8 in
+          let H10 : (a * b + a * n) + a = a * b + a * S n := eq_symm H9 in
+          let H11 : a * (b + S n) = a * (b + n) + a := eq_trans H2 H3 in
+          let H12 : a * (b + S n) = (a * b + a * n) + a := eq_trans H11 H4 in
+          let H13 : a * (b + S n) = a * b + a * S n := eq_trans H12 H10 in
+          H13
+      in
+      N_ind (fun n : nat => a * (b + n) = a*b + a* n)
+        Base
+        Step.
+  
+  
   Theorem distributivity : forall a b c : N, Eq_CoC $a * (b + c)$ $a*b + a*c$.
   Proof.
     intros a b c.
