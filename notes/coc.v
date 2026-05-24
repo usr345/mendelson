@@ -73,7 +73,7 @@ Module CoC.
       (Px : P x) => Heq2 P (Heq1 P Px).
 
   Definition eq_congr :
-    forall {A B : Type} (f : A -> B) (x y : A),
+    forall {A B : Type} (f : A -> B) {x y : A},
       x = y -> (f x) = (f y) :=
     fun (A B : Type) (f : A -> B) (x y : A) (Heq : x = y) =>
     fun (P : B -> Prop) (Pfx : P (f x)) =>
@@ -269,140 +269,106 @@ Section PeanoNat.
   Notation "x + y" := (add x y) (at level 50, left associativity).
   Notation "x * y" := (mul x y) (at level 40, left associativity).
 
-  Variable add_O_right : forall n : nat,  n + 0 = n.
+  Variable add_0_right : forall n : nat,  n + 0 = n.
   Variable add_S_right : forall n m : nat, n + (S m) = S (n + m).
-  Variable mul_O_right : forall n : nat, n * O = O.
+  Variable mul_0_right : forall n : nat, n * O = O.
   Variable mul_S_right : forall n m : nat, n * (S m) = (n * m) + n.
 
   Definition add_0_left : forall n : nat, 0 + n = n :=
     fun (n : nat) =>
-      let Base : 0 + 0 = 0 := add_O_right 0 in
+      let Base : 0 + 0 = 0 := add_0_right 0 in
       let Step : forall n : nat, 0 + n = n -> 0 + S n = S n :=
         (fun (n : nat) (IH : 0 + n = n) =>
-        let H : 0 + (S n) = S (0 + n) := add_S_right O n in
-        let H1 : 0 + n = n -> S (0 + n) = S n := eq_congr S (O + n) n in
-        let H2 : S (0 + n) = S n := H1 IH in
-        let H3 : 0 + S n = S n := eq_trans H H2 in
+        let H1 : 0 + (S n) = S (0 + n) := add_S_right O n in
+        let H2 : S (0 + n) = S n := eq_congr S IH in
+        let H3 : 0 + S n = S n := eq_trans H1 H2 in
         H3)
           in
       N_ind (fun n : nat => 0 + n = n) Base Step n.
-         
-  Theorem add_S_left : forall x y : N, Eq_CoC (add (S x) y) (S (add x y)).
-  Proof.
-    intros x y.
-    revert x.
-    apply N_ind with
-      (P := fun y => forall x : N, Eq_CoC (add (S x) y) (S $x+y$))
-      (n := y).
-    - intro x.
-      specialize (add_O_right x) as Heq1.
-      specialize (eq_congr S $x + O$ x Heq1) as Heq2.
-      apply eq_symm in Heq2.
-      apply @eq_trans with
-        (y := (S x)).
-      2 : { exact Heq2. }
-      specialize (add_O_right (S x)) as Heq3.
-      exact Heq3.
-    - intros n IH.
-      intro x.
-      specialize (add_S_right (S x) n) as Heq1.
-      apply eq_symm.
-      apply @eq_trans with
-        (y := (S (add (S x) n))).
-      2 : {
-        apply eq_symm.
-        exact Heq1.
-      }
-      specialize (IH x).
-      apply eq_symm in IH.
-      specialize (eq_congr S (add x (S n)) (add (S x) n)) as Himpl.
-      apply Himpl.
-      apply @eq_trans with
-        (y := S $x+n$).
-      2 : {
-        exact IH.
-      }
-      specialize (add_S_right x n) as Heq2.
-      exact Heq2.
-  Qed.
 
-  Theorem add_comm : forall x y : N, Eq_CoC $x + y$ $y + x$.
-  Proof.
-    intro x.
-    apply N_ind with
-      (P := fun x => forall y : N, Eq_CoC $x + y$ $y + x$)
-      (n := x).
-    - intro y.
-      unfold Eq_CoC.
-      intros P H0y.
-      specialize (add_O_right y) as Heq1.
-      apply eq_symm in Heq1.
-      apply Heq1.
-      specialize (add_0_left y) as Heq2.
-      unfold Eq_CoC in Heq2.
-      specialize (Heq2 P H0y).
-      exact Heq2.
-    - intros n IH.
-      intro y.
-      specialize (add_S_right y n) as Heq1.
-      apply eq_symm in Heq1.
-      apply @eq_trans with
-        (y := S $y+n$).
-      2 : exact Heq1.
-      specialize (add_S_left n y) as Heq2.
-      apply @eq_trans with
-        (y := S $n+y$).
-      1 : { exact Heq2. }
-      specialize (IH y).
-      apply eq_congr.
-      exact IH.
-  Qed.
+  Definition add_S_left : forall x y : nat, S x + y = S (x + y) :=
+    fun x =>
+      let Base : S x + 0 = S (x + 0) :=
+        let H1 : x + 0 = x := add_0_right x in
+        let Heq2 : S (x + 0) = S x := eq_congr S H1 in
+        let Heq3 : S x = S (x + 0) := eq_symm Heq2 in
+        let Heq4 : S x + 0 = S x := add_0_right (S x) in 
+        let Heq5 : S x + 0 = S (x + 0) := eq_trans Heq4 Heq3 in
+        Heq5
+      in
+      let Step : forall n, (S x + n = S (x + n)) -> (S x + S n = S (x + S n)) :=
+        fun (n : nat) (IH : S x + n = S (x + n)) =>
+          let H1 : S x + S n = S (S x + n) := add_S_right (S x) n in
+          let H2 : S (S x + n) = S (S (x + n)) := eq_congr S IH in
+          let H3 : S x + S n = S (S (x + n)) := eq_trans H1 H2 in
+          let H4 : x + S n = S (x + n) := add_S_right x n in
+          let H5 : S (x + n) = x + S n := eq_symm H4 in
+          let H6 : S (S (x + n)) = S (x + S n) := eq_congr S H5 in
+          let H7 : S x + S n = S (x + S n) := eq_trans H3 H6 in
+          H7
+      in
+      N_ind
+        (fun y : nat => S x + y = S (x + y))
+        Base
+        Step.
 
-  Theorem add_assoc : forall x y z : N, Eq_CoC $(x + y) + z$ $x + (y + z)$.
-  Proof.
-    intro x.
-    apply N_ind with
-      (P := fun x => forall y z : N, Eq_CoC $(x + y) + z$ $x + (y + z)$)
-      (n := x).
-    - (* x = O *)
-      intros y z.
-      unfold Eq_CoC.
-      intros P H.
-      specialize (add_0_left y) as Heq1.
-      specialize (eq_congr (fun n : N => add n z) (add O y) y) as Heq2.
-      specialize (Heq2 Heq1).
-      cbn in Heq2.
-      specialize (add_0_left (add y z)) as Heq3.
-      apply eq_symm in Heq3.
-      unfold Eq_CoC in Heq3.
-      specialize (Heq3 P).
-      apply Heq3.
-      apply Heq2.
-      exact H.
-    - (* x = S x *)
-      intros n IH.
-      intros y z.
-      specialize (IH y z).
-      specialize (add_S_left n (add y z)) as Heq1.
-      apply eq_symm in Heq1.
-      apply @eq_trans with
-        (y := S (add n (add y z))).
-      2 : exact Heq1.
-      specialize (add_S_left n y) as H2.
-      specialize (eq_congr (fun n : N => add n z) (add (S n) y) (S (add n y))) as H3.
-      cbn in H3.
-      specialize (H3 H2).
-      apply @eq_trans with
-        (y := add (S (add n y)) z).
-      1 : exact H3.
-      specialize (add_S_left (add n y) z) as H4.
-      apply @eq_trans with
-        (y := S (add (add n y) z)).
-      1 : exact H4.
-      apply eq_congr.
-      exact IH.
-  Qed.
+  Definition add_comm : forall x y : nat, x + y = y + x :=
+    fun x =>
+      let Base : x + 0 = 0 + x :=
+        let H1 : x + 0 = x := add_0_right x in
+        let H2 : 0 + x = x := add_0_left x in
+        let H3 : x = 0 + x := eq_symm H2 in
+        let H4 : x + 0 = 0 + x := eq_trans H1 H3 in
+        H4
+      in
+      let Step :=
+        fun (n : nat) (IH : x + n = n + x) =>
+          let H1 : x + S n = S (x + n) := add_S_right x n in
+          let H2 : S n + x = S (n + x) := add_S_left n x in
+          let H3 : S (n + x) = S n + x := eq_symm H2 in
+          let H4 : S (x + n) = S (n + x) := eq_congr S IH in
+          let H5 : x + S n = S (n + x) := eq_trans H1 H4 in
+          let H6 : x + S n = S n + x := eq_trans H5 H3 in
+          H6
+      in
+      N_ind
+        (fun y : nat => x + y = y + x)
+        Base
+        Step.
 
+  Definition add_assoc : forall x y z : nat, (x + y) + z = x + (y + z) :=
+    let Base : forall y z : nat, 0 + y + z = 0 + (y + z) :=
+      fun y z : nat =>
+        let H1 : 0 + y = y := add_0_left y in
+        let H2 : (0 + y) + z = y + z := eq_congr (fun n : nat => n + z) H1 in
+        let H3 : 0 + (y + z) = y + z := add_0_left (y + z) in
+        let H4 : y + z = 0 + (y + z) := eq_symm H3 in
+        let H5 : (0 + y) + z = 0 + (y + z) := eq_trans H2 H4 in
+        H5
+    in
+    let Step : forall n : nat,
+        (forall y z : nat, (n + y) + z = n + (y + z)) ->
+        (forall y z : nat, (S n + y) + z = S n + (y + z))
+      :=
+      fun (n : nat) (IH : forall y z : nat, (n + y) + z = n + (y + z)) =>
+      fun (y z : nat) =>
+        let H1 : S n + y = S (n + y) := add_S_left n y in
+        let H2 : (S n + y) + z = S (n + y) + z := eq_congr (fun n : nat => n + z) H1 in
+        let H3 : S n + (y + z) = S (n + (y + z)) := add_S_left n (y + z) in
+        let H4 : S (n + (y + z)) = S n + (y + z) := eq_symm H3 in
+        let H5 : (n + y) + z = n + (y + z) := IH y z in
+        let H6 : S ((n + y) + z) = S (n + (y + z)) := eq_congr S H5 in
+        let H7 : S (n + y + z) = S n + (y + z) := eq_trans H6 H4 in
+        let H8 : S (n + y) + z = S ((n + y) + z) := add_S_left (n + y) z in
+        let H9 : S (n + y) + z = S n + (y + z) := eq_trans H8 H7 in
+        let H10 : S n + y + z = S n + (y + z) := eq_trans H2 H9 in
+        H10
+    in
+    N_ind
+      (fun x : nat => forall y z : nat, (x + y) + z = x + (y + z))
+      Base
+      Step.
+  
   Lemma mul_O_left : forall x : N, Eq_CoC O (mul O x).
   Proof.
     intro x.
