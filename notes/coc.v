@@ -434,7 +434,7 @@ Section PeanoNat.
         Step.
 
   Definition mul_S_left : forall a b : nat, (S a)*b = b + a*b :=
-    fun (a : nat) =>
+    fun a : nat =>
       let Base : (S a)*0 = 0 + a*0 :=
         let H1 : (S a)*0 = 0 := mul_0_right (S a) in
         let H2 : a*0 = 0 := mul_0_right a in
@@ -466,6 +466,35 @@ Section PeanoNat.
         Base
         Step.
 
+  Definition mul_assoc : forall a b c : nat, (a*b) * c = a * (b*c) :=
+    fun a b : nat =>
+      let Base : (a * b) * 0 = a * (b * 0) :=
+        let H1 : (a * b) * 0 = 0 := mul_0_right (a*b) in
+        let H2 : b * 0 = 0 := mul_0_right b in
+        let H3 : a * (b * 0) = a * 0 := eq_congr (fun n : nat => a * n) H2 in
+        let H4 : a * 0 = 0 := mul_0_right a in
+        let H5 : a * (b * 0) = 0 := eq_trans H3 H4 in
+        let H6 : (a * b) * 0 = a * (b * 0) := eq_trans H1 (eq_symm H5) in
+        H6
+      in
+      let Step : forall n : nat,
+          ((a * b) * n = a * (b * n)) ->
+          ((a * b) * (S n) = a * (b * (S n))) :=
+          fun (n : nat) (IH : (a * b) * n = a * (b * n)) =>
+            let H1 : (a * b) * (S n) = (a * b) * n + a * b := mul_S_right (a * b) n in
+            let H2 : (a * b) * n + a * b = a * (b * n) + a * b := eq_congr (fun n : nat => n + a * b) IH in
+            let H3 : (a * b) * (S n) = a * (b * n) + a * b := eq_trans H1 H2 in
+            let H4 : b * (S n) = b * n + b := mul_S_right b n in
+            let H5 : a * (b * (S n)) = a * (b * n + b) := eq_congr (fun n : nat => a * n) H4 in
+            let H6 : a * (b * n + b) = a * (b * n) + a * b := distributivity_left a (b * n) b in
+            let H7 : a * (b * (S n)) = a * (b * n) + a * b := eq_trans H5 H6 in
+            let H8 : a * (b * n) + a * b = a * (b * (S n)) := eq_symm H7 in
+            let H9 : (a * b) * (S n) = a * (b * (S n)) := eq_trans H3 H8 in
+            H9
+      in
+      N_ind (fun n : nat => (a*b) * n = a * (b*n))
+        Base
+        Step.
 
   Theorem mul_comm : forall x y : N, Eq_CoC $x * y$ $y * x$.
   Proof.
