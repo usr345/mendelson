@@ -385,7 +385,7 @@ Section PeanoNat.
       Base
       Step.
 
-  Definition mul_O_left : forall x : nat, 0 * x = 0 :=
+  Definition mul_0_left : forall x : nat, 0 * x = 0 :=
     fun (n : nat) =>
       let Base : 0 * 0 = 0 := mul_0_right 0 in
       let Step : forall n : nat, 0 * n = 0 -> 0 * S n = 0 :=
@@ -496,21 +496,32 @@ Section PeanoNat.
         Base
         Step.
 
-  Theorem mul_comm : forall x y : N, Eq_CoC $x * y$ $y * x$.
-  Proof.
-    intro x.
-    apply N_ind with
-      (P := fun x => forall y : N, Eq_CoC $x * y$ $y * x$)
-      (n := x).
-    - intro y.
-      specialize (mul_O_right y) as H0_right.
-      specialize (mul_O_left y) as H0_left.
-      specialize (eq_trans H0_right H0_left) as H.
-      apply eq_symm.
-      exact H.
-    - intros n IH.
-      intro y.
-      specialize (mul_S_right y n) as H1.
+  Definition mul_comm : forall a b : nat, a * b = b * a :=
+    fun a : nat =>
+      let Base : a * 0 = 0 * a :=
+        let H1 : a * 0 = 0 := mul_0_right a in
+        let H2 : 0 * a = 0 := mul_0_left a in
+        let H3 : 0 = 0 * a := eq_symm H2 in
+        let H4 : a * 0 = 0 * a := eq_trans H1 H3 in
+        H4
+      in
+      let Step : forall n : nat,
+          (a * n = n * a) ->
+          (a * (S n) = (S n) * a) :=
+        fun (n : nat) (IH : a * n = n * a) =>
+          let H1 : a * (S n) = a * n + a := mul_S_right a n in
+          let H2 : (S n) * a = a + n * a := mul_S_left n a in
+          let H3 : a * n + a = a + a * n := add_comm (a * n) a in
+          let H4 : a * (S n) = a + a * n := eq_trans H1 H3 in
+          let H5 : a + a * n = a + n * a := eq_congr (fun n : nat => a + n) IH in
+          let H6 : a * (S n) = a + (n * a) := eq_trans H4 H5 in
+          let H7 : a + n * a = (S n) * a := eq_symm H2 in
+          let H8 : a * (S n) = (S n) * a := eq_trans H6 H7 in
+        H8
+      in
+      N_ind (fun n : nat => a * n = n * a)
+        Base
+        Step.
 
 End PeanoNat.
 
