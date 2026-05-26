@@ -386,7 +386,6 @@ Section PeanoNat.
       Step.
 
   Definition mul_0_left : forall x : nat, 0 * x = 0 :=
-    fun (n : nat) =>
       let Base : 0 * 0 = 0 := mul_0_right 0 in
       let Step : forall n : nat, 0 * n = 0 -> 0 * S n = 0 :=
         fun (n : nat) (IH : 0 * n = 0) =>
@@ -396,7 +395,20 @@ Section PeanoNat.
           let H4 : 0 * S n = 0 := eq_trans H3 IH in
           H4
       in
-      N_ind (fun n : nat => 0 * n = 0) Base Step n.
+      N_ind (fun n : nat => 0 * n = 0) Base Step.
+
+  Definition mul_S0 : forall a : nat, a * (S 0) = a :=
+      let Base : 0 * (S 0) = 0 := mul_0_left (S 0) in
+      let Step : forall n : nat, n * (S 0) = n -> (S n) * (S 0) = (S n) :=
+        fun (n : nat) (IH : n * (S 0) = n) =>
+          let H1 : S n * (S 0) = (S n) * 0 + S n := mul_S_right (S n) 0 in
+          let H2 : (S n) * 0 = 0 := mul_0_right (S n) in
+          let H3 : (S n) * 0 + (S n) = 0 + (S n) := eq_congr (fun k => k + S n) H2 in
+          let H4 : (S n) * (S 0) = 0 + (S n) := eq_trans H1 H3 in
+          let H5 : 0 + (S n) = S n := add_0_left (S n) in
+          let H6 : (S n) * (S 0) = (S n) := eq_trans H4 H5 in
+          H6 in
+      N_ind (fun n : nat => n * (S 0) = n) Base Step.
 
   Definition distributivity_left : forall a b c : nat, a * (b + c) = a*b + a*c :=
     fun (a b : nat) =>
@@ -411,8 +423,8 @@ Section PeanoNat.
         H7
       in
       let Step : forall n : nat,
-          (a * (b + n) = a*b + a*n) ->
-          (a * (b + S n) = a*b + a* (S n)) :=
+          (a * (b + n) = a * b + a * n) ->
+          (a * (b + S n) = a * b + a * (S n)) :=
         fun (n : nat) (IH : a * (b + n) = a*b + a*n) =>
           let H1 : b + S n = S (b + n) := add_S_right b n in
           let H2 : a * (b + S n) = a * S (b + n) := eq_congr (fun n : nat => a * n) H1 in
@@ -433,40 +445,40 @@ Section PeanoNat.
         Base
         Step.
 
-  Definition mul_S_left : forall a b : nat, (S a)*b = b + a*b :=
+  Definition mul_S_left : forall a b : nat, (S a) * b = b + a * b :=
     fun a : nat =>
-      let Base : (S a)*0 = 0 + a*0 :=
-        let H1 : (S a)*0 = 0 := mul_0_right (S a) in
-        let H2 : a*0 = 0 := mul_0_right a in
-        let H3 : 0 + a*0 = a*0 := add_0_left (a*0) in
-        let H4 : 0 + a*0 = 0 := eq_trans H3 H2 in
-        let H5 : (S a)*0 = 0 + a*0 := eq_trans H1 (eq_symm H4) in
+      let Base : (S a) * 0 = 0 + a * 0 :=
+        let H1 : (S a) * 0 = 0 := mul_0_right (S a) in
+        let H2 : a * 0 = 0 := mul_0_right a in
+        let H3 : 0 + a * 0 = a * 0 := add_0_left (a * 0) in
+        let H4 : 0 + a * 0 = 0 := eq_trans H3 H2 in
+        let H5 : (S a) * 0 = 0 + a * 0 := eq_trans H1 (eq_symm H4) in
         H5
       in
       let Step : forall n : nat,
-          ((S a)*n = n + a*n) ->
-          ((S a)*(S n) = (S n) + a*(S n)) :=
-          fun (n : nat) (IH : (S a)*n = n + a*n) =>
-            let H1 : (S a)*(S n) = (S a)*n + S a := mul_S_right (S a) n in
-            let H2 : (S a)*n + S a = (n + a*n) + S a := eq_congr (fun n : nat => n + S a) IH in
-            let H3 : a*(S n) = a*n + a := mul_S_right a n in
-            let H4 : S n + a*(S n) = S n + (a*n + a) := eq_congr (fun k : nat => S n + k) H3 in
-            let H5 : (n + a*n) + S a = S (n + a*n + a) := add_S_right (n + a*n) a in
-            let H6 : S n + (a*n + a) = S (n + (a*n + a)) := add_S_left n (a*n + a) in
-            let H7 : S n + a*(S n) = S (n + (a*n + a)) := eq_trans H4 H6 in
-            let H8 : (S a)*(S n) = (n + a*n) + S a := eq_trans H1 H2 in
-            let H9 : (S a)*(S n) = S (n + a*n + a) := eq_trans H8 H5 in
-            let H10 : (n + a*n) + a = n + (a*n + a) := add_assoc n (a*n) a in
-            let H11 : S ((n + a*n) + a) = S (n + (a*n + a)) := eq_congr S H10 in
-            let H12 : (S a)*(S n) = S (n + (a*n + a)) := eq_trans H9 H11 in
-            let H13 : (S a)*(S n) = S n + a*(S n) := eq_trans H12 (eq_symm H7) in
+          ((S a) * n = n + a * n) ->
+          ((S a) * (S n) = (S n) + a * (S n)) :=
+          fun (n : nat) (IH : (S a) * n = n + a * n) =>
+            let H1 : (S a) * (S n) = (S a) * n + S a := mul_S_right (S a) n in
+            let H2 : (S a) * n + S a = (n + a * n) + S a := eq_congr (fun n : nat => n + S a) IH in
+            let H3 : a * (S n) = a * n + a := mul_S_right a n in
+            let H4 : S n + a * (S n) = S n + (a * n + a) := eq_congr (fun k : nat => S n + k) H3 in
+            let H5 : (n + a * n) + S a = S (n + a * n + a) := add_S_right (n + a * n) a in
+            let H6 : S n + (a * n + a) = S (n + (a * n + a)) := add_S_left n (a * n + a) in
+            let H7 : S n + a * (S n) = S (n + (a * n + a)) := eq_trans H4 H6 in
+            let H8 : (S a) * (S n) = (n + a * n) + S a := eq_trans H1 H2 in
+            let H9 : (S a) * (S n) = S (n + a * n + a) := eq_trans H8 H5 in
+            let H10 : (n + a * n) + a = n + (a * n + a) := add_assoc n (a * n) a in
+            let H11 : S ((n + a * n) + a) = S (n + (a * n + a)) := eq_congr S H10 in
+            let H12 : (S a) * (S n) = S (n + (a * n + a)) := eq_trans H9 H11 in
+            let H13 : (S a) * (S n) = S n + a * (S n) := eq_trans H12 (eq_symm H7) in
             H13
       in
-      N_ind (fun n : nat => (S a)*n = n + a*n)
+      N_ind (fun n : nat => (S a) * n = n + a * n)
         Base
         Step.
 
-  Definition mul_assoc : forall a b c : nat, (a*b) * c = a * (b*c) :=
+  Definition mul_assoc : forall a b c : nat, (a * b) * c = a * (b * c) :=
     fun a b : nat =>
       let Base : (a * b) * 0 = a * (b * 0) :=
         let H1 : (a * b) * 0 = 0 := mul_0_right (a*b) in
