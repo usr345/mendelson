@@ -6,6 +6,12 @@ Module CoC.
   Definition False : Prop :=
     forall P : Prop, P.
 
+  Definition True : Prop :=
+    forall P : Prop, P -> P.
+
+  Definition I : True :=
+    fun (P : Prop) (p : P) => p.
+
   Definition not (P : Prop) : Prop :=
     P -> False.
 
@@ -97,24 +103,21 @@ Module Bool.
   Definition notb_CoC (b : bool) : bool :=
     fun (P : Type) (t f : P) => b P f t.
 
-  (* Definition true_ne_false : ~ (true = false) := *)
-  (* fun (Heq : true = false) => *)
-
-  (*   (* 1. Define a predicate that evaluates to True_CoC if given true, *)
-  (*         and False if given false. *) *)
-  (*   let P_disc : bool -> Prop := *)
-  (*     fun (b : bool) => b Prop True_CoC False in *)
-
-  (*   (* 2. Apply your equality hypothesis to your custom predicate. *)
-   (*         Because Coq beta-reduces silently, the type of H_impl *)
-   (*         is exactly: True_CoC -> False *) *)
-  (*   let H_impl : P_disc true -> P_disc false := *)
-  (*     Heq P_disc in *)
-
-  (*   (* You now have H_impl, which expects a proof of True_CoC. *)
-   (*      You also have I_CoC. *)
-   (*      The rest is up to you. *) *)
-  (*   _. *)
+  Definition true_ne_false : ~ (true = false) :=
+    fun (Heq : true = false) =>
+      (* 1. Define a predicate that evaluates to True if given true, *)
+      (* and False if given false. *)
+      let P_discr : bool -> Prop :=
+        fun (b : bool) => b Prop True False in
+      (* 2. Apply your equality hypothesis to your custom predicate. *)
+      (* Because Coq beta-reduces silently, the type of H_impl *)
+      (* is exactly: True_CoC -> False *)
+      let H_impl : P_discr true -> P_discr false :=
+        Heq P_discr in
+      (* You now have H_impl, which expects a proof of True. *)
+      (* You also have I. *)
+      let H_False : False := H_impl I in
+      H_False.
 End Bool.
 
 Section CoC_example.
@@ -257,38 +260,35 @@ Section CoC_theorems.
 
 End CoC_theorems.
 
-Section PeanoNat.
+Module PeanoArithmetic.
   Import CoC.
 
-  Variable nat : Type.
+  Parameter nat : Type.
   (* 0 есть натуральное число *)
-  Variable O : nat.
+  Parameter O : nat.
+  (* Для любого натурального числа n существует другое натуральное число (S n), называемое
+     непосредственно следующим за n  *)
+  Parameter S : nat -> nat.
+
 
   Notation "'0'" := O (at level 0, format "0").
-  (* Для любого натурального числа n существует другое натуральное число (S n), называемое
-     непосредственно следующим за n *)
-  Variable S : nat -> nat.
-  (* Для любого натурального n, 0 != S n *)
-  Variable S_not_O : forall n : nat, ~ (0 = (S n)).
 
+  Axiom S_not_O : forall n : nat, ~ (0 = (S n)).
   (* S инъективна *)
-  Variable S_inj :
-    forall x y : nat, (S x) = (S y) -> x = y.
-
+  Axiom S_inj : forall x y : nat, (S x) = (S y) -> x = y.
   (* Принцип индукции *)
-  Variable N_ind :
-    forall P : nat -> Prop, P 0 -> (forall n : nat, P n -> P (S n)) -> forall n : nat, P n.
+  Axiom N_ind : forall P : nat -> Prop, P 0 -> (forall n : nat, P n -> P (S n)) -> forall n : nat, P n.
 
-  Variable add : nat -> nat -> nat.
-  Variable mul : nat -> nat -> nat.
+  Parameter add : nat -> nat -> nat.
+  Parameter mul : nat -> nat -> nat.
 
   Notation "x + y" := (add x y) (at level 50, left associativity).
   Notation "x * y" := (mul x y) (at level 40, left associativity).
 
-  Variable add_0_right : forall n : nat,  n + 0 = n.
-  Variable add_S_right : forall n m : nat, n + (S m) = S (n + m).
-  Variable mul_0_right : forall n : nat, n * O = O.
-  Variable mul_S_right : forall n m : nat, n * (S m) = (n * m) + n.
+  Axiom add_0_right : forall n : nat,  n + 0 = n.
+  Axiom add_S_right : forall n m : nat, n + (S m) = S (n + m).
+  Axiom mul_0_right : forall n : nat, n * O = O.
+  Axiom mul_S_right : forall n m : nat, n * (S m) = (n * m) + n.
 
   Definition add_0_left : forall n : nat, 0 + n = n :=
     fun (n : nat) =>
@@ -535,34 +535,34 @@ Section PeanoNat.
         Base
         Step.
 
-End PeanoNat.
+End PeanoArithmetic.
 
+Module ChurchArithmetic.
 
-(* Module ChurchBool. *)
-(*   Import CoC. *)
+  Import CoC.
+  (* A Church numeral is a function that takes a type, a step function,
+     and a starting base value. *)
+  Definition nat_C : Type :=
+    forall P : Type, (P -> P) -> P -> P.
 
-(*   Theorem and_comm (b1 b2 : Bool_CoC) : Eq_CoC Bool_CoC (andb_CoC b1 b2) (andb_CoC b2 b1). *)
-(*   Proof. *)
-(*     unfold Eq_CoC. *)
-(*     intros P Hand. *)
-(*     unfold andb_CoC in Hand. *)
-(*     unfold andb_CoC. *)
-(*     unfold Bool_CoC in P. *)
-(* End ChurchBool. *)
+  Definition zero : nat_C :=
+    fun (P : Type) (f : P -> P) (x : P) => x.
 
-(*   Definition Bool_CoC : Type := forall P : Type, P -> P -> P. *)
+  Definition succ : nat_C -> nat_C :=
+    fun (n : nat_C) (P : Type) (f : P -> P) (x : P) => f (n P f x).
 
-(*   Definition true_CoC : Bool_CoC := fun (P : Type) (t f : P) => t. *)
-(*   Definition false_CoC : Bool_CoC := fun (P : Type) (t f : P) => f. *)
+  Definition plus : nat_C -> nat_C -> nat_C :=
+    fun (n m : nat_C) (P : Type) (f : P -> P) (x : P) => n P f (m P f x).
 
-(*   Definition andb_CoC (b1 b2 : Bool_CoC) : Bool_CoC := *)
-(*     fun (P : Type) (t f : P) => b1 P (b2 P t f) f. *)
+  (* Short-hand definitions for 1 and 2 *)
+  Definition one : nat_C := succ zero.
+  Definition two : nat_C := succ (succ zero).
 
-(*   Definition orb_CoC (b1 b2 : Bool_CoC) : Bool_CoC := *)
-(*     fun (P : Type) (t f : P) => b1 P t (b2 P t f). *)
+  (* THE CHALLENGE: Prove 1 + 1 = 2 *)
+  Definition plus_one_one_eq_two : (plus one one) = two :=
+    _.
 
-(*   Definition notb_CoC (b : Bool_CoC) : Bool_CoC := *)
-(*     fun (P : Type) (t f : P) => b P f t. *)
+End ChurchArithmetic.
 
 (* Local Variables: *)
 (* coq-prog-args: ("-noinit") *)
