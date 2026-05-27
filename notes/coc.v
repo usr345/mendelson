@@ -271,7 +271,7 @@ Module PeanoArithmetic.
   Parameter S : nat -> nat.
 
 
-  Notation "'0'" := O (at level 0, format "0").
+  Notation "'0'" := O.
 
   Axiom S_not_O : forall n : nat, ~ (0 = (S n)).
   (* S инъективна *)
@@ -546,13 +546,13 @@ Module ChurchArithmetic.
     forall P : Type, (P -> P) -> P -> P.
 
   Definition zero : nat_C :=
-    fun (P : Type) (f : P -> P) (x : P) => x.
+    fun (P : Type) (S : P -> P) (z : P) => z.
 
   Definition succ : nat_C -> nat_C :=
-    fun (n : nat_C) (P : Type) (f : P -> P) (x : P) => f (n P f x).
+    fun (n : nat_C) (P : Type) (S : P -> P) (z : P) => S (n P S z).
 
   Definition plus : nat_C -> nat_C -> nat_C :=
-    fun (n m : nat_C) (P : Type) (f : P -> P) (x : P) => n P f (m P f x).
+    fun (n m : nat_C) (P : Type) (S : P -> P) (z : P) => n P S (m P S z).
 
   (* Short-hand definitions for 1 and 2 *)
   Definition one : nat_C := succ zero.
@@ -560,7 +560,27 @@ Module ChurchArithmetic.
 
   (* THE CHALLENGE: Prove 1 + 1 = 2 *)
   Definition plus_one_one_eq_two : (plus one one) = two :=
-    _.
+    fun (P : nat_C -> Prop) (Hplus : P (plus one one)) =>
+
+      (* 1. Expand the definition of 'plus' *)
+      let H1 : P (fun (P0 : Type) (S : P0 -> P0) (z : P0) => one P0 S (one P0 S z)) := Hplus in
+
+      (* 2. Expand the outer 'one' (which is 'succ zero') *)
+      let H2 : P (fun (P0 : Type) (S : P0 -> P0) (z : P0) => S (zero P0 S (one P0 S z))) := H1 in
+
+      (* 3. Beta-reduce 'zero' (which ignores 'S' and returns its base argument) *)
+      let H3 : P (fun (P0 : Type) (S : P0 -> P0) (z : P0) => S (one P0 S z)) := H2 in
+
+      (* 4. Expand the inner 'one' *)
+      let H4 : P (fun (P0 : Type) (S : P0 -> P0) (z : P0) => S (S (zero P0 S z))) := H3 in
+
+      (* 5. Beta-reduce the inner 'zero' *)
+      let H5 : P (fun (P0 : Type) (S : P0 -> P0) (z : P0) => S (S z)) := H4 in
+
+      (* 6. Recognize that this final normal form is exactly 'two' *)
+      let H6 : P two := H5 in
+      H6.
+
 
 End ChurchArithmetic.
 
