@@ -581,6 +581,37 @@ Module ChurchArithmetic.
       let H6 : P two := H5 in
       H6.
 
+  Definition compose {A B C : Type} (g : B -> C) (f : A -> B) : A -> C :=
+    fun x : A => g (f x).
+
+  Notation "g ∘ f" := (compose g f) (at level 50, right associativity).
+  Definition apply_twice {A : Type} (f : A -> A) : A -> A := f ∘ f.
+
+  Definition compose_assoc {A B C D : Type} (f : A -> B) (g : B -> C) (h : C -> D) :
+    forall x : A, (h ∘ (g ∘ f)) x = ((h ∘ g) ∘ f) x :=
+    fun (x : A) => eq_refl.
+
+  (* Теорема 2: Четырехкратное применение.
+     Если мы применим `apply_twice` к функции `apply_twice f`,
+     это должно быть эквивалентно f(f(f(f(x)))). *)
+  Definition apply_four_times {A : Type} (f : A -> A) :
+    forall x : A, apply_twice (apply_twice f) x = f (f (f (f x))) :=
+    fun (x : A) => eq_refl.
+
+  Definition K_comb {A B : Type} : A -> B -> A :=
+    fun (x : A) (_ : B) => x.
+
+  Definition K_comb_keeps_first {A B : Type} : forall (x : A) (y : B), K_comb x y = x := fun (x : A) (y : B) => eq_refl.
+
+  Definition C_comb {A B C : Type} : (A -> B -> C) -> (B -> A -> C) :=
+    fun (f : A -> B -> C) (b : B) (a : A) => f a b.
+
+  Definition C_comb_involutive {A B C : Type} (f : A -> B -> C) :
+    forall (x : A) (y : B), C_comb (C_comb f) x y = f x y :=
+  fun (x : A) (y : B) => eq_refl.
+
+  Definition mul : nat_C -> nat_C -> nat_C :=
+    fun (n m : nat_C) (P : Type) (S : P -> P) (z : P) => n P (m P S) z.
 
 End ChurchArithmetic.
 
