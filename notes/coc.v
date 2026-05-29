@@ -38,8 +38,8 @@ Module CoC.
   Notation "x = y" := (eq x y) (at level 70, no associativity).
 
   (* exists - это свойство предиката B на универсуме A, что B не пусто *)
-  Definition exists (A : Type) (B : A -> Prop) : Prop :=
-    forall C : Prop, (forall x : A, B x -> C) -> C.
+  Definition exists : forall (A : Type) (B : A -> Prop), Prop :=
+    fun (A : Type) (B : A -> Prop) => forall (C : Prop), (forall x : A, B x -> C) -> C.
 
   Definition ex_intro {A : Type} {B : A -> Prop} (t : A) (p : B t) : exists A B :=
     fun (C : Prop) => fun (H : forall x : A, B x -> C) => H t p.
@@ -534,6 +534,72 @@ Module PeanoArithmetic.
       N_ind (fun n : nat => a * n = n * a)
         Base
         Step.
+
+  (* Определение x <= y как "существует такое k, что k + x = y" *)
+  Definition le : nat -> nat -> Prop :=
+    fun x y : nat => exists nat (fun k : nat => k + x = y).
+
+  Notation "x <= y" := (le x y) (at level 70, no associativity).
+
+  Definition check_le_refl_reduction_step_by_step :
+    (forall n : nat, le n n) ->
+    (forall n : nat, forall (C : Prop), (forall x : nat, x + n = n -> C) -> C) :=
+    fun H =>
+      (* Шаг 1. Исходный тип из аргумента H *)
+      let H0 : forall n : nat, le n n := H in
+      (* Шаг 2. Раскрываем определение le *)
+      let H1 : (forall n : nat, (fun x y : nat => exists nat (fun k : nat => k + x = y)) n n) := H0 in
+      (* Шаг 3. Делаем внешнюю beta-редукцию для аргументов 'n n' *)
+      let H2 : (forall n : nat, exists nat (fun k : nat => k + n = n)) := H1 in
+      (* Шаг 4. Раскрываем определение exists *)
+      let H3 : (forall n : nat, (fun (A : Type) (B : A -> Prop) => forall (C : Prop), (forall x : A, B x -> C) -> C) nat (fun k : nat => k + n = n)):= H2 in
+      (* Шаг 5. Делаем beta-редукцию для 'nat' и предиката *)
+      let H4 : (forall n : nat, forall (C : Prop), (forall x : nat, (fun k : nat => k + n = n) x -> C) -> C) := H3 in
+      (* Шаг 6. Делаем внутреннюю beta-редукцию для '(fun k ...) x' *)
+      let H5 : (forall n : nat, forall (C : Prop), (forall x : nat, (x + n = n) -> C) -> C) := H4 in
+      H5.
+
+  Definition le_refl : forall n : nat, n <= n :=
+    fun n : nat =>
+    fun (C : Prop)
+      (Request : forall x : nat, (x + n = n) -> C) =>
+      Request 0 (add_0_left n).
+
+  Definition check_ex_intro_reduction : forall n : nat, le n n :=
+    fun n : nat =>
+      (* Шаг 1. Полный вызов ex_intro с явно переданными параметрами A и B *)
+      let term1 : le n n := @ex_intro nat (fun k : nat => k + n = n) 0 (add_0_left n) in
+
+      (* Шаг 2. Раскрытие определения ex_intro - delta редукция *)
+      let term2 : (exists nat (fun k : nat => k + n = n)) :=
+          (fun (C : Prop) => fun (H : forall x : nat, (fun k : nat => k + n = n) x -> C) => H 0 (add_0_left n)) in
+
+      (* Шаг 3. Внутренняя beta-редукция предиката: (fun k => k + n = n) x  ->  x + n = n *)
+      let term3 : (forall (C : Prop), (forall x : nat, (x + n = n) -> C) -> C) :=
+        (fun (C : Prop) =>
+         fun H : forall x : nat, (x + n = n) -> C =>
+           H 0 (add_0_left n)) in
+      term3.
+
+  Definition le_refl_short : forall n : nat, le n n :=
+    fun n : nat => ex_intro 0 (add_0_left n).
+
+  Definition le_0_n : forall n : nat, 0 <= n :=
+    fun n : nat =>
+    (* Нам нужно получить тип: exists nat (fun k : nat => k + 0 = n) *)
+    (* Что эквивалентно: forall C : Prop, (forall k : nat, k + 0 = n -> C) -> C *)
+    fun (C : Prop) (H : forall k : nat, k + 0 = n -> C) =>
+      let H_eq : n + 0 = n := add_0_right n in
+      H n H_eq.
+
+  Definition le_trans : forall a b c : nat, a <= b -> b <= c -> a <= c :=
+    fun (a b c : nat) (Le1 : a <= b) (Le2 : b <= c) =>
+      (* Нам нужно вернуть x <= z, то есть:
+         forall C : Prop, (forall k : nat, k + x = z -> C) -> C *)
+      fun (C : Prop) (H : forall k : nat, k + a = c -> C) =>
+      (* Распаковать a <= b (получить свидетеля k1 и утверждение k1 + x = y). *)
+
+      _.
 
 End PeanoArithmetic.
 
