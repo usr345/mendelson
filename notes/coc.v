@@ -539,7 +539,7 @@ Module PeanoArithmetic.
   Definition le : nat -> nat -> Prop :=
     fun x y : nat => exists nat (fun k : nat => k + x = y).
 
-  Notation "x <= y" := (le x y) (at level 70, no associativity).
+  (* Notation "x <= y" := (le x y) (at level 70, no associativity). *)
 
   Definition check_le_refl_reduction_step_by_step :
     (forall n : nat, le n n) ->
@@ -559,7 +559,7 @@ Module PeanoArithmetic.
       let H5 : (forall n : nat, forall (C : Prop), (forall x : nat, (x + n = n) -> C) -> C) := H4 in
       H5.
 
-  Definition le_refl : forall n : nat, n <= n :=
+  Definition le_refl : forall n : nat, le n n :=
     fun n : nat =>
     fun (C : Prop)
       (Request : forall x : nat, (x + n = n) -> C) =>
@@ -584,15 +584,36 @@ Module PeanoArithmetic.
   Definition le_refl_short : forall n : nat, le n n :=
     fun n : nat => ex_intro 0 (add_0_left n).
 
-  Definition le_0_n : forall n : nat, 0 <= n :=
+  Definition check_le_0_n_reduction_step_by_step :
+    (forall n : nat, le 0 n) ->
+    forall n : nat, le 0 n :=
+    fun H =>
+      (* Шаг 1. Исходный тип из аргумента H *)
+      let H0 : forall n : nat, le 0 n := H in
+      (* Шаг 2. Раскрываем определение le (δ редукция) *)
+      let H1 : forall n : nat, (fun x y : nat => exists nat (fun k : nat => k + x = y)) 0 n := H0 in
+      (* Шаг 3. внешняя β редукция *)
+      let H2 : forall n : nat, (exists nat (fun k : nat => k + 0 = n)) := H1 in
+      (* Шаг 4. Раскрываем определение exists (δ редукция) *)
+      let H3 : forall n : nat, (fun (A : Type) (B : A -> Prop) => forall (C : Prop), (forall x : A, B x -> C) -> C) nat (fun k : nat => k + 0 = n) := H2 in
+      (* Шаг 5. β редукция для exists *)
+      let H4 : forall n : nat, (forall (C : Prop), (forall x : nat, (fun k : nat => k + 0 = n) x -> C) -> C) := H3 in
+      (* Шаг 6. Внутренняя beta-редукция предиката: (fun k : nat => k + 0 = n) x  ->  x + n = n *)
+      let H5 : forall n : nat, (forall (C : Prop), (forall x : nat, x + 0 = n -> C) -> C) := H4 in
+      H5.
+
+  Definition le_0_n : forall n : nat, le 0 n :=
     fun n : nat =>
     (* Нам нужно получить тип: exists nat (fun k : nat => k + 0 = n) *)
     (* Что эквивалентно: forall C : Prop, (forall k : nat, k + 0 = n -> C) -> C *)
-    fun (C : Prop) (H : forall k : nat, k + 0 = n -> C) =>
+    fun (C : Prop) (Request : forall k : nat, k + 0 = n -> C) =>
       let H_eq : n + 0 = n := add_0_right n in
-      H n H_eq.
+      Request n H_eq.
 
-  Definition le_trans : forall a b c : nat, a <= b -> b <= c -> a <= c :=
+  Definition le_0_n_short : forall n : nat, le 0 n :=
+    fun n : nat => ex_intro (B := (fun k : nat => k + 0 = n)) n (add_0_right n).
+
+  Definition le_trans : forall a b c : nat, le a b -> le b c -> le a c :=
     fun (a b c : nat) (Le1 : a <= b) (Le2 : b <= c) =>
       (* Нам нужно вернуть x <= z, то есть:
          forall C : Prop, (forall k : nat, k + x = z -> C) -> C *)
