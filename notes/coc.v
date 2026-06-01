@@ -52,7 +52,7 @@ Module CoC.
     (H_exists : exists A P)                    (* Γ ⊢ ∃x:A, P x *)
     (* Γ ⊢ ∀x:A, P x → C *)
     : (forall x : A, P x -> C) -> C := H_exists C.
- 
+
   Definition eq_subst :
     forall (A : Type) (x y : A) (P : A -> Prop), x = y -> P x -> P y :=
     fun (A : Type) (x y : A) (P : A -> Prop) (Heq : x = y) (Px : P x) =>
@@ -623,6 +623,14 @@ Module PeanoArithmetic.
                 let H6 : (k2 + k1) + a = k2 + b := eq_trans H5 (eq_symm H4) in
                 let H7 : (k2 + k1) + a = c := eq_trans H6 H2 in
                 @ex_intro nat (fun x : nat => x + a = c) (k2 + k1) H7)).
+
+  Definition n_times_2_eq_n_plus_n : forall n : nat, n * (S (S 0)) = n + n :=
+    fun n : nat =>
+      let H1 : n * (S (S 0)) = n * (S 0) + n := mul_S_right n (S 0) in
+      let H2 : n * (S 0) = n := mul_S0 n in
+      let H3 : n * (S 0) + n = n + n := eq_congr (fun k : nat => k + n) H2 in
+      let H4 : n * (S (S 0)) = n + n := eq_trans H1 H3 in
+      H4.
 
 End PeanoArithmetic.
 
