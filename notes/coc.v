@@ -52,13 +52,13 @@ Module CoC.
     (H_exists : exists A P)                    (* Γ ⊢ ∃x:A, P x *)
     (* Γ ⊢ ∀x:A, P x → C *)
     : (forall x : A, P x -> C) -> C := H_exists C.
- 
+
   Definition eq_subst :
     forall (A : Type) (x y : A) (P : A -> Prop), x = y -> P x -> P y :=
     fun (A : Type) (x y : A) (P : A -> Prop) (Heq : x = y) (Px : P x) =>
       Heq P Px.
 
-  Definition eq_refl {U : Type} {x : U} : x = x :=
+  Definition eq_refl {U : Type} (x : U) : x = x :=
     fun (P : U -> Prop) (Px : P x) => Px.
 
   Definition eq_symm {U : Type} {x y : U} : x = y -> y = x :=
@@ -623,6 +623,54 @@ Module PeanoArithmetic.
                 let H6 : (k2 + k1) + a = k2 + b := eq_trans H5 (eq_symm H4) in
                 let H7 : (k2 + k1) + a = c := eq_trans H6 H2 in
                 @ex_intro nat (fun x : nat => x + a = c) (k2 + k1) H7)).
+
+  Definition le_antisym : forall a b : nat, le a b -> le b a -> a = b :=
+    fun (a b : nat) (Hab : le a b) (Hba : le b a) =>
+      let Exists_ab : exists nat (fun k : nat => k + a = b) := Hab in
+      let Exists_ba : exists nat (fun k : nat => k + b = a) := Hba in
+                        _.
+
+  Definition n_times_2_eq_n_plus_n : forall n : nat, n * (S (S 0)) = n + n :=
+    fun n : nat =>
+      let H1 : n * (S (S 0)) = n * (S 0) + n := mul_S_right n (S 0) in
+      let H2 : n * (S 0) = n := mul_S0 n in
+      let H3 : n * (S 0) + n = n + n := eq_congr (fun k : nat => k + n) H2 in
+      let H4 : n * (S (S 0)) = n + n := eq_trans H1 H3 in
+      H4.
+
+  Definition n_k_eq_0 : forall n k : nat, n + k = 0 -> and (n = 0) (k = 0) :=
+    fun (n : nat) =>
+      (* 1. Выносим предикат индукции в отдельную переменную *)
+      let P : nat -> Prop :=
+        fun k : nat => n + k = 0 -> n = 0 /\ k = 0
+      in
+      (* База остается вашей, мы лишь указываем более чистый тип P 0 *)
+      let Base : P 0 :=
+        fun (H0 : n + 0 = 0) =>
+          let H1 : n + 0 = n := add_0_right n in
+          let H2 : n = 0 := eq_trans (eq_symm H1) H0 in
+          let H3 : 0 = 0 := eq_refl 0 in
+          and_intro H2 H3
+      in
+      (* 2. Шаг индукции с бета-редуцированным типом *)
+      let Step : forall k : nat, P k -> P (S k) :=
+        fun (k : nat) (IH : n + k = 0 -> n = 0 /\ k = 0) (Contra : n + (S k) = 0) =>
+          let H1 : n + (S k) = S (n + k) := add_S_right n k in
+          let H2 : S (n + k) = 0 := eq_trans (eq_symm H1) Contra in
+          let H3 : False := S_not_O (n + k) (eq_symm H2) in
+          H3 (n = 0 /\ S k = 0)
+      in
+      N_ind (fun k : nat => n + k = 0 -> and (n = 0) (k = 0))
+        Base
+        Step.
+
+  (* Definition S_inj : forall n m : nat, S n = S m -> n = m := *)
+  (* _. *)
+
+  (* Definition add_cancel_right : forall a b c : nat, a + c = b + c -> a = b := *)
+  (* _. *)
+
+  (* Definition le_not_S_le : forall n : nat, ~ (le (S n) n) := *)
 
 End PeanoArithmetic.
 
