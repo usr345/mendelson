@@ -628,7 +628,14 @@ Module PeanoArithmetic.
     fun (a b : nat) (Hab : le a b) (Hba : le b a) =>
       let Exists_ab : exists nat (fun k : nat => k + a = b) := Hab in
       let Exists_ba : exists nat (fun k : nat => k + b = a) := Hba in
-                        _.
+          ex_elim Exists_ab (fun (k1 : nat) (Wab : k1 + a = b) =>
+          ex_elim Exists_ba (fun (k2 : nat) (Wba : k2 + b = a) =>
+          let H1 : k2 + (k1 + a) = k2 + b := eq_congr (fun n : nat => k2 + n) Wab in
+          let H2 : (k2 + k1) + a = k2 + (k1 + a) := add_assoc k2 k1 a in
+          let H3 : (k2 + k1) + a = k2 + b := eq_trans H2 H1 in
+          let H4 : (k2 + k1) + a = a := eq_trans H3 Wba in
+          let H5 :
+          _)).
 
   Definition n_times_2_eq_n_plus_n : forall n : nat, n * (S (S 0)) = n + n :=
     fun n : nat =>
