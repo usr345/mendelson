@@ -270,12 +270,13 @@ Module PeanoArithmetic.
      непосредственно следующим за n  *)
   Parameter S : nat -> nat.
 
-
   Notation "'0'" := O.
 
   Axiom S_not_O : forall n : nat, ~ (0 = (S n)).
+  Arguments S_not_O {_} _.
   (* S инъективна *)
   Axiom S_inj : forall x y : nat, (S x) = (S y) -> x = y.
+  Arguments S_inj {_} {_} _.
   (* Принцип индукции *)
   Axiom N_ind : forall P : nat -> Prop, P 0 -> (forall n : nat, P n -> P (S n)) -> forall n : nat, P n.
 
@@ -504,7 +505,7 @@ Module PeanoArithmetic.
             let H9 : (a * b) * (S n) = a * (b * (S n)) := eq_trans H3 H8 in
             H9
       in
-      N_ind (fun n : nat => (a*b) * n = a * (b*n))
+      N_ind (fun n : nat => (a * b) * n = a * (b * n))
         Base
         Step.
 
@@ -624,26 +625,59 @@ Module PeanoArithmetic.
                 let H7 : (k2 + k1) + a = c := eq_trans H6 H2 in
                 @ex_intro nat (fun x : nat => x + a = c) (k2 + k1) H7)).
 
-  Definition le_antisym : forall a b : nat, le a b -> le b a -> a = b :=
-    fun (a b : nat) (Hab : le a b) (Hba : le b a) =>
-      let Exists_ab : exists nat (fun k : nat => k + a = b) := Hab in
-      let Exists_ba : exists nat (fun k : nat => k + b = a) := Hba in
-          ex_elim Exists_ab (fun (k1 : nat) (Wab : k1 + a = b) =>
-          ex_elim Exists_ba (fun (k2 : nat) (Wba : k2 + b = a) =>
-          let H1 : k2 + (k1 + a) = k2 + b := eq_congr (fun n : nat => k2 + n) Wab in
-          let H2 : (k2 + k1) + a = k2 + (k1 + a) := add_assoc k2 k1 a in
-          let H3 : (k2 + k1) + a = k2 + b := eq_trans H2 H1 in
-          let H4 : (k2 + k1) + a = a := eq_trans H3 Wba in
-          let H5 :
-          _)).
+  Definition add_cancel_right : forall a b c : nat, a + c = b + c -> a = b :=
+    fun a b : nat =>
+      let P : nat -> Prop :=
+        fun k : nat => a + k = b + k -> a = b
+      in
+      let Base : P 0 :=
+        fun (H0 : a + 0 = b + 0) =>
+        let H1 : a + 0 = a := add_0_right a in
+        let H2 : a = a + 0 := eq_symm H1 in
+        let H3 : a = b + 0 := eq_trans H2 H0 in
+        let H4 : b + 0 = b := add_0_right b in
+        let H5 : a = b := eq_trans H3 H4 in
+        H5
+      in
+      let Step : forall n, P n -> P (S n) :=
+        fun (n : nat) (IH : a + n = b + n -> a = b) =>
+          fun (H0 : a + S n = b + S n) =>
+            let H1 : a + S n = S (a + n) := add_S_right a n in
+            let H2 : S (a + n) = a + S n := eq_symm H1 in
+            let H3 : S (a + n) = b + S n := eq_trans H2 H0 in
+            let H4 : b + S n = S (b + n) := add_S_right b n in
+            let H5 : S (a + n) = S (b + n) := eq_trans H3 H4 in
+            let H6 : a + n = b + n := S_inj H5 in
+            let H7 : a = b := IH H6 in
+            H7
+      in
+      N_ind P Base Step.
 
-  Definition n_times_2_eq_n_plus_n : forall n : nat, n * (S (S 0)) = n + n :=
-    fun n : nat =>
-      let H1 : n * (S (S 0)) = n * (S 0) + n := mul_S_right n (S 0) in
-      let H2 : n * (S 0) = n := mul_S0 n in
-      let H3 : n * (S 0) + n = n + n := eq_congr (fun k : nat => k + n) H2 in
-      let H4 : n * (S (S 0)) = n + n := eq_trans H1 H3 in
-      H4.
+  Definition add_right_eq_self : forall a n : nat, a + n = a -> n = 0 :=
+  fun a n : nat =>
+    let P : nat -> Prop :=
+      fun x : nat => x + n = x -> n = 0
+    in
+    let Base : 0 + n = 0 -> n = 0 :=
+      fun (H0 : 0 + n = 0) =>
+        let H1 : 0 + n = n := add_0_left n in
+        let H2 : n = 0 + n := eq_symm H1 in
+        let H3 : n = 0 := eq_trans H2 H0 in
+        H3
+    in
+    let Step : forall x : nat, P x -> P (S x) :=
+      fun (x : nat) (IH : x + n = x -> n = 0) =>
+      fun (H0 : S x + n = S x) =>
+        let H1 : S x + n = S (x + n) := add_S_left x n in
+        let H2 : S (x + n) = S x + n := eq_symm H1 in
+        let H3 : S (x + n) = S x := eq_trans H2 H0 in
+        let H4 : x + n = x := S_inj H3 in
+        let H5 : n = 0 := IH H4 in
+       H5
+    in
+    N_ind P Base Step a.
+
+  Arguments add_right_eq_self {_} {_} _.
 
   Definition n_k_eq_0 : forall n k : nat, n + k = 0 -> and (n = 0) (k = 0) :=
     fun (n : nat) =>
@@ -664,21 +698,91 @@ Module PeanoArithmetic.
         fun (k : nat) (IH : n + k = 0 -> n = 0 /\ k = 0) (Contra : n + (S k) = 0) =>
           let H1 : n + (S k) = S (n + k) := add_S_right n k in
           let H2 : S (n + k) = 0 := eq_trans (eq_symm H1) Contra in
-          let H3 : False := S_not_O (n + k) (eq_symm H2) in
+          let H3 : False := S_not_O (eq_symm H2) in
           H3 (n = 0 /\ S k = 0)
       in
       N_ind (fun k : nat => n + k = 0 -> and (n = 0) (k = 0))
         Base
         Step.
 
-  (* Definition S_inj : forall n m : nat, S n = S m -> n = m := *)
+  Arguments n_k_eq_0 {_} {_} _.
+
+  Definition le_antisym : forall a b : nat, le a b -> le b a -> a = b :=
+    fun (a b : nat) (Hab : le a b) (Hba : le b a) =>
+      let Exists_ab : exists nat (fun k : nat => k + a = b) := Hab in
+      let Exists_ba : exists nat (fun k : nat => k + b = a) := Hba in
+          ex_elim Exists_ab (fun (k1 : nat) (Wab : k1 + a = b) =>
+          ex_elim Exists_ba (fun (k2 : nat) (Wba : k2 + b = a) =>
+          let H1 : k2 + (k1 + a) = k2 + b := eq_congr (fun n : nat => k2 + n) Wab in
+          let H2 : (k2 + k1) + a = k2 + (k1 + a) := add_assoc k2 k1 a in
+          let H3 : (k2 + k1) + a = k2 + b := eq_trans H2 H1 in
+          let H4 : (k2 + k1) + a = a := eq_trans H3 Wba in
+          let H5 : (k2 + k1) + a = a + (k2 + k1) := add_comm (k2 + k1) a in
+          let H6 : a + (k2 + k1) = a := eq_trans (eq_symm H5) H4 in
+          let H7 : k2 + k1 = 0 := add_right_eq_self H6 in
+          let H8 : k2 = 0 /\ k1 = 0 := n_k_eq_0 H7 in
+          let H9 : k1 = 0 := and_elim2 H8 in
+          let H10 : k1 + a = 0 + a := eq_congr (fun n : nat => n + a) H9 in
+          let H11 : 0 + a = a := add_0_left a in
+          let H12 : k1 + a = a := eq_trans H10 H11 in
+          let H13 : a = k1 + a := eq_symm H12 in
+          let H14 : a = b := eq_trans H13 Wab in
+          H14)).
+
+  Arguments le_antisym {_} {_} _ _.
+
+  Definition n_times_2_eq_n_plus_n : forall n : nat, n * (S (S 0)) = n + n :=
+    fun n : nat =>
+      let H1 : n * (S (S 0)) = n * (S 0) + n := mul_S_right n (S 0) in
+      let H2 : n * (S 0) = n := mul_S0 n in
+      let H3 : n * (S 0) + n = n + n := eq_congr (fun k : nat => k + n) H2 in
+      let H4 : n * (S (S 0)) = n + n := eq_trans H1 H3 in
+      H4.
+
+  Definition le_not_S_le : forall n : nat, ~ (le (S n) n) :=
+      (* 1. Выносим предикат индукции в отдельную переменную *)
+      let P : nat -> Prop :=
+        fun n : nat => ~ (le (S n) n)
+      in
+      let Base : P 0 :=
+        fun (H0 : le (S 0) 0) =>
+        (* Раскрыли определение le *)
+          let H1 : exists nat (fun k : nat => k + (S 0) = 0) := H0 in
+          ex_elim H1 (fun (k : nat) (W : k + (S 0) = 0) =>
+            let H2 : k + (S 0) = S (k + 0) := add_S_right k 0 in
+            let H3 : S (k + 0) = k + (S 0) := eq_symm H2 in
+            let H4 : S (k + 0) = 0 := eq_trans H3 W in
+            let H5 : False := S_not_O (eq_symm H4) in
+            H5)
+      in
+      let Step : forall n : nat, P n -> P (S n) :=
+        fun (n : nat) (IH : P n) =>
+          fun (H0 : le (S (S n)) (S n)) =>
+            (* Раскрыли определение le *)
+            let H1 : exists nat (fun k : nat => k + S (S n) = S n) := H0 in
+            ex_elim H1 (fun (k : nat) (W : k + S (S n) = S n) =>
+              let H2 : k + S (S n) = S (k + S n) := add_S_right k (S n) in
+              let H3 : S (k + S n) = k + S (S n) := eq_symm H2 in
+              let H4 : S (k + S n) = S n := eq_trans H3 W in
+              let H5 : k + S n = n := S_inj H4 in
+              let H6 : exists nat (fun k : nat => k + S n = n) := ex_intro k H5 in
+              IH H6)
+      in
+      N_ind (fun n : nat => ~ (le (S n) n))
+        Base
+        Step.
+
+  (* Definition add_le_mono : forall a b c : nat, le a b -> le (a + c) (b + c) := *)
   (* _. *)
 
-  (* Definition add_cancel_right : forall a b c : nat, a + c = b + c -> a = b := *)
+  Definition lt : nat -> nat -> Prop :=
+    fun a b : nat => le (S a) b.
+
+(* Definition lt_trans : forall a b c : nat, lt a b -> lt b c -> lt a c := *)
+(*   _. *)
+
+  (* Definition le_total : forall a b : nat, or (le a b) (le b a) := *)
   (* _. *)
-
-  (* Definition le_not_S_le : forall n : nat, ~ (le (S n) n) := *)
-
 End PeanoArithmetic.
 
 Module ChurchArithmetic.
