@@ -772,8 +772,44 @@ Module PeanoArithmetic.
         Base
         Step.
 
-  (* Definition add_le_mono : forall a b c : nat, le a b -> le (a + c) (b + c) := *)
-  (* _. *)
+  Definition add_le_mono : forall a b c : nat, le a b -> le (a + c) (b + c) :=
+    fun (a b c : nat) (Le_ab: le a b) =>
+      (* 1. Выносим предикат индукции в отдельную переменную *)
+      let P : nat -> Prop :=
+        fun n : nat => le (a + n) (b + n)
+      in
+      let Base : P 0 :=
+        (* Раскрыли определение le в Le_ab *)
+        let H1 : exists nat (fun k : nat => k + a = b) := Le_ab in
+        ex_elim H1 (fun (k : nat) (W : k + a = b) =>
+            let H2 : b + 0 = b := add_0_right b in
+            let H3 : b = b + 0 := eq_symm H2 in
+            let H4 : k + a = b + 0 := eq_trans W H3 in
+            let H5 : a + 0 = a := add_0_right a in
+            let H6 : k + (a + 0) = k + a := eq_congr (fun n : nat => k + n) H5 in
+            let H7 : k + (a + 0) = b + 0 := eq_trans H6 H4 in
+            let H8 : exists nat (fun k : nat => k + (a + 0) = b + 0) := ex_intro k H7 in
+            H8
+          )
+      in
+      let Step : forall n : nat, P n -> P (S n) :=
+        fun (n : nat) (IH : le (a + n) (b + n)) =>
+          (* Раскрыли определение le в IH *)
+          let H1 : exists nat (fun k => k + (a + n) = (b + n)) := IH in
+          ex_elim IH (fun (k : nat) (W : k + (a + n) = (b + n)) =>
+            let H2 : a + S n = S (a + n) := add_S_right a n in
+            let H3 : k + S(a + n) = S (k + (a + n)) := add_S_right k (a + n) in
+            let H4 : k + (a + S n) = k + S (a + n) := eq_congr (fun p : nat => k + p) H2 in
+            let H5 : k + (a + S n) = S (k + (a + n)) := eq_trans H4 H3 in
+            let H6 : S (k + (a + n)) = S (b + n) := eq_congr S W in
+            let H7 : k + (a + S n) = S (b + n) := eq_trans H5 H6 in
+            let H8 : b + S n = S (b + n) := add_S_right b n in
+            let H9 : S (b + n) = b + S n := eq_symm H8 in
+            let H10 : k + (a + S n) = b + S n := eq_trans H7 H9 in
+            let H11 : exists nat (fun k : nat => k + (a + S n) = b + S n) := ex_intro k H10 in
+            H11)
+        in
+      N_ind (fun n : nat => le (a + n) (b + n)) Base Step c.
 
   Definition lt : nat -> nat -> Prop :=
     fun a b : nat => le (S a) b.
