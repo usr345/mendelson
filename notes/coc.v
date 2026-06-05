@@ -814,6 +814,36 @@ Module PeanoArithmetic.
   Definition lt : nat -> nat -> Prop :=
     fun a b : nat => le (S a) b.
 
+  Definition check_lt_antirefl_reduction :
+    (forall n : nat, ~ (lt n n)) ->
+    forall n : nat, ~ (exists nat (fun k => k + S n = n))
+    :=
+    fun H0 : forall n : nat, ~ (lt n n) =>
+      (* Шаг 1. Раскрыли определение lt (δ редукция) *)
+      let H1 : forall n : nat, ~ (le (S n) n) := H0 in
+      let H2 : forall n : nat, ~ (exists nat (fun k => k + S n = n)) := H1 in
+      H2.
+
+  (* Расрыв определение, мы получили старого знакомого -
+     Definition le_not_S_le : forall n : nat, ~ (le (S n) n) := *)
+
+  Definition lt_antirefl : forall n : nat, ~ (lt n n) :=
+    fun n : nat =>
+      (* 1. Выносим предикат индукции в отдельную переменную *)
+      let P : nat -> Prop :=
+        fun n : nat => ~ (lt n n)
+      in
+      let Base : P 0 :=
+        let T1 : ~ (lt n n) := P 0 in
+        _
+      in
+      let Step : forall n : nat, P n -> P (S n) :=
+        fun (n : nat) (IH : P n -> P (S n)) =>
+          _
+      in
+      N_ind (fun n : nat => P n) Base Step n.
+
+
 (* Definition lt_trans : forall a b c : nat, lt a b -> lt b c -> lt a c := *)
 (*   _. *)
 
