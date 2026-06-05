@@ -1,0 +1,120 @@
+#+TITLE: Базовые понятия Calculus of Constructions
+#+AUTHOR:
+#+PROPERTY: header-args:coq :tangle coc1.v
+
+* Введение в Calculus of Constructions
+В данном модуле мы определяем базовые логические константы и связки, используя возможности чистого исчисления конструкций (CoC), опираясь на полиморфизм и зависимые типы.
+
+#+begin_src coq
+Module CoC.
+
+  Notation "A -> B" := (forall (_ : A), B)
+                       (right associativity, at level 99).
+#+end_src
+
+** Истина и Ложь
+В интуиционистской логике ложь ($False$) — это утверждение, из которого следует любое другое утверждение. Истина ($True$) определяется тривиально: из $P$ следует $P$.
+
+#+begin_src coq
+  Definition False : Prop :=
+    forall P : Prop, P.
+
+  Definition True : Prop :=
+    forall P : Prop, P -> P.
+
+  Definition I : True :=
+    fun (P : Prop) (p : P) => p.
+
+  Definition not (P : Prop) : Prop :=
+    P -> False.
+
+  Notation "~ A" := (not A) (at level 75, right associativity).
+#+end_src
+
+** Конъюнкция и Дизъюнкция
+Смысл конъюнкции $A \land B$: если высказывание $C$ следует из $A$ и $B$, и у нас есть оба конъюнкта, то мы можем получить $C$.
+
+Дизъюнкция $A \lor B$ определяется через закон исключения: чтобы доказать $C$ из $A \lor B$, мы должны уметь выводить $C$ из $A$ и выводить $C$ из $B$.
+
+#+begin_src coq
+  Definition and (A B : Prop) : Prop :=
+    forall C : Prop, (A -> B -> C) -> C.
+
+  Notation "A /\ B" := (and A B) (at level 80, right associativity).
+
+  Definition or (A B : Prop) : Prop :=
+    forall (C : Prop), (A -> C) -> (B -> C) -> C.
+
+  Notation "A \/ B" := (or A B) (at level 85, right associativity).
+#+end_src
+
+* Кванторы и Эквивалентность
+** Равенство Лейбница
+Два объекта эквивалентны ($x = y$), если они обладают одинаковыми свойствами. То есть для любого предиката $P$, если выполняется $P(x)$, то выполняется и $P(y)$.
+
+#+begin_src coq
+  Definition eq {A : Type} (x y : A) : Prop :=
+    forall P : A -> Prop, P x -> P y.
+
+  Notation "x = y" := (eq x y) (at level 70, no associativity).
+#+end_src
+
+** Квантор существования
+Свойство предиката $B$ на универсуме $A$, заключающееся в том, что $B$ не пусто.
+
+#+begin_src coq
+  Definition exists : forall (A : Type) (B : A -> Prop), Prop :=
+    fun (A : Type) (B : A -> Prop) => forall (C : Prop), (forall x : A, B x -> C) -> C.
+
+  Definition ex_intro {A : Type} {B : A -> Prop} (t : A) (p : B t) : exists A B :=
+    fun (C : Prop) => fun (H : forall x : A, B x -> C) => H t p.
+#+end_src
+
+Правило исключения (elimination) для квантора существования. В терминах теории типов:
+$$ \Gamma \vdash t : \exists x:A, P~x $$
+$$ \Gamma \vdash \forall x:A, (P~x \to C) $$
+
+#+begin_src coq
+  Definition ex_elim {A : Type} {P : A -> Prop} {C : Prop}
+    (H_exists : exists A P)
+    : (forall x : A, P x -> C) -> C := H_exists C.
+#+end_src
+
+* Свойства равенства
+Равенство Лейбница обладает стандартными свойствами отношения эквивалентности: рефлексивностью, симметричностью и транзитивностью.
+
+#+begin_src coq
+  Definition eq_subst :
+    forall (A : Type) (x y : A) (P : A -> Prop), x = y -> P x -> P y :=
+    fun (A : Type) (x y : A) (P : A -> Prop) (Heq : x = y) (Px : P x) =>
+      Heq P Px.
+
+  Definition eq_refl {U : Type} (x : U) : x = x :=
+    fun (P : U -> Prop) (Px : P x) => Px.
+
+  Definition eq_symm {U : Type} {x y : U} : x = y -> y = x :=
+    fun Heq : x = y =>
+    fun (P : U -> Prop) (Py : P y) =>
+      let HPz : U -> Prop := (fun z : U => P z -> P x) in
+      let H1 : HPz x -> HPz y := (Heq HPz) in
+      let PxPx : P x -> P x := (fun h : P x => h) in
+      let H2 : P y -> P x := H1 PxPx in
+      H2 Py.
+
+  Definition eq_trans {U : Type} {x y z : U} :
+    x = y -> y = z -> x = z :=
+    fun
+      (Heq1 : x = y)
+      (Heq2 : y = z)
+      (P : U -> Prop)
+      (Px : P x) => Heq2 P (Heq1 P Px).
+
+  Definition eq_congr :
+    forall {A B : Type} (f : A -> B) {x y : A},
+      x = y -> (f x) = (f y) :=
+    fun (A B : Type) (f : A -> B) (x y : A) (Heq : x = y) =>
+    fun (P : B -> Prop) (Pfx : P (f x)) =>
+      Heq (fun z : A => P (f z)) Pfx.
+
+End CoC.
+#+end_src
