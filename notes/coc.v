@@ -1,19 +1,19 @@
 Module CoC.
 
-  Notation "A -> B" := (forall (_ : A), B)
-                         (right associativity, at level 99).
+Notation "A -> B" := (forall (_ : A), B)
+                      (right associativity, at level 99).
 
-  Definition False : Prop :=
-    forall P : Prop, P.
+Definition False : Prop :=
+  forall P : Prop, P.
 
-  Definition True : Prop :=
-    forall P : Prop, P -> P.
+Definition True : Prop :=
+  forall P : Prop, P -> P.
 
-  Definition I : True :=
-    fun (P : Prop) (p : P) => p.
+Definition I : True :=
+  fun (P : Prop) (p : P) => p.
 
-  Definition not (P : Prop) : Prop :=
-    P -> False.
+Definition not (P : Prop) : Prop :=
+  P -> False.
 
   Notation "~ A" := (not A) (at level 75, right associativity).
 
@@ -228,20 +228,19 @@ Section CoC_theorems.
 
   Definition frobenius_dir (A : Type) (P : A -> Prop) (Q : Prop) :
     exists A (fun x => (P x) /\ Q) -> (exists A P) /\ Q :=
-    fun (Hex : exists A (fun x : A => (P x) /\ Q)) =>
-     Hex ((exists A P) /\ Q) (
-         fun (x : A) (Hpq : (P x) /\ Q) =>
-           let Px : P x := and_elim1 Hpq in
-           let q : Q := and_elim2 Hpq in
-           let exP : exists A P := ex_intro x Px in
-           and_intro exP q
-       ).
+      fun (Hex : exists A (fun x : A => (P x) /\ Q)) =>
+        Hex ((exists A P) /\ Q) (
+            fun (x : A) (Hpq : (P x) /\ Q) =>
+              let Px : P x := and_elim1 Hpq in
+              let q : Q := and_elim2 Hpq in
+              let exP : exists A P := ex_intro x Px in
+                        and_intro exP q).
 
   Definition and_or_distr (A B C : Prop) : A /\ (B \/ C) -> (A /\ B) \/ (A /\ C) :=
-    fun (H : A /\ (B \/ C)) =>
-      let a := and_elim1 H in
-      let b_or_c := and_elim2 H in
-      let case1 := (fun b : B =>
+      fun (H : A /\ (B \/ C)) =>
+        let a := and_elim1 H in
+        let b_or_c := and_elim2 H in
+        let case1 := (fun b : B =>
                       let a_and_b := and_intro a b in
                       or_intro_left (A /\ B) (A /\ C) a_and_b
                    ) in
@@ -252,7 +251,8 @@ Section CoC_theorems.
       b_or_c (A /\ B \/ A /\ C) case1 case2.
 
   Definition ex1 (A : Prop) : ~ ~ (~ A \/ A) := fun (H : ~ ((~ A) \/ A)) =>
-                                                                           let conj1 := (deMorgan_disj H) in                                                            (uncurry (ex_falso (~ A))) (and_comm conj1).
+    let conj1 := (deMorgan_disj H) in
+      (uncurry (ex_falso (~ A))) (and_comm conj1).
 
 (*
   Следующий вызов: Попробуй формализовать числа Чёрча (Nat_CoC) и операцию plus_CoC. Доказательство того, что plus_CoC zero n = n через прямой терм — это отличная тренировка «умственной выносливости».
@@ -625,6 +625,8 @@ Module PeanoArithmetic.
                 let H7 : (k2 + k1) + a = c := eq_trans H6 H2 in
                 @ex_intro nat (fun x : nat => x + a = c) (k2 + k1) H7)).
 
+  Arguments le_trans {_} {_} {_} _ _.
+
   Definition add_cancel_right : forall a b c : nat, a + c = b + c -> a = b :=
     fun a b : nat =>
       let P : nat -> Prop :=
@@ -825,30 +827,51 @@ Module PeanoArithmetic.
       H2.
 
   (* Расрыв определение, мы получили старого знакомого -
-     Definition le_not_S_le : forall n : nat, ~ (le (S n) n) := *)
+  Definition le_not_S_le : forall n : nat, ~ (le (S n) n) := *)
 
-  Definition lt_antirefl : forall n : nat, ~ (lt n n) :=
-    fun n : nat =>
-      (* 1. Выносим предикат индукции в отдельную переменную *)
-      let P : nat -> Prop :=
-        fun n : nat => ~ (lt n n)
-      in
-      let Base : P 0 :=
-        let T1 : ~ (lt n n) := P 0 in
-        _
-      in
-      let Step : forall n : nat, P n -> P (S n) :=
-        fun (n : nat) (IH : P n -> P (S n)) =>
-          _
-      in
-      N_ind (fun n : nat => P n) Base Step n.
+  Definition lt_antirefl : forall n : nat, ~ (lt n n) := le_not_S_le.
 
+  Definition a_plus_S0 : forall a : nat, a + S 0 = S a :=
+    fun a : nat =>
+      let H1 : a + S 0 = S (a + 0) := add_S_right a 0 in
+      let H2 : a + 0 = a := add_0_right a in
+      let H3 : S (a + 0) = S a := eq_congr S H2 in
+      let H4 : a + S 0 = S a := eq_trans H1 H3 in
+      H4.
 
-(* Definition lt_trans : forall a b c : nat, lt a b -> lt b c -> lt a c := *)
-(*   _. *)
+  Definition le_Sa_le_a : forall a b : nat, le (S a) b -> le a b :=
+    fun (a b :nat) (H0 : le (S a) b) =>
+      (* Раскрыли определение le в H0 *)
+      let H1 : exists nat (fun k : nat => k + (S a) = b) := H0 in
+      ex_elim H1 (fun (k : nat) (W : k + (S a) = b) =>
+        let H2 : a + S 0 = S a := a_plus_S0 a in
+        let H3 : S a = a + S 0 := eq_symm H2 in
+        let H4 : a + S 0 = S 0 + a := add_comm a (S 0) in
+        let H5 : S a = S 0 + a := eq_trans H3 H4 in
+        let H6 : k + S a = k + (S 0 + a) := eq_congr (fun n : nat => k + n) H5 in
+        let H7 : (k + S 0) + a = k + (S 0 + a) := add_assoc k (S 0) a in
+        let H8 : k + (S 0 + a) = (k + S 0) + a := eq_symm H7 in
+        let H9 : k + S a = (k + S 0) + a := eq_trans H6 H8 in
+        let H10 : (k + S 0) + a = k + S a := eq_symm H9 in
+        let H11 : (k + S 0) + a = b := eq_trans H10 W in
+        let H12 : exists nat (fun n : nat => n + a = b) := ex_intro (k + S 0) H11 in
+        (* Закрыли определение le *)
+        let H13 : le a b := H12 in
+        H13).
 
-  (* Definition le_total : forall a b : nat, or (le a b) (le b a) := *)
-  (* _. *)
+  Arguments le_Sa_le_a {_} {_} _.
+
+  Definition lt_trans : forall a b c : nat, lt a b -> lt b c -> lt a c :=
+    fun (a b c : nat) (H1 : lt a b) (H2 : lt b c) =>
+      (* Раскрыли определение lt *)
+      let H3 : le (S a) b := H1 in
+      let H4 : le (S b) c := H2 in
+      let H5 : le b c := le_Sa_le_a H4 in
+      let H6 : le (S a) c := le_trans H3 H5 in
+      H6.
+
+  Definition le_total : forall a b : nat, or (le a b) (le b a) :=
+  _.
 End PeanoArithmetic.
 
 Module ChurchArithmetic.
