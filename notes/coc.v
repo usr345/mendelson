@@ -839,7 +839,7 @@ Module PeanoArithmetic.
       let H4 : a + S 0 = S a := eq_trans H1 H3 in
       H4.
 
-  Definition le_Sa_le_a : forall a b : nat, le (S a) b -> le a b :=
+  Definition le_Sa_le_a1 : forall a b : nat, le (S a) b -> le a b :=
     fun (a b :nat) (H0 : le (S a) b) =>
       (* Раскрыли определение le в H0 *)
       let H1 : exists nat (fun k : nat => k + (S a) = b) := H0 in
@@ -859,6 +859,22 @@ Module PeanoArithmetic.
         let H13 : le a b := H12 in
         H13).
 
+  (* Более элегантное доказательство теоремы *)
+  Definition le_Sa_le_a : forall a b : nat, le (S a) b -> le a b :=
+    fun (a b :nat) (H0 : le (S a) b) =>
+      (* Раскрыли определение le в H0 *)
+      let H1 : exists nat (fun k : nat => k + S a = b) := H0 in
+      ex_elim H1 (fun (k : nat) (W : k + S a = b) =>
+        let H2 : k + S a = S (k + a) := add_S_right k a in
+        let H3 : S k + a = S (k + a) := add_S_left k a in
+        let H4 : S (k + a) = k + S a := eq_symm H2 in
+        let H5 : S k + a = k + S a := eq_trans H3 H4 in
+        let H6 : S k + a = b := eq_trans H5 W in
+        let H7 : exists nat (fun k : nat => k + a = b) := ex_intro (S k) H6 in
+        (* Закрыли определение le *)
+        let H8 : le a b := H7 in
+        H8).
+
   Arguments le_Sa_le_a {_} {_} _.
 
   Definition lt_trans : forall a b c : nat, lt a b -> lt b c -> lt a c :=
@@ -871,7 +887,22 @@ Module PeanoArithmetic.
       H6.
 
   Definition le_total : forall a b : nat, or (le a b) (le b a) :=
-  _.
+    fun (a b : nat) =>
+      (* 1. Выносим предикат индукции в отдельную переменную *)
+      let P : nat -> Prop :=
+        fun n : nat => or (le n b) (le n a)
+      in
+      let Base : P 0 :=
+        _
+      in
+      let Step : forall n : nat, P n -> P (S n) :=
+        fun (n : nat) (IH : P n) =>
+          _
+      in
+      N_ind (fun n : nat => P n) Base Step a.
+
+  .
+
 End PeanoArithmetic.
 
 Module ChurchArithmetic.
