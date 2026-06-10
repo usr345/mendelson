@@ -917,6 +917,29 @@ Module PeanoArithmetic.
       let H6 : le (S a) c := le_trans H3 H5 in
       H6.
 
+  Definition le_a_b_le_a_Sb : forall a b : nat, le a b -> le a (S b) :=
+    let P : nat -> Prop :=
+        fun n : nat => forall b : nat, le n b -> le n (S b)
+      in
+      let Base : P 0 :=
+        fun (b : nat) (_ : le 0 b) =>
+          let H1 : le 0 (S b) := le_0_n (S b) in
+          H1
+      in
+      let Step : forall n : nat, P n -> P (S n) :=
+        fun (n : nat) (IH : P n) =>
+          fun (b : nat) (H0: le (S n) b) =>
+          (* Раскрыли определение IH *)
+          let IH1 : forall b : nat, le n b -> le n (S b) := IH in
+          let H1 : le n b -> le n (S b) := IH1 b in
+          let H2 : le n b := le_Sa_le_a H0 in
+          let H3 : le n (S b) := H1 H2 in
+          let H4 : le n (S b) -> le n (S (S b)) := IH1 (S b) in
+          let H5 : le n (S (S b)) := H4 H3 in
+        _
+      in
+      N_ind (fun n : nat => P n) Base Step.
+
   Definition le_total : forall a b : nat, or (le a b) (le b a) :=
     fun (a b : nat) =>
       (* 1. Выносим предикат индукции в отдельную переменную *)
@@ -938,18 +961,23 @@ Module PeanoArithmetic.
                let Q : nat -> Prop :=
                  fun m : nat => le (S n) m \/ le m (S n)
                in
-               let Base : Q 0 :=
+               let Base1 : Q 0 :=
+                 (* Раскрыли определение Q *)
                  let H1 : le 0 (S n) := le_0_n (S n) in
-                 let H2 : le (S n) 0 \/ le 0 (S n) in
-                 H1
+                 let H2 : le (S n) 0 \/ le 0 (S n) := or_intro_right (le (S n) 0) (le 0 (S n)) H1
+                 in
+                 H2
                in
-               let Step : forall n : nat, P n -> P (S n) :=
-                 fun (n : nat) (IH : P n) =>
+               let Step1 : forall m : nat, Q m -> Q (S m) :=
+                 fun (m : nat) (IH : Q m) =>
+                   (* Раскрыли определение IH *)
+                   let IH1 : le (S n) m \/ le m (S n) := IH in
+                   let H1 : le (S n) m -> Q (S m) :=
+                     fun (H2 : le (S n) m) =>
+                       let H3 :
                    _
                in
-               N_ind (fun n : nat => P n) Base Step b
-
-              _)
+               N_ind (fun n : nat => Q n) Base1 Step1 b)
           in
           _
       in
