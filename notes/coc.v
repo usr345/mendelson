@@ -446,6 +446,37 @@ Module PeanoArithmetic.
         Base
         Step.
 
+  Definition eq_mul_eq : forall a b c : nat, a = b -> a * c = b * c :=
+    fun (a b c : nat) (Heq : a = b) =>
+      (* 1. Выносим предикат индукции в отдельную переменную *)
+      let P : nat -> Prop :=
+        fun n : nat => a * n = b * n
+      in
+      let Base : P 0 :=
+        let H1 : a * 0 = 0 := mul_0_right a in
+        let H2 : b * 0 = 0 := mul_0_right b in
+        let H3 : 0 = b * 0 := eq_symm H2 in
+        let H4 : a * 0 = b * 0 := eq_trans H1 H3 in
+        H4
+      in
+      let Step : forall n : nat, P n -> P (S n) :=
+        fun (n : nat) (IH : P n) =>
+          (* Раскрыли определение P *)
+          let IH1 : a * n = b * n := IH in
+          let H1 : a * S n = a * n + a := mul_S_right a n in
+          let H2 : b * S n = b * n + b := mul_S_right b n in
+          let H3 : a * n + a = b * n + a := eq_congr (fun k : nat => k + a) IH1 in
+          let H4 : b * n + a = b * n + b := eq_congr (fun k : nat => b * n + k) Heq in
+          let H5 : a * n + a = b * n + b := eq_trans H3 H4 in
+          let H6 : a * S n = b * n + b := eq_trans H1 H5 in
+          let H7 : b * n + b = b * S n := eq_symm H2 in
+          let H8 : a * S n = b * S n := eq_trans H6 H7 in
+          H8
+      in
+      N_ind (fun n : nat => P n) Base Step c.
+
+  Arguments eq_mul_eq {_} {_} {_} _.
+
   Definition mul_S_left : forall a b : nat, (S a) * b = b + a * b :=
     fun a : nat =>
       let Base : (S a) * 0 = 0 + a * 0 :=
@@ -681,7 +712,7 @@ Module PeanoArithmetic.
 
   Arguments add_right_eq_self {_} {_} _.
 
-  Definition n_k_eq_0 : forall n k : nat, n + k = 0 -> and (n = 0) (k = 0) :=
+  Definition n_k_eq_0 : forall n k : nat, n + k = 0 -> (n = 0) /\ (k = 0) :=
     fun (n : nat) =>
       (* 1. Выносим предикат индукции в отдельную переменную *)
       let P : nat -> Prop :=
@@ -890,13 +921,36 @@ Module PeanoArithmetic.
     fun (a b : nat) =>
       (* 1. Выносим предикат индукции в отдельную переменную *)
       let P : nat -> Prop :=
-        fun n : nat => or (le n b) (le n a)
+        fun n : nat => or (le n b) (le b n)
       in
       let Base : P 0 :=
-        _
+        let H1 : le 0 b := le_0_n b in
+        or_intro_left (le 0 b) (le b 0) H1
       in
       let Step : forall n : nat, P n -> P (S n) :=
         fun (n : nat) (IH : P n) =>
+          (* Раскрыли определение IH *)
+          let IH1 : le n b \/ le b n := IH in
+          (* (le n b) -> le (S n) b \/ le (S n) a *)
+          let H_left : (le n b) -> or (le (S n) b) (le b (S n)) :=
+            (fun (H0 : le n b) =>
+               (* 1. Выносим предикат индукции в отдельную переменную *)
+               let Q : nat -> Prop :=
+                 fun m : nat => le (S n) m \/ le m (S n)
+               in
+               let Base : Q 0 :=
+                 let H1 : le 0 (S n) := le_0_n (S n) in
+                 let H2 : le (S n) 0 \/ le 0 (S n) in
+                 H1
+               in
+               let Step : forall n : nat, P n -> P (S n) :=
+                 fun (n : nat) (IH : P n) =>
+                   _
+               in
+               N_ind (fun n : nat => P n) Base Step b
+
+              _)
+          in
           _
       in
       N_ind (fun n : nat => P n) Base Step a.
