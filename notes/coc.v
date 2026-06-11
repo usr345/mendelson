@@ -932,7 +932,12 @@ Module PeanoArithmetic.
           (* Раскрыли определение le в H1 *)
           let H2 : exists nat (fun k : nat => k + S n = b) := H1 in
           ex_elim H2 (fun (k : nat) (W : k + S n = b) =>
-              _
+            let H3 : S k + S n = S (k + S n) := add_S_left k (S n) in
+            let H4 : S (k + S n) = S b := eq_congr S W in
+            let H5 : S k + S n = S b := eq_trans H3 H4 in
+            let H6 : exists nat (fun k : nat => k + S n = S b) := ex_intro (S k) H5 in
+            let H7 : le (S n) (S b) := H6 in
+            H7
           )
       in
       N_ind (fun n : nat => P n) Base Step.
