@@ -928,15 +928,12 @@ Module PeanoArithmetic.
       in
       let Step : forall n : nat, P n -> P (S n) :=
         fun (n : nat) (IH : P n) =>
-          fun (b : nat) (H0: le (S n) b) =>
-          (* Раскрыли определение IH *)
-          let IH1 : forall b : nat, le n b -> le n (S b) := IH in
-          let H1 : le n b -> le n (S b) := IH1 b in
-          let H2 : le n b := le_Sa_le_a H0 in
-          let H3 : le n (S b) := H1 H2 in
-          let H4 : le n (S b) -> le n (S (S b)) := IH1 (S b) in
-          let H5 : le n (S (S b)) := H4 H3 in
-        _
+          fun (b : nat) (H1: le (S n) b) =>
+          (* Раскрыли определение le в H1 *)
+          let H2 : exists nat (fun k : nat => k + S n = b) := H1 in
+          ex_elim H2 (fun (k : nat) (W : k + S n = b) =>
+              _
+          )
       in
       N_ind (fun n : nat => P n) Base Step.
 
