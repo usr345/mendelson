@@ -872,6 +872,14 @@ Module PeanoArithmetic.
       let H4 : a + S 0 = S a := eq_trans H1 H3 in
       H4.
 
+  Definition S0_plus_a : forall a : nat, S 0 + a = S a :=
+    fun a : nat =>
+      let H1 : S 0 + a = S (0 + a) := add_S_left 0 a in
+      let H2 : 0 + a = a := add_0_left a in
+      let H3 : S (0 + a) = S a := eq_congr S H2 in
+      let H4 : S 0 + a = S a := eq_trans H1 H3 in
+      H4.
+
   Definition le_Sa_le_a1 : forall a b : nat, le (S a) b -> le a b :=
     fun (a b :nat) (H0 : le (S a) b) =>
       (* Раскрыли определение le в H0 *)
@@ -959,38 +967,31 @@ Module PeanoArithmetic.
     fun (a b : nat) (H0 : a = S b) =>
       let H1 : S b = a := eq_symm H0 in
       let H2 : S 0 + S b = S 0 + a := eq_congr (fun n : nat => S 0 + n) H1 in
-      let H3 : S 0 + a = a + S 0 := add_comm (S 0) a in
-      let H4 : a + S 0 = S a := a_plus_S0 a in
-      let H5 : S 0 + a = S a := eq_trans H3 H4 in
-      let H6 : S 0 + S b = S a := eq_trans H2 H5 in
-      let H7 : exists nat (fun k : nat => k + S b = S a) := ex_intro (S 0) H6 in
-      let H8 : S b <= S a := H7 in
-      let H9 : S a <= S b \/ S b <= S a := or_intro_right (S a <= S b) (S b <= S a) H8 in
-      H9.
+      let H3 : S 0 + a = S a := S0_plus_a a in
+      let H4 : S 0 + S b = S a := eq_trans H2 H3 in
+      let H5 : exists nat (fun k : nat => k + S b = S a) := ex_intro (S 0) H4 in
+      let H6 : S b <= S a := H5 in
+      let H7 : S a <= S b \/ S b <= S a := or_intro_right (S a <= S b) (S b <= S a) H6 in
+      H7.
 
   Definition le_total_left : forall a b : nat, a <= b -> S a <= b \/ b <= S a :=
-    fun a b : nat =>
-      (* Выносим предикат индукции в отдельную переменную *)
-      let P : nat -> Prop :=
-        fun n : nat => a <= n -> S a <= n \/ n <= S a
+    fun (a b : nat) (H0 : a <= b) =>
+      let H_disj : a = b \/ S a <= b := a_le_b_or H0 in
+      let H_right : S a <= b -> S a <= b \/ b <= S a := or_intro_left (S a <= b) (b <= S a) in
+      let H_left : a = b -> S a <= b \/ b <= S a :=
+        (fun Heq : a = b =>
+           let H1 : b = a := eq_symm Heq in
+           let H2 : S 0 + b = S 0 + a := eq_congr (fun k : nat => S 0 + k) H1 in
+           let H3 : S 0 + a = S a := S0_plus_a a in
+           let H4 : S 0 + b = S a := eq_trans H2 H3 in
+           let H5 : exists nat (fun k : nat => k + b = S a) := ex_intro (S 0) H4 in
+           let H6 : b <= S a := H5 in
+           let H7 : S a <= b \/ b <= S a := or_intro_right (S a <= b) (b <= S a) H6 in
+           H7
+        )
       in
-      let Base : P 0 :=
-        fun (_ : a <= 0) =>
-          let H1 : 0 <= S a := le_0_n (S a) in
-          let H2 : S a <= 0 \/ 0 <= S a := or_intro_right (S a <= 0) (0 <= S a) H1 in
-          H2
-      in
-      let Step : forall n : nat, P n -> P (S n) :=
-        fun (n : nat) (IH : P n) =>
-          fun (H0 : a <= S n) =>
-            let IH1 : a <= n -> S a <= n \/ n <= S a := IH in
-            let H_disj : a = S n \/ S a <= S n := a_le_b_or H0 in
-            let H_right : S a <= S n -> S a <= S n \/ S n <= S a := or_intro_left (S a <= S n) (S n <= S a) in
-            (* Раскрыли определение дизъюнкции как элиминатора *)
-            let H_disj_elim : forall (C : Prop), (a = S n -> C) -> (S a <= S n -> C) -> C := H_disj in
-            H_disj_elim (S a <= S n \/ S n <= S a) (le_total_left_eq a n) H_right
-      in
-      N_ind (fun n : nat => P n) Base Step b.
+      let H_disj_elim : forall (C : Prop), (a = b -> C) -> (S a <= b -> C) -> C := H_disj in
+      H_disj_elim (S a <= b \/ b <= S a) H_left H_right.
 
   Definition le_a_b_le_a_Sb : forall a b : nat, a <= b -> a <= S b :=
     fun (a b : nat) (H0 : a <= b) =>
