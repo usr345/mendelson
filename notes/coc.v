@@ -15,13 +15,13 @@ Definition I : True :=
 Definition not (P : Prop) : Prop :=
   P -> False.
 
-  Notation "~ A" := (not A) (at level 75, right associativity).
+Notation "~ A" := (not A) (at level 75, right associativity).
 
-  (* Смысл определения: если высказывание C следует из A и B, и у нас есть оба конъюнкта, то мы можем получить C. *)
-  Definition and (A B : Prop) : Prop :=
-    forall C : Prop, (A -> B -> C) -> C.
+(* Смысл определения: если высказывание C следует из A и B, и у нас есть оба конъюнкта, то мы можем получить C. *)
+Definition and (A B : Prop) : Prop :=
+  forall C : Prop, (A -> B -> C) -> C.
 
-  Notation "A /\ B" := (and A B) (at level 80, right associativity).
+Notation "A /\ B" := (and A B) (at level 80, right associativity).
 
   (* Закон исключения дизъюнкции *)
   Definition or (A B : Prop) : Prop :=
@@ -475,7 +475,7 @@ Module PeanoArithmetic.
       in
       N_ind (fun n : nat => P n) Base Step c.
 
-  Arguments eq_mul_eq {_} {_} {_} _.
+  Arguments eq_mul_eq {_} {_} _ _.
 
   Definition mul_S_left : forall a b : nat, (S a) * b = b + a * b :=
     fun a : nat =>
@@ -571,11 +571,11 @@ Module PeanoArithmetic.
   Definition le : nat -> nat -> Prop :=
     fun x y : nat => exists nat (fun k : nat => k + x = y).
 
-  (* Notation "x <= y" := (le x y) (at level 70, no associativity). *)
+  Notation "x <= y" := (le x y) (at level 70, no associativity).
 
   Definition check_le_refl_reduction_step_by_step :
     (forall n : nat, le n n) ->
-    forall n : nat, forall (C : Prop), (forall x : nat, x + n = n -> C) -> C :=
+    forall n : nat, forall C : Prop, (forall x : nat, x + n = n -> C) -> C :=
     fun H0 : forall n : nat, le n n =>
       (* Шаг 1. Раскрываем определение le *)
       let H1 : forall n : nat, (fun x y : nat => exists nat (fun k : nat => k + x = y)) n n := H0 in
@@ -618,7 +618,7 @@ Module PeanoArithmetic.
 
   Definition check_le_0_n_reduction_step_by_step :
     (forall n : nat, le 0 n) ->
-    (forall n : nat, forall (C : Prop), (forall x : nat, x + 0 = n -> C) -> C) :=
+    forall n : nat, forall C : Prop, (forall x : nat, x + 0 = n -> C) -> C :=
     (* Нам дано *)
     fun H0 : forall n : nat, le 0 n =>
       (* Шаг 1. Раскрываем определение le (δ редукция) *)
@@ -685,6 +685,8 @@ Module PeanoArithmetic.
             H7
       in
       N_ind P Base Step.
+
+  Arguments add_cancel_right {_} {_} {_} _.
 
   Definition add_right_eq_self : forall a n : nat, a + n = a -> n = 0 :=
   fun a n : nat =>
@@ -917,31 +919,105 @@ Module PeanoArithmetic.
       let H6 : le (S a) c := le_trans H3 H5 in
       H6.
 
-  Definition le_a_b_le_a_Sb : forall a b : nat, le a b -> le a (S b) :=
-    let P : nat -> Prop :=
-        fun n : nat => forall b : nat, le n b -> le n (S b)
+  Definition a_le_b_or : forall a b : nat, a <= b -> a = b \/ S a <= b :=
+    fun (a b : nat) (H0 : a <= b) =>
+      (* Раскрыл определение le в H0 *)
+      let H1 : exists nat (fun k : nat => k + a = b) := H0 in
+      ex_elim H1 (fun k : nat =>
+        (* 1. Выносим предикат индукции в отдельную переменную *)
+        let P : nat -> Prop := fun n : nat => n + a = b -> a = b \/ S a <= b in
+        (* 0 + a = b -> a = b \/ S a <= b   *)
+        let Base : P 0 :=
+          fun (H2 : 0 + a = b) =>
+            let H3 : 0 + a = a := add_0_left a in
+            let H4 : a = 0 + a := eq_symm H3 in
+            let H5 : a = b := eq_trans H4 H2 in
+            let H6 : a = b \/ S a <= b := or_intro_left (a = b) (S a <= b) H5 in
+            H6
+        in
+        let Step : forall n : nat, P n -> P (S n) :=
+          fun (n : nat) (IH : P n) =>
+            (* Раскрыли индуктивную гипотезу *)
+            let IH1 : n + a = b -> a = b \/ S a <= b := IH in
+            fun (H2 : S n + a = b) =>
+              let H3 : S n + a = S (n + a) := add_S_left n a in
+              let H4 : n + S a = S (n + a) := add_S_right n a in
+              let H5 : S (n + a) = S n + a := eq_symm H3 in
+              let H6 : n + S a = S n + a := eq_trans H4 H5 in
+              let H7 : n + S a = b := eq_trans H6 H2 in
+              let H8 : exists nat (fun k : nat => k + S a = b) := ex_intro n H7 in
+              let H9 : S a <= b := H8 in
+              let H10 : a = b \/ S a <= b := or_intro_right (a = b) (S a <= b) H9 in
+              H10
+        in
+        N_ind (fun n : nat => P n) Base Step k
+        ).
+
+  Arguments a_le_b_or {_} {_} _.
+
+  Definition le_total_left_eq : forall a b : nat, a = S b -> S a <= S b \/ S b <= S a :=
+    fun (a b : nat) (H0 : a = S b) =>
+      let H1 : S b = a := eq_symm H0 in
+      let H2 : S 0 + S b = S 0 + a := eq_congr (fun n : nat => S 0 + n) H1 in
+      let H3 : S 0 + a = a + S 0 := add_comm (S 0) a in
+      let H4 : a + S 0 = S a := a_plus_S0 a in
+      let H5 : S 0 + a = S a := eq_trans H3 H4 in
+      let H6 : S 0 + S b = S a := eq_trans H2 H5 in
+      let H7 : exists nat (fun k : nat => k + S b = S a) := ex_intro (S 0) H6 in
+      let H8 : S b <= S a := H7 in
+      let H9 : S a <= S b \/ S b <= S a := or_intro_right (S a <= S b) (S b <= S a) H8 in
+      H9.
+
+  Definition le_total_left : forall a b : nat, a <= b -> S a <= b \/ b <= S a :=
+    fun a b : nat =>
+      (* Выносим предикат индукции в отдельную переменную *)
+      let P : nat -> Prop :=
+        fun n : nat => a <= n -> S a <= n \/ n <= S a
       in
       let Base : P 0 :=
-        fun (b : nat) (_ : le 0 b) =>
-          let H1 : le 0 (S b) := le_0_n (S b) in
-          H1
+        fun (_ : a <= 0) =>
+          let H1 : 0 <= S a := le_0_n (S a) in
+          let H2 : S a <= 0 \/ 0 <= S a := or_intro_right (S a <= 0) (0 <= S a) H1 in
+          H2
       in
       let Step : forall n : nat, P n -> P (S n) :=
         fun (n : nat) (IH : P n) =>
-          fun (b : nat) (H1: le (S n) b) =>
-          (* Раскрыли определение le в H1 *)
-          let H2 : exists nat (fun k : nat => k + S n = b) := H1 in
-          ex_elim H2 (fun (k : nat) (W : k + S n = b) =>
-              _
-          )
+          fun (H0 : a <= S n) =>
+            let IH1 : a <= n -> S a <= n \/ n <= S a := IH in
+            let H_disj : a = S n \/ S a <= S n := a_le_b_or H0 in
+            let H_right : S a <= S n -> S a <= S n \/ S n <= S a := or_intro_left (S a <= S n) (S n <= S a) in
+            (* Раскрыли определение дизъюнкции как элиминатора *)
+            let H_disj_elim : forall (C : Prop), (a = S n -> C) -> (S a <= S n -> C) -> C := H_disj in
+            H_disj_elim (S a <= S n \/ S n <= S a) (le_total_left_eq a n) H_right
       in
-      N_ind (fun n : nat => P n) Base Step.
+      N_ind (fun n : nat => P n) Base Step b.
+
+  Definition le_a_b_le_a_Sb : forall a b : nat, a <= b -> a <= S b :=
+    fun (a b : nat) (H0 : a <= b) =>
+      (* Раскрыли определение le в H0 *)
+      let H1 : exists nat (fun k : nat => k + a = b) := H0 in
+      ex_elim H1 (fun (k : nat) (W : k + a = b) =>
+         let H2 : S(k + a) = S b := eq_congr S W in
+         let H3 : S k + a = S (k + a) := add_S_left k a in
+         let H4 : S k + a = S b := eq_trans H3 H2 in
+         let H5 : exists nat (fun n : nat => n + a = S b) := ex_intro (S k) H4 in
+         let H6 : a <= S b := H5 in
+         H6
+      ).
+
+  Arguments le_a_b_le_a_Sb {_} {_} _.
+
+  Definition le_total_right : forall a b : nat, b <= a -> S a <= b \/ b <= S a :=
+    fun (a b : nat) (H0 : b <= a) =>
+      let H1 : b <= S a := le_a_b_le_a_Sb  H0 in
+      let H2 : S a <= b \/ b <= S a := or_intro_right (S a <= b) (b <= S a) H1 in
+      H2.
 
   Definition le_total : forall a b : nat, or (le a b) (le b a) :=
     fun (a b : nat) =>
       (* 1. Выносим предикат индукции в отдельную переменную *)
       let P : nat -> Prop :=
-        fun n : nat => or (le n b) (le b n)
+        fun n : nat => (n <= b) \/ (b <= n)
       in
       let Base : P 0 :=
         let H1 : le 0 b := le_0_n b in
@@ -950,37 +1026,14 @@ Module PeanoArithmetic.
       let Step : forall n : nat, P n -> P (S n) :=
         fun (n : nat) (IH : P n) =>
           (* Раскрыли определение IH *)
-          let IH1 : le n b \/ le b n := IH in
-          (* (le n b) -> le (S n) b \/ le (S n) a *)
-          let H_left : (le n b) -> or (le (S n) b) (le b (S n)) :=
-            (fun (H0 : le n b) =>
-               (* 1. Выносим предикат индукции в отдельную переменную *)
-               let Q : nat -> Prop :=
-                 fun m : nat => le (S n) m \/ le m (S n)
-               in
-               let Base1 : Q 0 :=
-                 (* Раскрыли определение Q *)
-                 let H1 : le 0 (S n) := le_0_n (S n) in
-                 let H2 : le (S n) 0 \/ le 0 (S n) := or_intro_right (le (S n) 0) (le 0 (S n)) H1
-                 in
-                 H2
-               in
-               let Step1 : forall m : nat, Q m -> Q (S m) :=
-                 fun (m : nat) (IH : Q m) =>
-                   (* Раскрыли определение IH *)
-                   let IH1 : le (S n) m \/ le m (S n) := IH in
-                   let H1 : le (S n) m -> Q (S m) :=
-                     fun (H2 : le (S n) m) =>
-                       let H3 :
-                   _
-               in
-               N_ind (fun n : nat => Q n) Base1 Step1 b)
-          in
-          _
+          let H_disj : n <= b \/ b <= n := IH in
+          let H_left : n <= b -> (S n <= b) \/ (b <= S n) := le_total_left n b in
+          let H_right : b <= n -> (S n <= b) \/ (b <= S n) := le_total_right n b in
+          (* Раскрыли определение дизъюнкции как элиминатора *)
+          let H_disj_elim : forall (C : Prop), (n <= b -> C) -> (b <= n -> C) -> C := H_disj in
+          H_disj_elim (S n <= b \/ b <= S n) H_left H_right
       in
       N_ind (fun n : nat => P n) Base Step a.
-
-  .
 
 End PeanoArithmetic.
 
