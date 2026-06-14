@@ -409,6 +409,14 @@ Definition mul_comm : forall a b : nat, a * b = b * a :=
       Base
       Step.
 
+Definition n_times_2_eq_n_plus_n : forall n : nat, n * (S (S 0)) = n + n :=
+    fun n : nat =>
+      let H1 : n * (S (S 0)) = n * (S 0) + n := mul_S_right n (S 0) in
+      let H2 : n * (S 0) = n := mul_S0_right n in
+      let H3 : n * (S 0) + n = n + n := eq_congr (fun k : nat => k + n) H2 in
+      let H4 : n * (S (S 0)) = n + n := eq_trans H1 H3 in
+      H4.
+
 (* Теоремы про отношение le *)
 
 (* Определение x <= y как "существует такое k, что k + x = y" *)
@@ -526,14 +534,6 @@ Definition le_antisym : forall a b : nat, le a b -> le b a -> a = b :=
 
 Arguments le_antisym {_} {_} _ _.
 
-Definition n_times_2_eq_n_plus_n : forall n : nat, n * (S (S 0)) = n + n :=
-    fun n : nat =>
-      let H1 : n * (S (S 0)) = n * (S 0) + n := mul_S_right n (S 0) in
-      let H2 : n * (S 0) = n := mul_S0_right n in
-      let H3 : n * (S 0) + n = n + n := eq_congr (fun k : nat => k + n) H2 in
-      let H4 : n * (S (S 0)) = n + n := eq_trans H1 H3 in
-      H4.
-
 Definition le_not_S_le : forall n : nat, ~ (S n <= n) :=
   (* 1. Выносим предикат индукции в отдельную переменную *)
   let P : nat -> Prop :=
@@ -606,7 +606,11 @@ Definition add_le_mono : forall a b c : nat, a <= b -> a + c <= b + c :=
     in
     N_ind (fun n : nat => le (a + n) (b + n)) Base Step c.
 
-Definition le_Sa_le_a1 : forall a b : nat, le (S a) b -> le a b :=
+Definition mul_le_mono : forall a b c : nat, a <= b -> a * c <= b * c :=
+  fun (a b c : nat) (H0: a <= b) =>
+    
+                   
+Definition le_Sa_le_a1 : forall a b : nat, S a <= b -> a <= b :=
   fun (a b :nat) (H0 : le (S a) b) =>
     (* Раскрыли определение le в H0 *)
     let H1 : exists nat (fun k : nat => k + (S a) = b) := H0 in
@@ -649,7 +653,7 @@ Definition a_le_b_or : forall a b : nat, a <= b -> a = b \/ S a <= b :=
     (* Раскрыл определение le в H0 *)
     let H1 : exists nat (fun k : nat => k + a = b) := H0 in
     ex_elim H1 (fun k : nat =>
-      (* 1. Выносим предикат индукции в отдельную переменную *)
+      (* Выносим предикат индукции в отдельную переменную *)
       let P : nat -> Prop := fun n : nat => n + a = b -> a = b \/ S a <= b in
       (* 0 + a = b -> a = b \/ S a <= b   *)
       let Base : P 0 :=
