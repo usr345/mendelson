@@ -253,6 +253,13 @@ Definition mul_S0_right : forall a : nat, a * (S 0) = a :=
       H6 in
   N_ind (fun n : nat => n * (S 0) = n) Base Step.
 
+Definition add_2equalities : forall a b c d : nat, a = c -> b = d -> a + b = c + d :=
+  fun (a b c d : nat) (H1 : a = c) (H2 : b = d) =>
+    let H3 : a + b = c + b := eq_congr (fun p : nat => p + b) H1 in
+    let H4 : c + b = c + d := eq_congr (fun p : nat => c + p) H2 in
+    let H5 : a + b = c + d := eq_trans H3 H4 in
+    H5.
+
 Definition distributivity_left : forall a b c : nat, a * (b + c) = a*b + a*c :=
   fun (a b : nat) =>
     let Base : a * (b + 0) = a*b + a*0 :=
@@ -606,10 +613,10 @@ Definition add_le_mono : forall a b c : nat, a <= b -> a + c <= b + c :=
     in
     N_ind (fun n : nat => le (a + n) (b + n)) Base Step c.
 
-Definition mul_le_mono : forall a b c : nat, a <= b -> a * c <= b * c :=
-  fun (a b c : nat) (H0: a <= b) =>
-    
-                   
+(* Definition mul_le_mono : forall a b c : nat, a <= b -> a * c <= b * c := *)
+(*   fun (a b c : nat) (H0: a <= b) => *)
+
+
 Definition le_Sa_le_a1 : forall a b : nat, S a <= b -> a <= b :=
   fun (a b :nat) (H0 : le (S a) b) =>
     (* Раскрыли определение le в H0 *)
