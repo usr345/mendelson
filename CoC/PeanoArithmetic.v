@@ -260,6 +260,8 @@ Definition add_2equalities : forall a b c d : nat, a = c -> b = d -> a + b = c +
     let H5 : a + b = c + d := eq_trans H3 H4 in
     H5.
 
+Arguments add_2equalities {_} {_} {_} {_} _ _.
+
 Definition distributivity_left : forall a b c : nat, a * (b + c) = a*b + a*c :=
   fun (a b : nat) =>
     let Base : a * (b + 0) = a*b + a*0 :=
@@ -358,6 +360,49 @@ Definition mul_S_left : forall a b : nat, (S a) * b = b + a * b :=
     N_ind (fun n : nat => (S a) * n = n + a * n)
       Base
       Step.
+
+Definition distributivity_right : forall a b c : nat, (a + b) * c = a * c + b * c :=
+  fun (a b c : nat) =>
+    let P : nat -> Prop :=
+      fun n : nat => (a + n) * c = a * c + n * c
+    in
+    let Base : P 0 :=
+      let H1 : a + 0 = a := add_0_right a in
+      let H2 : (a + 0) * c = a * c := eq_congr (fun p : nat => p * c) H1 in
+      let H3 : a * c + 0 = a * c := add_0_right (a * c) in
+      let H4 : 0 * c = 0 := mul_0_left c in
+      let H5 : a * c = a * c + 0 := eq_symm H3 in
+      let H6 : (a + 0) * c = a * c + 0 := eq_trans H2 H5 in
+      let H7 : a * c = a * c := eq_refl (a * c) in
+      let H8 : a * c + 0 * c = a * c + 0 := add_2equalities H7 H4 in
+      let H9 : a * c + 0 = a * c + 0 * c := eq_symm H8 in
+      let H10 : (a + 0) * c = a * c + 0 * c := eq_trans H6 H9 in
+      H10
+    in
+    let Step : forall n : nat, P n -> P (S n) :=
+      fun (n : nat) (IH : P n) =>
+        let H1 : S n * c = c + n * c := mul_S_left n c in
+        let H2 : c + n * c = n * c + c := add_comm c (n * c) in
+        let H3 : S n * c = n * c + c := eq_trans H1 H2 in
+        let H4 : a * c + S n * c = a * c + (n * c + c) := eq_congr (fun p : nat => a * c + p) H3 in
+        let H5 : a * c + (n * c + c) = a * c + S n * c := eq_symm H4 in
+        (* Мы получили правую часть Step *)
+        let H6 : (a * c + n * c) + c = a * c + (n * c + c) := add_assoc (a * c) (n * c) c in
+        let H7 : (a * c + n * c) + c = a * c + S n * c := eq_trans H6 H5 in
+        let H8 : (a + n) * c + c = (a * c + n * c) + c := eq_congr (fun p : nat => p + c) IH in
+        let H9 : (a + n) * c + c = a * c + S n * c := eq_trans H8 H7 in
+        let H10 : a + S n = S (a + n) := add_S_right a n in
+        let H11 : S (a + n) * c = c + (a + n) * c := mul_S_left (a + n) c in
+        let H12 : (a + S n) * c = S (a + n) * c := eq_congr (fun p : nat => p * c) H10 in
+        (* Мы получили левую часть Step *)
+        let H13 : (a + S n) * c = c + (a + n) * c := eq_trans H12 H11 in
+        let H14 : c + (a + n) * c = (a + n) * c + c := add_comm c ((a + n)  * c) in
+        let H15 : (a + S n) * c = (a + n) * c + c := eq_trans H13 H14 in
+        let H16 : (a + S n) * c = a * c + S n * c := eq_trans H15 H9 in
+        H16
+    in
+    N_ind (fun n : nat => P n) Base Step b.
+
 
 Definition mul_assoc : forall a b c : nat, (a * b) * c = a * (b * c) :=
   fun a b : nat =>
