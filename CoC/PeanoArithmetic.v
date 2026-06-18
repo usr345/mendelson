@@ -382,16 +382,18 @@ Definition distributivity_right : forall a b c : nat, (a + b) * c = a * c + b * 
     let Step : forall n : nat, P n -> P (S n) :=
       fun (n : nat) (IH : P n) =>
         let Goal : (a + S n) * c = a * c + S n * c :=
+          (* Правая часть: ... = a * c + S n * c *)
           let H1 : S n * c = c + n * c := mul_S_left n c in
           let H2 : c + n * c = n * c + c := add_comm c (n * c) in
           let H3 : S n * c = n * c + c := eq_trans H1 H2 in
           let H4 : a * c + S n * c = a * c + (n * c + c) := eq_congr (fun p : nat => a * c + p) H3 in
           let H5 : a * c + (n * c + c) = a * c + S n * c := eq_symm H4 in
-          (* Мы получили правую часть Step *)
+          (* Преобразование правой части для получения удобной формулы для транзитивности *)
           let H6 : (a * c + n * c) + c = a * c + (n * c + c) := add_assoc (a * c) (n * c) c in
           let H7 : (a * c + n * c) + c = a * c + S n * c := eq_trans H6 H5 in
           let H8 : (a + n) * c + c = (a * c + n * c) + c := eq_congr (fun p : nat => p + c) IH in
           let H9 : (a + n) * c + c = a * c + S n * c := eq_trans H8 H7 in
+          (* Левая часть: (a + S n) * c = (a + n) * c + c *)
           let H10 : a + S n = S (a + n) := add_S_right a n in
           let H11 : S (a + n) * c = c + (a + n) * c := mul_S_left (a + n) c in
           let H12 : (a + S n) * c = S (a + n) * c := eq_congr (fun p : nat => p * c) H10 in
