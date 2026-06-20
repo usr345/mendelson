@@ -330,34 +330,41 @@ Arguments eq_mul_eq {_} {_} _ _.
 
 Definition mul_S_left : forall a b : nat, (S a) * b = b + a * b :=
   fun a : nat =>
-    let Base : (S a) * 0 = 0 + a * 0 :=
-      let H1 : (S a) * 0 = 0 := mul_0_right (S a) in
-      let H2 : a * 0 = 0 := mul_0_right a in
-      let H3 : 0 + a * 0 = a * 0 := add_0_left (a * 0) in
-      let H4 : 0 + a * 0 = 0 := eq_trans H3 H2 in
-      let H5 : (S a) * 0 = 0 + a * 0 := eq_trans H1 (eq_symm H4) in
-      H5
+    let P : nat -> Prop :=
+      fun n : nat => (S a) * n = n + a * n
     in
-    let Step : forall n : nat,
-        ((S a) * n = n + a * n) ->
-        ((S a) * (S n) = (S n) + a * (S n)) :=
+    let Base : P 0 :=
+      let Goal : (S a) * 0 = 0 + a * 0 :=
+        let H_left : (S a) * 0 = 0 := mul_0_right (S a) in
+        let H1 : a * 0 = 0 := mul_0_right a in
+        let H2 : 0 + a * 0 = a * 0 := add_0_left (a * 0) in
+        let H3 : 0 + a * 0 = 0 := eq_trans H2 H1 in
+        let H_right : 0 = 0 + a * 0 := eq_symm H3 in
+        eq_trans H_left H_right
+      in
+      Goal
+    in
+    let Step : forall n : nat, P n -> P (S n) :=
       fun (n : nat) (IH : (S a) * n = n + a * n) =>
-        let H1 : (S a) * (S n) = (S a) * n + S a := mul_S_right (S a) n in
-        let H2 : (S a) * n + S a = (n + a * n) + S a := eq_congr (fun n : nat => n + S a) IH in
-        let H3 : a * (S n) = a * n + a := mul_S_right a n in
-        let H4 : S n + a * (S n) = S n + (a * n + a) := eq_congr (fun k : nat => S n + k) H3 in
-        let H5 : (n + a * n) + S a = S (n + a * n + a) := add_S_right (n + a * n) a in
-        let H6 : S n + (a * n + a) = S (n + (a * n + a)) := add_S_left n (a * n + a) in
-        let H7 : S n + a * (S n) = S (n + (a * n + a)) := eq_trans H4 H6 in
-        let H8 : (S a) * (S n) = (n + a * n) + S a := eq_trans H1 H2 in
-        let H9 : (S a) * (S n) = S (n + a * n + a) := eq_trans H8 H5 in
-        let H10 : (n + a * n) + a = n + (a * n + a) := add_assoc n (a * n) a in
-        let H11 : S ((n + a * n) + a) = S (n + (a * n + a)) := eq_congr S H10 in
-        let H12 : (S a) * (S n) = S (n + (a * n + a)) := eq_trans H9 H11 in
-        let H13 : (S a) * (S n) = S n + a * (S n) := eq_trans H12 (eq_symm H7) in
-        H13
+        let Goal : (S a) * (S n) = (S n) + a * (S n) :=
+          let H1 : (S a) * (S n) = (S a) * n + S a := mul_S_right (S a) n in
+          let H2 : (S a) * n + S a = (n + a * n) + S a := eq_congr (fun n : nat => n + S a) IH in
+          let H3 : a * (S n) = a * n + a := mul_S_right a n in
+          let H4 : S n + a * (S n) = S n + (a * n + a) := eq_congr (fun k : nat => S n + k) H3 in
+          let H5 : (n + a * n) + S a = S (n + a * n + a) := add_S_right (n + a * n) a in
+          let H6 : S n + (a * n + a) = S (n + (a * n + a)) := add_S_left n (a * n + a) in
+          let H7 : S n + a * (S n) = S (n + (a * n + a)) := eq_trans H4 H6 in
+          let H8 : (S a) * (S n) = (n + a * n) + S a := eq_trans H1 H2 in
+          let H9 : (S a) * (S n) = S (n + a * n + a) := eq_trans H8 H5 in
+          let H10 : (n + a * n) + a = n + (a * n + a) := add_assoc n (a * n) a in
+          let H11 : S ((n + a * n) + a) = S (n + (a * n + a)) := eq_congr S H10 in
+          let H12 : (S a) * (S n) = S (n + (a * n + a)) := eq_trans H9 H11 in
+          let H13 : (S a) * (S n) = S n + a * (S n) := eq_trans H12 (eq_symm H7) in
+          H13
+        in
+        Goal
     in
-    N_ind (fun n : nat => (S a) * n = n + a * n) Base Step.
+    N_ind P Base Step.
 
 Definition distributivity_right : forall a b c : nat, (a + b) * c = a * c + b * c :=
   fun (a b c : nat) =>
@@ -380,7 +387,7 @@ Definition distributivity_right : forall a b c : nat, (a + b) * c = a * c + b * 
       in Goal
     in
     let Step : forall n : nat, P n -> P (S n) :=
-      fun (n : nat) (IH : P n) =>
+      fun (n : nat) (IH : (a + n) * c = a * c + n * c) =>
         let Goal : (a + S n) * c = a * c + S n * c :=
           (* Правая часть: ... = a * c + S n * c *)
           let H1 : S n * c = c + n * c := mul_S_left n c in
@@ -404,7 +411,7 @@ Definition distributivity_right : forall a b c : nat, (a + b) * c = a * c + b * 
           eq_trans H15 H9
         in Goal
     in
-    N_ind (fun n : nat => P n) Base Step b.
+    N_ind P Base Step b.
 
 Definition mul_assoc : forall a b c : nat, (a * b) * c = a * (b * c) :=
   fun a b : nat =>
@@ -654,9 +661,59 @@ Definition add_le_mono : forall a b c : nat, a <= b -> a + c <= b + c :=
     in
     N_ind (fun n : nat => le (a + n) (b + n)) Base Step c.
 
-(* Definition mul_le_mono : forall a b c : nat, a <= b -> a * c <= b * c := *)
-(*   fun (a b c : nat) (H0: a <= b) => *)
-
+Definition mul_le_mono : forall a b c : nat, a <= b -> a * c <= b * c :=
+  fun (a b c : nat) (H0: a <= b) =>
+    ex_elim H0 (fun (k1 : nat) (W1 : k1 + a = b) =>
+      let P : nat -> Prop := fun n : nat => a * n <= b * n in
+      let Base : P 0 :=
+        let Goal : a * 0 <= b * 0 :=
+          let H1 : a * 0 = 0 := mul_0_right a in
+          let H2 : 0 <= b * 0 := le_0_n (b * 0) in
+          let H3 : exists nat (fun k : nat => k + 0 = b * 0) := H2 in
+          ex_elim H3 (fun (k : nat) (W : k + 0 = b * 0) =>
+            let H4 : k + a * 0 = k + 0 := eq_congr (fun p : nat => k + p) H1 in
+            let H5 : k + a * 0 = b * 0 := eq_trans H4 W in
+            let H6 : exists nat (fun k : nat => k + a * 0 = b * 0) := ex_intro k H5 in
+            let H7 : a * 0 <= b * 0 := H6 in
+            H7
+          )
+        in Goal
+      in
+      let Step : forall n : nat, P n -> P (S n) :=
+        fun (n : nat) (IH : a * n <= b * n) =>
+          let Goal : a * S n <= b * S n :=
+            let IH1 : exists nat (fun k : nat => k + a * n = b * n) := IH in
+            ex_elim IH1 (fun (k2 : nat) (W2 : k2 + a * n = b * n) =>
+              (* Левая часть: k? + a + S n = ... *)
+              let H1 : a * S n = a * n + a := mul_S_right a n in
+              let H2 : k2 + a * S n = k2 + (a * n + a) := eq_congr (fun p : nat => k2 + p) H1 in
+              let H3 : k2 + (a * n + a) = (k2 + a * n) + a := eq_symm (add_assoc k2 (a * n) a) in
+              let H4 : k2 + a * S n = (k2 + a * n) + a := eq_trans H2 H3 in
+              let H5 : (k2 + a * n) + a = b * n + a := eq_congr (fun p : nat => p + a) W2 in
+              let H6 : k2 + a * S n = b * n + a := eq_trans H4 H5 in
+              let H7 : (k2 + a * S n) + k1 = (b * n + a) + k1 := eq_congr (fun p : nat => p + k1) H6 in
+              let H8 : k1 + (k2 + a * S n) = (k2 + a * S n) + k1 := add_comm k1 (k2 + a * S n) in
+              let H9 : k1 + (k2 + a * S n) = (b * n + a) + k1 := eq_trans H8 H7 in
+              let H10 : (k1 + k2) + a * S n = k1 + (k2 + a * S n) := add_assoc k1 k2 (a * S n) in
+              (* Левая часть готова *)
+              let H_left : (k1 + k2) + a * S n = (b * n + a) + k1 := eq_trans H10 H9 in
+              (* Конструируем правую часть: (b * n + a) + k1 = b * S n *)
+              let H11 : a + k1 = k1 + a := add_comm a k1 in
+              let H12 : a + k1 = b := eq_trans H11 W1 in
+              let H13 : b * n + (a + k1) = b * n + b := eq_congr (fun p : nat => b * n + p) H12 in
+              let H14 : b * S n = b * n + b := mul_S_right b n in
+              let H15 : b * n + b = b * S n := eq_symm H14 in
+              let H16 : b * n + (a + k1) = b * S n := eq_trans H13 H15 in
+              let H17 : (b * n + a) + k1 = b * n + (a + k1) := add_assoc (b * n) a k1 in
+              let H_right : (b * n + a) + k1 = b * S n := eq_trans H17 H16 in
+              (* Объединяем левую и правую часть, и закрываем определение le *)
+              let H18 : (k1 + k2) + a * S n = b * S n := eq_trans H_left H_right in
+              let H19 : exists nat (fun k : nat => k + a * S n = b * S n) := ex_intro (k1 + k2) H18 in
+              let H20 : a * S n <= b * S n := H19 in
+              H20)
+          in Goal
+      in
+      N_ind P Base Step c).
 
 Definition le_Sa_le_a1 : forall a b : nat, S a <= b -> a <= b :=
   fun (a b :nat) (H0 : le (S a) b) =>
