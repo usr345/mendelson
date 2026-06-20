@@ -1,4 +1,5 @@
 From CoC Require Import CoC.
+From CoC Require Import Groups.
 Import CoC.
 
 Parameter nat : Type.
@@ -371,7 +372,6 @@ Definition distributivity_right : forall a b c : nat, (a + b) * c = a * c + b * 
     let P : nat -> Prop :=
       fun n : nat => (a + n) * c = a * c + n * c
     in
-    (* Доказать (a + 0) * c = a * c + 0 * c *)
     let Base : P 0 :=
       let Goal : (a + 0) * c = a * c + 0 * c :=
         (* Левая часть: (a + 0) * c = a * c *)
@@ -399,16 +399,16 @@ Definition distributivity_right : forall a b c : nat, (a + b) * c = a * c + b * 
           let H6 : (a * c + n * c) + c = a * c + (n * c + c) := add_assoc (a * c) (n * c) c in
           let H7 : (a * c + n * c) + c = a * c + S n * c := eq_trans H6 H5 in
           let H8 : (a + n) * c + c = (a * c + n * c) + c := eq_congr (fun p : nat => p + c) IH in
-          let H9 : (a + n) * c + c = a * c + S n * c := eq_trans H8 H7 in
+          let H_right : (a + n) * c + c = a * c + S n * c := eq_trans H8 H7 in
           (* Левая часть: (a + S n) * c = (a + n) * c + c *)
-          let H10 : a + S n = S (a + n) := add_S_right a n in
-          let H11 : S (a + n) * c = c + (a + n) * c := mul_S_left (a + n) c in
-          let H12 : (a + S n) * c = S (a + n) * c := eq_congr (fun p : nat => p * c) H10 in
+          let H9 : a + S n = S (a + n) := add_S_right a n in
+          let H10 : S (a + n) * c = c + (a + n) * c := mul_S_left (a + n) c in
+          let H11 : (a + S n) * c = S (a + n) * c := eq_congr (fun p : nat => p * c) H9 in
           (* Мы получили левую часть Step *)
-          let H13 : (a + S n) * c = c + (a + n) * c := eq_trans H12 H11 in
-          let H14 : c + (a + n) * c = (a + n) * c + c := add_comm c ((a + n)  * c) in
-          let H15 : (a + S n) * c = (a + n) * c + c := eq_trans H13 H14 in
-          eq_trans H15 H9
+          let H12 : (a + S n) * c = c + (a + n) * c := eq_trans H11 H10 in
+          let H13 : c + (a + n) * c = (a + n) * c + c := add_comm c ((a + n)  * c) in
+          let H_left : (a + S n) * c = (a + n) * c + c := eq_trans H12 H13 in
+          eq_trans H_left H_right
         in Goal
     in
     N_ind P Base Step b.
@@ -684,7 +684,7 @@ Definition mul_le_mono : forall a b c : nat, a <= b -> a * c <= b * c :=
           let Goal : a * S n <= b * S n :=
             let IH1 : exists nat (fun k : nat => k + a * n = b * n) := IH in
             ex_elim IH1 (fun (k2 : nat) (W2 : k2 + a * n = b * n) =>
-              (* Левая часть: k? + a + S n = ... *)
+              (* Левая часть: k? + a * S n = ... *)
               let H1 : a * S n = a * n + a := mul_S_right a n in
               let H2 : k2 + a * S n = k2 + (a * n + a) := eq_congr (fun p : nat => k2 + p) H1 in
               let H3 : k2 + (a * n + a) = (k2 + a * n) + a := eq_symm (add_assoc k2 (a * n) a) in
@@ -893,3 +893,12 @@ Definition lt_trans : forall a b c : nat, a < b -> b < c -> a < c :=
     let H5 : le b c := le_Sa_le_a H4 in
     let H6 : le (S a) c := le_trans H3 H5 in
     H6.
+
+Definition nat_Setoid : Is_Setoid nat eq :=
+  let Refl : forall x : nat, x = x := @eq_refl nat
+  in
+  let Sym : forall x y : nat, x = y -> y = x := @eq_symm nat
+  in
+  let Trans : forall x y z : nat, x = y -> y = z -> x = z := @eq_trans nat
+  in
+  Build_Setoid nat eq Refl Sym Trans.
