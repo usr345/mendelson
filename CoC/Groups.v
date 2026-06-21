@@ -39,14 +39,43 @@ Definition setoid_trans
 (* Отношение эквивалентности разбивает исходное множество на непересекающиеся подмножества - классы эквивалентности. Множество классов эквивалентности для данного множества - это фактормножество *)
 Definition equivalence_class (A : Type) (Eq : A -> A -> Prop) (S : Is_Setoid A Eq) : A -> A -> Prop := fun a b : A => Eq a b.
 
-Definition FactorSet (A : Type) (Eq : A -> A -> Prop) (S : Is_Setoid A Eq) : (C : equivalence_class A Eq S) -> Prop := fun (C : equivalence_class A Eq S)
+(* Definition is_equivalence_class {A : Type} (Eq : A -> A -> Prop) (C : A -> Prop) : Prop := *)
+(*   exists a : A, forall b : A, C b <-> Eq a b. *)
 
-Definition setoid_eq_congr (A : Type) (Eq : A -> A -> Prop) (S : Is_Setoid A Eq) :
-  forall (f : A -> A) {x y : A}, Eq x y -> Eq (f x) (f y) :=
-  fun (f : A -> A) (x y : A) (Heq : Eq x y) =>
-    _.
+(* Definition FactorSet (A : Type) (Eq : A -> A -> Prop) (S : Is_Setoid A Eq) : Type := *)
+(*   { C : A -> Prop | is_equivalence_class Eq C }. *)
 
-  
-  fun (P : B -> Prop) (Pfx : P (f x)) =>
-    Heq (fun z : A => P (f z)) Pfx.
+(* Definition FactorSet (A : Type) (Eq : A -> A -> Prop) (S : Is_Setoid A Eq) : (C : equivalence_class A Eq S) -> Prop := fun (C : equivalence_class A Eq S) *)
 
+(* Definition setoid_eq_congr (A : Type) (Eq : A -> A -> Prop) (S : Is_Setoid A Eq) : *)
+(*   forall (f : A -> A) {x y : A}, Eq x y -> Eq (f x) (f y) := *)
+(*   fun (f : A -> A) (x y : A) (Heq : Eq x y) => *)
+(*     _. *)
+
+(* Предикат 1: Операция сохраняет отношение эквивалентности *)
+Definition Is_Congruence_2
+  (A : Type) (Eq : A -> A -> Prop) (op : A -> A -> A) : Prop :=
+  forall x1 x2 y1 y2 : A, Eq x1 x2 -> Eq y1 y2 -> Eq (op x1 y1) (op x2 y2).
+
+Definition Is_Associative
+  (A : Type) (Eq : A -> A -> Prop) (op : A -> A -> A) : Prop :=
+  forall x y z : A, Eq (op (op x y) z) (op x (op y z)).
+
+Definition Is_Semigroup (A : Type) (Eq : A -> A -> Prop) (op : A -> A -> A) : Prop :=
+  forall P : Prop,
+  (
+    Is_Setoid A Eq ->
+    Is_Congruence_2 A Eq op ->
+    Is_Associative A Eq op ->
+    P
+  ) -> P.
+
+
+Definition Is_Monoid (A : Type) (Eq : A -> A -> Prop) (op : A -> A -> A) : Prop :=
+  forall P : Prop,
+  (
+    (Is_Setoid A Eq) ->
+    (Is_Congruence_2 A Eq op) ->
+    (Is_Associative A Eq op) ->
+    P
+  ) -> P.
