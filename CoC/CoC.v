@@ -18,16 +18,16 @@ Definition not (P : Prop) : Prop :=
 #[global] Notation "~ A" := (not A) (at level 75, right associativity).
 
 (* Смысл определения: если высказывание C следует из A и B, и у нас есть оба конъюнкта, то мы можем получить C. *)
-Definition and (A B : Prop) : Prop :=
+Definition conj (A B : Prop) : Prop :=
   forall C : Prop, (A -> B -> C) -> C.
 
-#[global] Notation "A /\ B" := (and A B) (at level 80, right associativity).
+#[global] Notation "A /\ B" := (conj A B) (at level 80, right associativity).
 
 (* Закон исключения дизъюнкции *)
-Definition or (A B : Prop) : Prop :=
+Definition disj (A B : Prop) : Prop :=
   forall (C : Prop), (A -> C) -> (B -> C) -> C.
 
-#[global] Notation "A \/ B" := (or A B) (at level 85, right associativity).
+#[global] Notation "A \/ B" := (disj A B) (at level 85, right associativity).
 
 (* Эквивалентность на универсуме: два объекта эквивалентны,
    если они обладают одинаковыми свойствами
@@ -94,7 +94,7 @@ Module Bool.
   Definition true : bool := fun (P : Type) (t f : P) => t.
   Definition false : bool := fun (P : Type) (t f : P) => f.
 
-  Definition andb (b1 b2 : bool) : bool :=
+  Definition conjb (b1 b2 : bool) : bool :=
     fun (P : Type) (t f : P) => b1 P (b2 P t f) f.
 
   Definition orb (b1 b2 : bool) : bool :=
@@ -106,7 +106,7 @@ Module Bool.
   Definition true_ne_false : ~ (true = false) :=
     fun (Heq : true = false) =>
       (* 1. Define a predicate that evaluates to True if given true, *)
-      (* and False if given false. *)
+      (* conj False if given false. *)
       let P_discr : bool -> Prop :=
         fun (b : bool) => b Prop True False in
       (* 2. Apply your equality hypothesis to your custom predicate. *)
@@ -143,7 +143,7 @@ Section CoC_example.
 
 End CoC_example.
 
-Section CoC_theorems.
+Module CoC_theorems.
   Import CoC.
 
   Definition ex_not_forall (A : Type) (P : A -> Prop) (C : Prop) :
@@ -152,23 +152,23 @@ Section CoC_theorems.
         let false : False := ex_elim Hex Hcontra in
       false.
 
-  Definition and_elim1 : forall {A B : Prop}, A /\ B -> A :=
+  Definition conj_elim1 : forall {A B : Prop}, A /\ B -> A :=
     fun A B : Prop =>
-      fun Hand : A /\ B => Hand A (fun (a : A) (b : B) => a).
+      fun Hconj : A /\ B => Hconj A (fun (a : A) (b : B) => a).
 
-  Definition and_elim2 : forall {A B : Prop}, A /\ B -> B :=
+  Definition conj_elim2 : forall {A B : Prop}, A /\ B -> B :=
     fun (A B : Prop) =>
-     fun (Hand : A /\ B) => Hand B (fun (a : A) (b : B) => b).
+     fun (Hconj : A /\ B) => Hconj B (fun (a : A) (b : B) => b).
 
-  Definition and_intro : forall {A B : Prop}, A -> B -> A /\ B :=
+  Definition conj_intro : forall {A B : Prop}, A -> B -> A /\ B :=
     fun A B : Prop =>
       fun (a : A) (b : B) =>
         fun (C : Prop) (HAB_C : A -> B -> C) => HAB_C a b.
 
-  Definition and_comm {A B : Prop} : A /\ B -> B /\ A :=
-    fun (Hand : A /\ B) =>
+  Definition conj_comm {A B : Prop} : A /\ B -> B /\ A :=
+    fun (Hconj : A /\ B) =>
       fun (C : Prop) (f : B -> A -> C) =>
-        Hand C (fun (a : A) (b : B) => f b a).
+        Hconj C (fun (a : A) (b : B) => f b a).
 
   Definition ex_falso (A : Prop) : A -> ~ A -> False :=
     fun (a : A) (na : ~ A) =>
@@ -183,20 +183,20 @@ Section CoC_theorems.
       fun (C : Prop) (Hac : A -> C) (Hbc : B -> C) => Hbc Hb.
 
   Definition or_comm (A B : Prop) : A \/ B -> B \/ A :=
-    fun (Hor : A \/ B) =>
+    fun (Hdisj : A \/ B) =>
       fun (C : Prop) (fB : B -> C) (fA : A -> C) =>
-        Hor C fA fB.
+        Hdisj C fA fB.
 
-  Definition id : forall A : Type, A -> A :=
+  Definition id : forall {A : Type}, A -> A :=
     fun (A : Type) (a : A) => a.
 
   Definition or_idempotent : forall {A : Prop}, A \/ A -> A :=
-    fun (A : Prop) (Hor : A \/ A) =>
-      Hor A (id A) (id A).
+    fun (A : Prop) (Hdisj : A \/ A) =>
+      Hdisj A id id.
 
-  Definition and_idempotent : forall {A : Prop}, A /\ A -> A :=
-    fun (A : Prop) (Hand : A /\ A) =>
-      Hand A (fun (a _ : A) => a).
+  Definition conj_idempotent : forall {A : Prop}, A /\ A -> A :=
+    fun (A : Prop) (Hconj : A /\ A) =>
+      Hconj A (fun (a _ : A) => a).
 
   Definition uncurry: forall {A B C : Prop}, (A -> B -> C) -> (A /\ B) -> C :=
     fun (A B C : Prop) (HAB_C : A -> B -> C) (Hconj : A /\ B) =>
@@ -205,7 +205,7 @@ Section CoC_theorems.
   Definition curry : forall {A B C : Prop}, (A /\ B -> C) -> A -> B -> C :=
     fun (A B C : Prop) =>
       fun (f : (A /\ B) -> C) (a : A) (b : B) =>
-        let Hconj : A /\ B := and_intro a b in
+        let Hconj : A /\ B := conj_intro a b in
         f Hconj.
 
   Definition contrapos : forall P Q : Prop, (P -> Q) -> ~Q -> ~P :=
@@ -213,46 +213,46 @@ Section CoC_theorems.
 
   Definition deMorgan_disj {A B : Prop} :
     ~ (A \/ B) -> ~ A /\ ~ B :=
-    fun (NotOr : ~ (A \/ B)) =>
+    fun (NotDisj : ~ (A \/ B)) =>
       fun (C : Prop) (H : ~ A -> ~ B -> C) =>
         H
-          (fun (a : A) => NotOr (or_intro_left A B a))
-          (fun (b : B) => NotOr (or_intro_right A B b)).
+          (fun (a : A) => NotDisj (or_intro_left A B a))
+          (fun (b : B) => NotDisj (or_intro_right A B b)).
 
   Definition deMorgan_disj_back : forall {A B : Prop},
     ~ A /\ ~ B -> ~ (A \/ B) :=
     fun (A B : Prop) =>
-      fun (Hand : ~ A /\ ~ B) =>
-        fun (Hor : A \/ B) =>
-          Hor False (and_elim1 Hand) (and_elim2 Hand).
+      fun (Hconj : ~ A /\ ~ B) =>
+        fun (Hdisj : A \/ B) =>
+          Hdisj False (conj_elim1 Hconj) (conj_elim2 Hconj).
 
   Definition frobenius_dir (A : Type) (P : A -> Prop) (Q : Prop) :
     exists A (fun x => (P x) /\ Q) -> (exists A P) /\ Q :=
       fun (Hex : exists A (fun x : A => (P x) /\ Q)) =>
         Hex ((exists A P) /\ Q) (
             fun (x : A) (Hpq : (P x) /\ Q) =>
-              let Px : P x := and_elim1 Hpq in
-              let q : Q := and_elim2 Hpq in
+              let Px : P x := conj_elim1 Hpq in
+              let q : Q := conj_elim2 Hpq in
               let exP : exists A P := ex_intro x Px in
-                        and_intro exP q).
+                        conj_intro exP q).
 
-  Definition and_or_distr (A B C : Prop) : A /\ (B \/ C) -> (A /\ B) \/ (A /\ C) :=
+  Definition conj_or_distr (A B C : Prop) : A /\ (B \/ C) -> (A /\ B) \/ (A /\ C) :=
       fun (H : A /\ (B \/ C)) =>
-        let a := and_elim1 H in
-        let b_or_c := and_elim2 H in
+        let a := conj_elim1 H in
+        let b_or_c := conj_elim2 H in
         let case1 := (fun b : B =>
-                      let a_and_b := and_intro a b in
-                      or_intro_left (A /\ B) (A /\ C) a_and_b
+                      let a_conj_b := conj_intro a b in
+                      or_intro_left (A /\ B) (A /\ C) a_conj_b
                    ) in
       let case2 := (fun c : C =>
-                      let a_and_c := and_intro a c in
-                      or_intro_right (A /\ B) (A /\ C) a_and_c
+                      let a_conj_c := conj_intro a c in
+                      or_intro_right (A /\ B) (A /\ C) a_conj_c
                    ) in
       b_or_c (A /\ B \/ A /\ C) case1 case2.
 
   Definition ex1 (A : Prop) : ~ ~ (~ A \/ A) := fun (H : ~ ((~ A) \/ A)) =>
     let conj1 := (deMorgan_disj H) in
-      (uncurry (ex_falso (~ A))) (and_comm conj1).
+      (uncurry (ex_falso (~ A))) (conj_comm conj1).
 
 (*
   Следующий вызов: Попробуй формализовать числа Чёрча (Nat_CoC) и операцию plus_CoC. Доказательство того, что plus_CoC zero n = n через прямой терм — это отличная тренировка «умственной выносливости».
