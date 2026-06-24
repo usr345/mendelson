@@ -81,63 +81,64 @@ Definition semigroup_congruence_2 {A : Type} {Eq : A -> A -> Prop} {op : A -> A 
 Definition semigroup_assoc {A : Type} {Eq : A -> A -> Prop} {op : A -> A -> A} (Hs : Is_Semigroup A Eq op) : Is_Associative A Eq op :=
   Hs (Is_Associative A Eq op) (fun _ _ (assoc : Is_Associative A Eq op) => assoc).
 
-Definition Is_Unit (A : Type) (Eq : A -> A -> Prop) (op : A -> A -> A) (e : A) : Prop :=
-  (forall a : A, Eq (op e a) a) /\
-  (forall a : A, Eq (op a e) a).
+Declare Scope algebra_scope.
 
-Definition Is_Monoid
-  (A : Type) (Eq : A -> A -> Prop) (op : A -> A -> A) (e : A) : Prop :=
-  forall P : Prop,
-  ( Is_Semigroup A Eq op ->
-    Is_Unit A Eq op e ->
-    P
-  ) -> P.
+Section MonoidTheory.
 
-Definition Build_Monoid (A : Type) (Eq : A -> A -> Prop) (op : A -> A -> A) (e : A) (Hsemi : Is_Semigroup A Eq op) (Hunit : Is_Unit A Eq op e) : Is_Monoid A Eq op e :=
-  fun (P : Prop) (Constructor : Is_Semigroup A Eq op -> Is_Unit A Eq op e -> P) => Constructor Hsemi Hunit.
+  Context {A : Type}.
+  Variable Eq : A -> A -> Prop.
+  Variable op : A -> A -> A.
+  Variable e : A.
 
-Definition monoid_semigroup {A : Type} {Eq : A -> A -> Prop} {op : A -> A -> A} (e : A) (Hm : Is_Monoid A Eq op e) : Is_Semigroup A Eq op :=
-  Hm (Is_Semigroup A Eq op) (fun (semi : Is_Semigroup A Eq op) _ => semi).
+  (* Вводим локальные нотации, которые работают только внутри секции *)
+  Notation "x = y" := (Eq x y) (at level 70, no associativity) : algebra_scope.
+  Notation "x * y" := (op x y) (at level 40, left associativity) : algebra_scope.
 
+  Open Scope algebra_scope.
+  Definition Is_Unit (u : A) : Prop :=
+    (forall a : A, u * a = a) /\ (forall a : A, a * u = a).
 
-Definition monoid_unit_proof (A : Type) (Eq : A -> A -> Prop) (op : A -> A -> A) (e : A) (Hm : Is_Monoid A Eq op e) : Is_Unit A Eq op e :=
-  Hm (Is_Unit A Eq op e)
-    (fun _ (H_unit : Is_Unit A Eq op e) => H_unit).
+  Definition Is_Monoid : Prop :=
+    forall P : Prop,
+      ( Is_Semigroup A Eq op ->
+        Is_Unit e ->
+        P
+      ) -> P.
 
-Definition monoid_id_left
-  {A : Type}
-  {Eq : A -> A -> Prop}
-  {op : A -> A -> A}
-  {e : A}
-  (M : Is_Monoid A Eq op e) : forall a : A, Eq (op e a) a :=
-  let H_unit : Is_Unit A Eq op e := monoid_unit_proof A Eq op e M in
-  conj_elim1 H_unit.
+  Definition Build_Monoid (Hsemi : Is_Semigroup A Eq op) (Hunit : Is_Unit e) : Is_Monoid :=
+    fun (P : Prop) (Constructor : Is_Semigroup A Eq op -> Is_Unit e -> P) => Constructor Hsemi Hunit.
 
-Definition monoid_id_right
-  {A : Type}
-  {Eq : A -> A -> Prop}
-  {op : A -> A -> A}
-  {e : A}
-  (M : Is_Monoid A Eq op e) : forall a : A, Eq (op a e) a :=
-  let H_unit : Is_Unit A Eq op e := monoid_unit_proof A Eq op e M in
+  Definition monoid_semigroup (Hm : Is_Monoid) : Is_Semigroup A Eq op :=
+    Hm (Is_Semigroup A Eq op) (fun (semi : Is_Semigroup A Eq op) _ => semi).
+
+  Definition monoid_unit_proof (Hm : Is_Monoid) : Is_Unit e :=
+    Hm (Is_Unit e)
+      (fun _ (H_unit : Is_Unit e) => H_unit).
+
+  Definition monoid_id_left (M : Is_Monoid) : forall a : A, Eq (op e a) a :=
+    let H_unit : (Is_Unit e) := monoid_unit_proof M in
+    conj_elim1 H_unit.
+
+  Definition monoid_id_right (M : Is_Monoid) : forall a : A, Eq (op a e) a :=
+  let H_unit : (Is_Unit e) := monoid_unit_proof M in
   conj_elim2 H_unit.
 
-Definition e_unique : forall {A : Type} {Eq : A -> A -> Prop} {op : A -> A -> A} {e : A} (Hm : Is_Monoid A Eq op e),
-  forall e1 : A, Is_Unit A Eq op e1 -> Eq e e1 :=
-  fun (A : Type) (Eq : A -> A -> Prop) (op : A -> A -> A) (e : A) (Hm : Is_Monoid A Eq op e) (e1 : A) (e1_unit : Is_Unit A Eq op e1) =>
-    let e1_id_left : forall a : A, Eq (op e1 a) a := conj_elim1 e1_unit in
-    let e_id_right : forall a : A, Eq (op a e) a := monoid_id_right Hm in
-    let e1_e : Eq (op e1 e) e := e1_id_left e in
-    let e_e1 : Eq (op e1 e) e1 := e_id_right e1 in
-    let Hsemi : Is_Semigroup A Eq op := @monoid_semigroup A Eq op e Hm in
-    let Hsetoid : Is_Setoid A Eq := semigroup_setoid Hsemi in
+  Definition e_unique : forall Hm : Is_Monoid,
+    forall e1 : A, Is_Unit -> Eq e e1 :=
+    fun (Hm : Is_Monoid) (e1 : A) (e1_unit : @Is_Unit A Eq op e1) =>
+      let e1_id_left : forall a : A, Eq (op e1 a) a := conj_elim1 e1_unit in
+      let e_id_right : forall a : A, Eq (op a e) a := monoid_id_right Hm in
+      let e1_e : Eq (op e1 e) e := e1_id_left e in
+      let e_e1 : Eq (op e1 e) e1 := e_id_right e1 in
+      let Hsemi : Is_Semigroup A Eq op := @monoid_semigroup A Eq op e Hm in
+      let Hsetoid : Is_Setoid A Eq := semigroup_setoid Hsemi in
     (* Wrapper assignments to force implicit variable resolution *)
-    let eq_symm {x y : A} (H : Eq x y) : Eq y x := setoid_sym Hsetoid x y H in
-    let eq_trans {x y z : A} (H1 : Eq x y) (H2 : Eq y z) : Eq x z := setoid_trans Hsetoid x y z H1 H2 in
+      let eq_symm {x y : A} (H : Eq x y) : Eq y x := setoid_sym Hsetoid x y H in
+      let eq_trans {x y z : A} (H1 : Eq x y) (H2 : Eq y z) : Eq x z := setoid_trans Hsetoid x y z H1 H2 in
 
-    let H1 : Eq e (op e1 e) := eq_symm e1_e in
-    let H2 : Eq e e1 := eq_trans H1 e_e1 in
-    H2.
+      let H1 : Eq e (op e1 e) := eq_symm e1_e in
+      let H2 : Eq e e1 := eq_trans H1 e_e1 in
+      H2.
 
 (* Отображение $f : A \to B$ является гомоморфизмом моноидов, если выполняются **три** условия:
 
@@ -186,7 +187,9 @@ Definition left_right_inverse_equal {A : Type} (Eq : A -> A -> Prop) (op : A -> 
   let Hsemi : Is_Semigroup A Eq op := @monoid_semigroup A Eq op e Hm in
   let Hsetoid : Is_Setoid A Eq := semigroup_setoid Hsemi in
   let assoc : forall x y z : A, Eq (op (op x y) z) (op x (op y z)) := semigroup_assoc Hsemi in
-  let congr2 : forall x1 x2 y1 y2 : A, Eq x1 x2 -> Eq y1 y2 -> Eq (op x1 y1) (op x2 y2) := semigroup_congruence_2 Hsemi in
+  (* Определяем congr2 как функцию, которая принимает неявные аргументы
+   и сама пробрасывает их в строгий элиминатор *)
+  let congr2 {a1 a2 b1 b2 : A} (H1 : Eq a1 a2) (H2 : Eq b1 b2) : Eq (op a1 b1) (op a2 b2) := semigroup_congruence_2 Hsemi a1 a2 b1 b2 H1 H2 in
   let eq_refl : forall x : A, Eq x x := setoid_refl Hsetoid in
   let eq_symm {x y : A} (H : Eq x y) : Eq y x := setoid_sym Hsetoid x y H in
   let eq_trans {x y z : A} (H1 : Eq x y) (H2 : Eq y z) : Eq x z := setoid_trans Hsetoid x y z H1 H2 in
@@ -197,7 +200,7 @@ Definition left_right_inverse_equal {A : Type} (Eq : A -> A -> Prop) (op : A -> 
   (* Конструируем левую часть y = ... *)
   let H1 : Eq (op y e) y := id_right y in
   let H2 : Eq y (op y e) := eq_symm H1 in
-  let H3 : Eq (op y (op x z)) (op (op y e) e) := congr2 y (op y e) (op x z) e  H2 Hxz in
+  let H3 : Eq (op y (op x z)) (op (op y e) e) := congr2 H2 Hxz in
   let H4 : Eq (op (op y e) e) (op y e) := id_right (op y e) in
   let H5 : Eq (op y (op x z)) (op y e) := eq_trans H3 H4 in
   let H6 : Eq (op (op y x) z) (op y (op x z)) := assoc y x z in
@@ -207,7 +210,7 @@ Definition left_right_inverse_equal {A : Type} (Eq : A -> A -> Prop) (op : A -> 
   (* Правая часть (y * x) * z = z *)
   let H9 : Eq (op e z) z := id_left z in
   let H10 : Eq z (op e z) := eq_symm H9 in
-  let H11 : Eq (op (op y x) z) (op e (op e z)) := congr2 (op y x) e z (op e z) Hyx H10 in
+  let H11 : Eq (op (op y x) z) (op e (op e z)) := congr2 Hyx H10 in
   let H12 : Eq (op e (op e z)) (op e z) := id_left (op e z) in
   let H13 : Eq (op (op y x) z) (op e z) := eq_trans H11 H12 in
   let H_right : Eq (op (op y x) z) z := eq_trans H13 H9 in
