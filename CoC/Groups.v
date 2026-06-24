@@ -1,5 +1,5 @@
 From CoC Require Import CoC.
-Import CoC.
+Import CoC_core.
 Import CoC_theorems.
 
 Definition Is_Setoid (A : Type) (Eq : A -> A -> Prop) : Prop :=

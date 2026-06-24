@@ -1,4 +1,4 @@
-Module CoC.
+Module CoC_core.
 
 #[global] Notation "A -> B" := (forall (_ : A), B)
                       (right associativity, at level 99).
@@ -85,10 +85,10 @@ Definition eq_congr :
   fun (P : B -> Prop) (Pfx : P (f x)) =>
     Heq (fun z : A => P (f z)) Pfx.
 
-End CoC.
+End CoC_core.
 
 Module Bool.
-  Import CoC.
+  Import CoC_core.
   Definition bool : Type := forall P : Type, P -> P -> P.
 
   Definition true : bool := fun (P : Type) (t f : P) => t.
@@ -121,7 +121,7 @@ Module Bool.
 End Bool.
 
 Section CoC_example.
-  Import CoC.
+  Import CoC_core.
   Variable U : Type. (* Универсум *)
   Variable B : U -> Prop. (* Предикат на универсуме *)
   Variable t : U. (* Объект универсума *)
@@ -144,7 +144,7 @@ Section CoC_example.
 End CoC_example.
 
 Module CoC_theorems.
-  Import CoC.
+  Import CoC_core.
 
   Definition ex_not_forall (A : Type) (P : A -> Prop) (C : Prop) :
     exists A P -> ~ (forall x : A, ~ (P x)) :=
