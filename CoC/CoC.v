@@ -146,6 +146,13 @@ End CoC_example.
 Module CoC_theorems.
   Import CoC_core.
 
+  Definition A2 (A B C : Prop) : (A -> (B -> C)) -> (A -> B) -> (A -> C) :=
+    fun (H1 : A -> (B -> C)) (H2 : A -> B) (a : A) =>
+      let H3 : B -> C := H1 a in
+      let b : B := H2 a in
+      let c : C := H3 b in
+      c.
+  
   Definition ex_not_forall (A : Type) (P : A -> Prop) (C : Prop) :
     exists A P -> ~ (forall x : A, ~ (P x)) :=
       fun (Hex : exists A P) (Hcontra : (forall x : A, ~ (P x))) =>
@@ -257,5 +264,57 @@ Module CoC_theorems.
 (*
   Следующий вызов: Попробуй формализовать числа Чёрча (Nat_CoC) и операцию plus_CoC. Доказательство того, что plus_CoC zero n = n через прямой терм — это отличная тренировка «умственной выносливости».
  *)
+
+
+  Definition Included {A : Type} (P Q : A -> Prop) : Prop :=
+    forall x : A, P x -> Q x.
+
+  Definition SamePred {A : Type} (P Q : A -> Prop) : Prop :=
+    forall x : A, P x -> Q x /\ Q x -> P x.
+
+  Definition SurjectiveExt {A : Type}
+    (f : A -> A -> Prop) : Prop :=
+    forall P : A -> Prop, exists A (fun a : A => forall x : A, (f a x -> P x) /\ (P x -> f a x)).
+
+  Definition cantor_theorem :
+    forall (A : Type) (f : A -> A -> Prop),
+      ~ SurjectiveExt f :=
+    fun (A : Type) (f : A -> A -> Prop) =>
+      (* Раскрыли определение отрицания *)
+      let Goal : SurjectiveExt f -> False :=
+        fun (Contra : SurjectiveExt f) =>
+          let Contra1 : forall P : A -> Prop, exists A (fun a : A => forall x : A, (f a x -> P x) /\ (P x -> f a x)) := Contra in
+          let diagonal : A -> Prop := fun x : A => f x x -> False in
+          let H1 : exists A (fun a : A => forall x : A, (f a x -> diagonal x) /\ (diagonal x -> f a x)) := Contra1 diagonal in
+          ex_elim H1 (fun (a : A) (W : forall x : A, (f a x -> diagonal x) /\ (diagonal x -> f a x)) =>
+            let H2 : (f a a -> diagonal a) /\ (diagonal a -> f a a) := W a in
+            let H3 : f a a -> diagonal a := conj_elim1 H2 in
+            let H4 : diagonal a -> f a a := conj_elim2 H2 in
+            let H5 : f a a -> (f a a -> False) := H3 in
+            let H6 : (f a a -> False) -> f a a := H4 in
+            let P : Prop := f a a in
+            let H7 : (P -> P) -> (P -> False) := A2 P P False H5 in
+            let H8 : P -> P := @id P in
+            let H9 : P -> False := H7 H8 in
+            let H10 : (P -> False) -> P := H6 in
+            let H11 : P := H10 H9 in
+            let H12 : False := H9 H11 in
+            H12)
+      in Goal.
+
+  Definition property_closed_under_arbitrary_intersections :
+  forall (A I : Type) (F : (A -> Prop) -> Prop) (P : I -> A -> Prop),
+    (forall i : I, F (P i)) ->
+    (forall Q : I -> A -> Prop,
+      (forall i : I, F (Q i)) ->
+      F (fun x : A => forall i : I, Q i x)) ->
+    F (fun x : A => forall i : I, P i x) :=
+    fun (A I : Type) (F : (A -> Prop) -> Prop) (P : I -> A -> Prop)
+      (H1 : forall i : I, F (P i)) (H2 :  forall Q : I -> A -> Prop,
+          (forall i : I, F (Q i)) ->
+          F (fun x : A => forall i : I, Q i x)) =>
+      let H3 : (forall i : I, F (P i)) -> F (fun x : A => forall i : I, P i x) := H2 P in
+      let H4 : F (fun x : A => forall i : I, P i x) := H3 H1 in
+    H4.
 
 End CoC_theorems.
