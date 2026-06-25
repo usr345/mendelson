@@ -99,7 +99,6 @@ Definition Build_Monoid (A : Type) (Eq : A -> A -> Prop) (op : A -> A -> A) (e :
 Definition monoid_semigroup {A : Type} {Eq : A -> A -> Prop} {op : A -> A -> A} (e : A) (Hm : Is_Monoid A Eq op e) : Is_Semigroup A Eq op :=
   Hm (Is_Semigroup A Eq op) (fun (semi : Is_Semigroup A Eq op) _ => semi).
 
-
 Definition monoid_unit_proof (A : Type) (Eq : A -> A -> Prop) (op : A -> A -> A) (e : A) (Hm : Is_Monoid A Eq op e) : Is_Unit A Eq op e :=
   Hm (Is_Unit A Eq op e)
     (fun _ (H_unit : Is_Unit A Eq op e) => H_unit).
@@ -147,10 +146,24 @@ Definition e_unique : forall {A : Type} {Eq : A -> A -> Prop} {op : A -> A -> A}
  2. **Сохранение операции:** $forall x y : A, Eq_B (f (op_A x y)) (op_B (f x) (f y))$
  3. **Сохранение нейтрального элемента:** $Eq_B (f e_A) e_B$ *)
 
-Definition Is_Monoid_Homomorphismus (A B : Type) (f : A -> B) (Eq_A : A -> A -> Prop) (op_A : A -> A -> A) (e_A : A) (Eq_B : B -> B -> Prop) (op_B : B -> B -> B) (e_B : B) (MA : Is_Monoid A Eq_A op_A e_A) (MB : Is_Monoid B Eq_B op_B e_B) : Prop :=
-  ((forall a b : A, Eq_A a b -> Eq_B (f a) (f b)) /\ (forall a b : A, Eq_B (f (op_A a b)) (op_B (f a) (f b)))) /\ (Eq_B (f e_A) e_B).
+Definition Is_Monoid_Homomorphismus {A B : Type} (f : A -> B) {Eq_A : A -> A -> Prop} {op_A : A -> A -> A} {e_A : A} {Eq_B : B -> B -> Prop} {op_B : B -> B -> B} {e_B : B} (MA : Is_Monoid A Eq_A op_A e_A) (MB : Is_Monoid B Eq_B op_B e_B) : Prop :=
+  forall P : Prop,
+  ( (forall a b : A, Eq_A a b -> Eq_B (f a) (f b)) ->
+    (forall a b : A, Eq_B (f (op_A a b)) (op_B (f a) (f b))) ->
+    (Eq_B (f e_A) e_B) ->
+    P
+  ) -> P.
 
-Definition id_is_homomorphismus {A : Type} (Eq : A -> A -> Prop) (op : A -> A -> A) (e : A) (Hm : Is_Monoid A Eq op e) : Is_Monoid_Homomorphismus A A (@id A) Eq op e Eq op e Hm Hm :=
+Definition monoid_homomorphismus_Eq_invariant {A B : Type} {f : A -> B} {Eq_A : A -> A -> Prop} {op_A : A -> A -> A} {e_A : A} {Eq_B : B -> B -> Prop} {op_B : B -> B -> B} {e_B : B} {MA : Is_Monoid A Eq_A op_A e_A} {MB : Is_Monoid B Eq_B op_B e_B} (Homo : Is_Monoid_Homomorphismus f MA MB) : forall a b : A, Eq_A a b -> Eq_B (f a) (f b) :=
+  Homo (forall a b : A, Eq_A a b -> Eq_B (f a) (f b)) (fun (Eq_invariant : forall a b : A, Eq_A a b -> Eq_B (f a) (f b)) _ _ => Eq_invariant).
+
+Definition monoid_homomorphismus_op_invariant {A B : Type} {f : A -> B} {Eq_A : A -> A -> Prop} {op_A : A -> A -> A} {e_A : A} {Eq_B : B -> B -> Prop} {op_B : B -> B -> B} {e_B : B} {MA : Is_Monoid A Eq_A op_A e_A} {MB : Is_Monoid B Eq_B op_B e_B} (Homo : Is_Monoid_Homomorphismus f MA MB) : forall a b : A, Eq_B (f (op_A a b)) (op_B (f a) (f b)) :=
+  Homo (forall a b : A, Eq_B (f (op_A a b)) (op_B (f a) (f b))) (fun _ (op_invariant : forall a b : A, Eq_B (f (op_A a b)) (op_B (f a) (f b))) _ => op_invariant).
+
+Definition monoid_homomorphismus_e_invariant {A B : Type} {f : A -> B} {Eq_A : A -> A -> Prop} {op_A : A -> A -> A} {e_A : A} {Eq_B : B -> B -> Prop} {op_B : B -> B -> B} {e_B : B} {MA : Is_Monoid A Eq_A op_A e_A} {MB : Is_Monoid B Eq_B op_B e_B} (Homo : Is_Monoid_Homomorphismus f MA MB) : Eq_B (f e_A) e_B :=
+  Homo (Eq_B (f e_A) e_B) (fun _ _ (e_invariant : Eq_B (f e_A) e_B) => e_invariant).
+
+Definition id_is_homomorphismus {A : Type} (Eq : A -> A -> Prop) (op : A -> A -> A) (e : A) (Hm : Is_Monoid A Eq op e) : Is_Monoid_Homomorphismus (@id A) Hm Hm :=
   let Hsemi : Is_Semigroup A Eq op := @monoid_semigroup A Eq op e Hm in
   let Hsetoid : Is_Setoid A Eq := semigroup_setoid Hsemi in
   let eq_refl : forall x : A, Eq x x := setoid_refl Hsetoid in
@@ -171,7 +184,7 @@ Definition id_is_homomorphismus {A : Type} (Eq : A -> A -> Prop) (op : A -> A ->
     (eq_refl e : Eq (id e) e)
   in
   (* Собираем всё вместе *)
-  conj_intro (conj_intro Goal1 Goal2) Goal3.
+  fun (P : Prop) (H : (forall a b : A, Eq a b -> Eq (id a) (id b)) -> (forall a b : A, Eq (id (op a b)) (op (id a) (id b))) -> (Eq (id e) e) -> P) => H Goal1 Goal2 Goal3.
 
 (* y является левым обратным для x *)
 Definition Is_Left_Inverse {A : Type} (Eq : A -> A -> Prop) (op : A -> A -> A) (e : A) (x y : A) : Prop :=
