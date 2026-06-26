@@ -2,41 +2,18 @@ From CoC Require Import CoC.
 Import CoC_core.
 Import CoC_theorems.
 
-Definition Is_Setoid (A : Type) (Eq : A -> A -> Prop) : Prop :=
-  forall P : Prop,
-  ( (* Конструктор ожидает получить три доказательства: *)
-    (forall x : A, Eq x x) ->                             (* Refl *)
-    (forall x y : A, Eq x y -> Eq y x) ->                 (* Sym *)
-    (forall x y z : A, Eq x y -> Eq y z -> Eq x z) ->     (* Trans *)
-    P
-  ) -> P.
+Inductive ex : forall A : Type, (A -> Prop) -> Prop :=
+  ex_intro : forall (A : Type) (P : A -> Prop) (x : A), P x -> ex A P.
 
-Definition Build_Setoid : forall (A : Type) (Eq : A -> A -> Prop) (Refl : forall x : A, Eq x x) (Sym : forall x y : A, Eq x y -> Eq y x) (Trans : forall x y z : A, Eq x y -> Eq y z -> Eq x z), Is_Setoid A Eq :=
-  fun (A : Type)
-    (Eq : A -> A -> Prop)
-    (Refl : forall x : A, Eq x x)
-    (Sym : forall x y : A, Eq x y -> Eq y x)
-    (Trans : forall x y z : A, Eq x y -> Eq y z -> Eq x z)
-    (P : Prop)
-    (Constructor : (forall x : A, Eq x x) -> (forall x y : A, Eq x y -> Eq y x) -> (forall x y z : A, Eq x y -> Eq y z -> Eq x z) -> P) =>
-    Constructor Refl Sym Trans.
-
-Definition setoid_refl {A : Type} {Eq : A -> A -> Prop} (S : Is_Setoid A Eq) : forall x : A, Eq x x :=
-  S (forall x : A, Eq x x)
-    (fun (Refl : forall x : A, Eq x x) Sym Trans => Refl).
-
-Definition setoid_sym
-  {A : Type} {Eq : A -> A -> Prop} (S : Is_Setoid A Eq) : forall x y : A, Eq x y -> Eq y x :=
-  S (forall x y : A, Eq x y -> Eq y x)
-    (fun Refl (Sym : forall x y : A, Eq x y -> Eq y x) Trans => Sym).
-
-Definition setoid_trans
-  {A : Type} {Eq : A -> A -> Prop} (S : Is_Setoid A Eq) : forall x y z : A, Eq x y -> Eq y z -> Eq x z :=
-  S (forall x y z : A, Eq x y -> Eq y z -> Eq x z)
-    (fun Refl Sym (Trans : forall x y z : A, Eq x y -> Eq y z -> Eq x z) => Trans).
+Class Setoid (A : Type) : Type := {
+  eq : A -> A -> Prop;
+  setoid_refl  : forall x, eq x x;
+  setoid_sym   : forall x y, eq x y -> eq y x;
+  setoid_trans : forall x y z, eq x y -> eq y z -> eq x z;
+}.
 
 (* Отношение эквивалентности разбивает исходное множество на непересекающиеся подмножества - классы эквивалентности. Множество классов эквивалентности для данного множества - это фактормножество *)
-Definition equivalence_class (A : Type) (Eq : A -> A -> Prop) (S : Is_Setoid A Eq) : A -> A -> Prop := fun a b : A => Eq a b.
+(* Definition equivalence_class (A : Type) (Eq : A -> A -> Prop) (S : Is_Setoid A Eq) : A -> A -> Prop := fun a b : A => Eq a b. *)
 
 (* Definition is_equivalence_class {A : Type} (Eq : A -> A -> Prop) (C : A -> Prop) : Prop := *)
 (*   exists a : A, forall b : A, C b <-> Eq a b. *)
@@ -53,45 +30,23 @@ Definition equivalence_class (A : Type) (Eq : A -> A -> Prop) (S : Is_Setoid A E
 
 (* Предикат 1: Операция сохраняет отношение эквивалентности *)
 Definition Is_Congruence_2
-  (A : Type) (Eq : A -> A -> Prop) (op : A -> A -> A) : Prop :=
-  forall x1 x2 y1 y2 : A, Eq x1 x2 -> Eq y1 y2 -> Eq (op x1 y1) (op x2 y2).
+  (A : Type) (eq : A -> A -> Prop) (op : A -> A -> A) : Prop :=
+  forall x1 x2 y1 y2 : A, eq x1 x2 -> eq y1 y2 -> eq (op x1 y1) (op x2 y2).
 
 Definition Is_Associative
-  (A : Type) (Eq : A -> A -> Prop) (op : A -> A -> A) : Prop :=
-  forall x y z : A, Eq (op (op x y) z) (op x (op y z)).
+  (A : Type) (eq : A -> A -> Prop) (op : A -> A -> A) : Prop :=
+  forall x y z : A, eq (op (op x y) z) (op x (op y z)).
 
-Definition Is_Semigroup (A : Type) (Eq : A -> A -> Prop) (op : A -> A -> A) : Prop :=
-  forall P : Prop,
-  (
-    Is_Setoid A Eq ->
-    Is_Congruence_2 A Eq op ->
-    Is_Associative A Eq op ->
-    P
-  ) -> P.
+Class Semigroup (A : Type) `{HSetoid : Setoid A} : Type := {
+  op : A -> A -> A;
+  semigroup_congruence_2 : Is_Congruence_2 A HSetoid.(eq) op;
+  semigroup_assoc : Is_Associative A HSetoid.(eq) op;
+}.
 
-Definition Build_Semigroup (A : Type) (Eq : A -> A -> Prop) (op : A -> A -> A) (Hsetoid : Is_Setoid A Eq) (Hcongr : Is_Congruence_2 A Eq op) (Hassoc : Is_Associative A Eq op) : Is_Semigroup A Eq op :=
-  fun (P : Prop) (Constructor : Is_Setoid A Eq -> Is_Congruence_2 A Eq op -> Is_Associative A Eq op -> P) => Constructor Hsetoid Hcongr Hassoc.
-
-Definition semigroup_setoid {A : Type} {Eq : A -> A -> Prop} {op : A -> A -> A} (Hs : Is_Semigroup A Eq op) : Is_Setoid A Eq :=
-  Hs (Is_Setoid A Eq) (fun (S : Is_Setoid A Eq) _ _ => S).
-
-Definition semigroup_congruence_2 {A : Type} {Eq : A -> A -> Prop} {op : A -> A -> A} (Hs : Is_Semigroup A Eq op) : Is_Congruence_2 A Eq op :=
-  Hs (Is_Congruence_2 A Eq op) (fun _ (congr : Is_Congruence_2 A Eq op) _ => congr).
-
-Definition semigroup_assoc {A : Type} {Eq : A -> A -> Prop} {op : A -> A -> A} (Hs : Is_Semigroup A Eq op) : Is_Associative A Eq op :=
-  Hs (Is_Associative A Eq op) (fun _ _ (assoc : Is_Associative A Eq op) => assoc).
-
-Definition Is_Unit (A : Type) (Eq : A -> A -> Prop) (op : A -> A -> A) (e : A) : Prop :=
-  (forall a : A, Eq (op e a) a) /\
-  (forall a : A, Eq (op a e) a).
-
-Definition Is_Monoid
-  (A : Type) (Eq : A -> A -> Prop) (op : A -> A -> A) (e : A) : Prop :=
-  forall P : Prop,
-  ( Is_Semigroup A Eq op ->
-    Is_Unit A Eq op e ->
-    P
-  ) -> P.
+Class Monoid (A : Type) `{HSemigroup : Semigroup A} (e : A) : Type := {
+  id_left : forall a : A, HSemigroup.(eq) (HSemigroup.(op) e a) a;
+  id_right : forall a : A, HSemigroup.(eq) (HSemigroup.(op) e a) a;
+}.
 
 Definition Build_Monoid (A : Type) (Eq : A -> A -> Prop) (op : A -> A -> A) (e : A) (Hsemi : Is_Semigroup A Eq op) (Hunit : Is_Unit A Eq op e) : Is_Monoid A Eq op e :=
   fun (P : Prop) (Constructor : Is_Semigroup A Eq op -> Is_Unit A Eq op e -> P) => Constructor Hsemi Hunit.
@@ -272,20 +227,28 @@ Definition compose_is_homomorphismus {A B C : Type}
     let Hsemi_C : Is_Semigroup C Eq_C op_C := @monoid_semigroup C Eq_C op_C e_C M_C in
     let Hsetoid_C : Is_Setoid C Eq_C := semigroup_setoid Hsemi_C in
     let Eq_C_trans {x y z : C} (H1 : Eq_C x y) (H2 : Eq_C y z) : Eq_C x z := setoid_trans Hsetoid_C x y z H1 H2 in
+    (* Если a и b равны в A, то их образы равны в B *)
     let Heq_AB : forall a b : A, Eq_A a b -> Eq_B (f a) (f b) := monoid_homomorphismus_Eq_invariant Hom_AB in
+    (* Если a и b равны в B, то их образы равны в C *)
     let Heq_BC : forall a b : B, Eq_B a b -> Eq_C (g a) (g b) := monoid_homomorphismus_Eq_invariant Hom_BC in
     let Hop_AB : forall a b : A, Eq_B (f (op_A a b)) (op_B (f a) (f b)) := monoid_homomorphismus_op_invariant Hom_AB in
     let Hop_BC : forall a b : B, Eq_C (g (op_B a b)) (op_C (g a) (g b)) := monoid_homomorphismus_op_invariant Hom_BC in
+    (* f переводит единицу A в единицу B *)
     let H_eAB : Eq_B (f e_A) e_B := monoid_homomorphismus_e_invariant Hom_AB in
+    (* g переводит единицу B в единицу C *)
     let H_eBC : Eq_C (g e_B) e_C := monoid_homomorphismus_e_invariant Hom_BC in
+    (* Доказательство *)
     (* Сохранение эквивалентности *)
     let Composition_Eq : forall a b : A, Eq_A a b -> Eq_C ((g ∘ f) a) ((g ∘ f) b) :=
       (fun (a b : A) (Heq : Eq_A a b) =>
+        (* Из свойств гомоморфизма f: forall a b : A, если a и b эквивалентны в A, то их образы эквивалентны в B *)
         let H1 : Eq_A a b -> Eq_B (f a) (f b) := Heq_AB a b in
         let H2 : Eq_B (f a) (f b) := H1 Heq in
+        (* Из свойств гомоморфизма g: forall a b : B, если a и b эквивалентны в B, то их образы эквивалентны в C *)
         let H3 : Eq_B (f a) (f b) -> Eq_C (g (f a)) (g (f b)) := Heq_BC (f a) (f b) in
         let H4 : Eq_C (g (f a)) (g (f b)) := H3 H2 in
-        H4)
+        let H5 : Eq_C ((g ∘ f) a) ((g ∘ f) b) := H4 in
+        H5)
     in
     (* Сохранение операции *)
     let Composition_op : forall a b : A, Eq_C ((g ∘ f) (op_A a b)) (op_C ((g ∘ f) a) ((g ∘ f) b)) :=
@@ -303,6 +266,24 @@ Definition compose_is_homomorphismus {A B C : Type}
       let H1 : Eq_B (f e_A) e_B -> Eq_C (g (f e_A)) (g e_B) := Heq_BC (f e_A) e_B in
       let H2 : Eq_C (g (f e_A)) (g e_B) := H1 H_eAB in
       let H3 : Eq_C (g (f e_A)) e_C := Eq_C_trans H2 H_eBC in
-      H3
+      let H4 : Eq_C ((g ∘ f) e_A) e_C := H3 in
+      H4
     in
       Build_Homomorphismus (g ∘ f) M_A M_C Composition_Eq Composition_op Composition_e.
+
+Definition func_equiv {A : Type} {Eq : A -> A -> Prop} {A_setoid : Is_Setoid A Eq} : (A -> A) -> (A -> A) -> Prop :=
+  fun (f g : A -> A) => forall a : A, Eq (f a) (g a).
+
+Definition func_equiv_refl {A : Type} {Eq : A -> A -> Prop} {A_setoid : Is_Setoid A Eq} : forall f : (A -> A), func_equiv f f :=
+  fun f : A -> A =>
+    let Goal : forall a : A, Eq (f a) (f a) :=
+      fun a : A => setoid_refl A_setoid (f a)
+    in
+    Goal.
+
+(* Definition compose_assoc {A : Type} {Eq : A -> A -> Prop} (A_setoid : Is_Setoid A Eq) : Is_Associative (A -> A) (func_equiv A_setoid) compose := *)
+(*   fun h g f : A -> A => *)
+(*     let eq_refl : forall x : A, Eq x x := setoid_refl A_setoid : forall x : A, Eq x x *)
+    (* let H1 : fun x : A => (h ∘ g) (f x) := ((h ∘ g) ∘ f) in *)
+    _.
+  (* forall , Eq (op (op x y) z) (op x (op y z)) *)
