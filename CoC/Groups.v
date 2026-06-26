@@ -154,6 +154,22 @@ Definition Is_Monoid_Homomorphismus {A B : Type} (f : A -> B) {Eq_A : A -> A -> 
     P
   ) -> P.
 
+Definition Build_Homomorphismus {A B : Type}
+  {Eq_A : A -> A -> Prop} {op_A : A -> A -> A} {e_A : A}
+  {Eq_B : B -> B -> Prop} {op_B : B -> B -> B} {e_B : B}
+  (f : A -> B)
+  (MA : Is_Monoid A Eq_A op_A e_A)
+  (MB : Is_Monoid B Eq_B op_B e_B)
+  (Eq_invariant : forall a b : A, Eq_A a b -> Eq_B (f a) (f b))
+  (op_invariant : forall a b : A, Eq_B (f (op_A a b)) (op_B (f a) (f b)))
+  (e_invariant : Eq_B (f e_A) e_B)
+  : Is_Monoid_Homomorphismus f MA MB :=
+  fun (P : Prop) (Constructor : (forall a b : A, Eq_A a b -> Eq_B (f a) (f b)) ->
+    (forall a b : A, Eq_B (f (op_A a b)) (op_B (f a) (f b))) ->
+    (Eq_B (f e_A) e_B) ->
+    P) => Constructor Eq_invariant op_invariant e_invariant.
+
+
 Definition monoid_homomorphismus_Eq_invariant {A B : Type} {f : A -> B} {Eq_A : A -> A -> Prop} {op_A : A -> A -> A} {e_A : A} {Eq_B : B -> B -> Prop} {op_B : B -> B -> B} {e_B : B} {MA : Is_Monoid A Eq_A op_A e_A} {MB : Is_Monoid B Eq_B op_B e_B} (Homo : Is_Monoid_Homomorphismus f MA MB) : forall a b : A, Eq_A a b -> Eq_B (f a) (f b) :=
   Homo (forall a b : A, Eq_A a b -> Eq_B (f a) (f b)) (fun (Eq_invariant : forall a b : A, Eq_A a b -> Eq_B (f a) (f b)) _ _ => Eq_invariant).
 
@@ -183,8 +199,7 @@ Definition id_is_homomorphismus {A : Type} (Eq : A -> A -> Prop) (op : A -> A ->
   let Goal3 : Eq (id e) e :=
     (eq_refl e : Eq (id e) e)
   in
-  (* Собираем всё вместе *)
-  fun (P : Prop) (H : (forall a b : A, Eq a b -> Eq (id a) (id b)) -> (forall a b : A, Eq (id (op a b)) (op (id a) (id b))) -> (Eq (id e) e) -> P) => H Goal1 Goal2 Goal3.
+  Build_Homomorphismus id Hm Hm Goal1 Goal2 Goal3.
 
 (* y является левым обратным для x *)
 Definition Is_Left_Inverse {A : Type} (Eq : A -> A -> Prop) (op : A -> A -> A) (e : A) (x y : A) : Prop :=
@@ -225,3 +240,69 @@ Definition left_right_inverse_equal {A : Type} (Eq : A -> A -> Prop) (op : A -> 
   let H13 : Eq (op (op y x) z) (op e z) := eq_trans H11 H12 in
   let H_right : Eq (op (op y x) z) z := eq_trans H13 H9 in
   eq_trans H_left H_right.
+
+Definition compose : forall {A B C : Type} (g : B -> C) (f : A -> B), A -> C := fun (A B C : Type) (g : B -> C) (f : A -> B) =>
+    fun x : A => g (f x).
+
+#[global] Notation "g ∘ f" := (compose g f)
+                      (right associativity, at level 105).
+
+(* Пусть даны 3 моноида: A, B, C и 2 гомоморфизма:
+   f : A -> B
+   g : B -> C
+
+  тогда g ∘ f : A -> C --- это гомоморфизм
+*)
+
+Definition compose_is_homomorphismus {A B C : Type}
+  {Eq_A : A -> A -> Prop} {op_A : A -> A -> A} {e_A : A}
+  {Eq_B : B -> B -> Prop} {op_B : B -> B -> B} {e_B : B}
+  {Eq_C : C -> C -> Prop} {op_C : C -> C -> C} {e_C : C}
+  {f : A -> B}
+  {g : B -> C}
+  (M_A : Is_Monoid A Eq_A op_A e_A)
+  (M_B : Is_Monoid B Eq_B op_B e_B)
+  (M_C : Is_Monoid C Eq_C op_C e_C)
+  (Hom_AB : Is_Monoid_Homomorphismus f M_A M_B)
+  (Hom_BC : Is_Monoid_Homomorphismus g M_B M_C) : Is_Monoid_Homomorphismus (g ∘ f) M_A M_C :=
+    (* Распаковка свойств для структур *)
+    let Hsemi_B : Is_Semigroup B Eq_B op_B := @monoid_semigroup B Eq_B op_B e_B M_B in
+    let Hsetoid_B : Is_Setoid B Eq_B := semigroup_setoid Hsemi_B in
+    let Eq_B_trans {x y z : B} (H1 : Eq_B x y) (H2 : Eq_B y z) : Eq_B x z := setoid_trans Hsetoid_B x y z H1 H2 in
+    let Hsemi_C : Is_Semigroup C Eq_C op_C := @monoid_semigroup C Eq_C op_C e_C M_C in
+    let Hsetoid_C : Is_Setoid C Eq_C := semigroup_setoid Hsemi_C in
+    let Eq_C_trans {x y z : C} (H1 : Eq_C x y) (H2 : Eq_C y z) : Eq_C x z := setoid_trans Hsetoid_C x y z H1 H2 in
+    let Heq_AB : forall a b : A, Eq_A a b -> Eq_B (f a) (f b) := monoid_homomorphismus_Eq_invariant Hom_AB in
+    let Heq_BC : forall a b : B, Eq_B a b -> Eq_C (g a) (g b) := monoid_homomorphismus_Eq_invariant Hom_BC in
+    let Hop_AB : forall a b : A, Eq_B (f (op_A a b)) (op_B (f a) (f b)) := monoid_homomorphismus_op_invariant Hom_AB in
+    let Hop_BC : forall a b : B, Eq_C (g (op_B a b)) (op_C (g a) (g b)) := monoid_homomorphismus_op_invariant Hom_BC in
+    let H_eAB : Eq_B (f e_A) e_B := monoid_homomorphismus_e_invariant Hom_AB in
+    let H_eBC : Eq_C (g e_B) e_C := monoid_homomorphismus_e_invariant Hom_BC in
+    (* Сохранение эквивалентности *)
+    let Composition_Eq : forall a b : A, Eq_A a b -> Eq_C ((g ∘ f) a) ((g ∘ f) b) :=
+      (fun (a b : A) (Heq : Eq_A a b) =>
+        let H1 : Eq_A a b -> Eq_B (f a) (f b) := Heq_AB a b in
+        let H2 : Eq_B (f a) (f b) := H1 Heq in
+        let H3 : Eq_B (f a) (f b) -> Eq_C (g (f a)) (g (f b)) := Heq_BC (f a) (f b) in
+        let H4 : Eq_C (g (f a)) (g (f b)) := H3 H2 in
+        H4)
+    in
+    (* Сохранение операции *)
+    let Composition_op : forall a b : A, Eq_C ((g ∘ f) (op_A a b)) (op_C ((g ∘ f) a) ((g ∘ f) b)) :=
+      fun (a b : A) =>
+        let H1 : Eq_B (f (op_A a b)) (op_B (f a) (f b)) -> Eq_C (g (f (op_A a b))) (g (op_B (f a) (f b))) := Heq_BC (f (op_A a b)) (op_B (f a) (f b)) in
+        let H2 : Eq_B (f (op_A a b)) (op_B (f a) (f b)) := Hop_AB a b in
+        let H3 : Eq_C (g (f (op_A a b))) (g (op_B (f a) (f b))) := H1 H2 in
+        let H4 : Eq_C (g (op_B (f a) (f b))) (op_C (g (f a)) (g (f b))) := Hop_BC (f a) (f b) in
+        let H5 : Eq_C (g (f (op_A a b))) (op_C (g (f a)) (g (f b))) := Eq_C_trans H3 H4 in
+        let H6 : Eq_C ((g ∘ f) (op_A a b)) (op_C ((g ∘ f) a) ((g ∘ f) b)) := H5 in
+        H6
+    in
+    (* Сохранение единицы *)
+    let Composition_e : Eq_C ((g ∘ f) e_A) e_C :=
+      let H1 : Eq_B (f e_A) e_B -> Eq_C (g (f e_A)) (g e_B) := Heq_BC (f e_A) e_B in
+      let H2 : Eq_C (g (f e_A)) (g e_B) := H1 H_eAB in
+      let H3 : Eq_C (g (f e_A)) e_C := Eq_C_trans H2 H_eBC in
+      H3
+    in
+      Build_Homomorphismus (g ∘ f) M_A M_C Composition_Eq Composition_op Composition_e.
