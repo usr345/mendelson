@@ -2,95 +2,75 @@ From CoC Require Import CoC.
 Import CoC_core.
 Import CoC_theorems.
 
-Inductive ex : forall A : Type, (A -> Prop) -> Prop :=
-  ex_intro : forall (A : Type) (P : A -> Prop) (x : A), P x -> ex A P.
-
 Class Setoid (A : Type) : Type := {
   eq : A -> A -> Prop;
-  setoid_refl  : forall x, eq x x;
-  setoid_sym   : forall x y, eq x y -> eq y x;
-  setoid_trans : forall x y z, eq x y -> eq y z -> eq x z;
+  refl  : forall x, eq x x;
+  symm   : forall {x y : A}, eq x y -> eq y x;
+  trans : forall {x y z : A}, eq x y -> eq y z -> eq x z;
 }.
 
-(* Отношение эквивалентности разбивает исходное множество на непересекающиеся подмножества - классы эквивалентности. Множество классов эквивалентности для данного множества - это фактормножество *)
-(* Definition equivalence_class (A : Type) (Eq : A -> A -> Prop) (S : Is_Setoid A Eq) : A -> A -> Prop := fun a b : A => Eq a b. *)
-
-(* Definition is_equivalence_class {A : Type} (Eq : A -> A -> Prop) (C : A -> Prop) : Prop := *)
-(*   exists a : A, forall b : A, C b <-> Eq a b. *)
-
-(* Definition FactorSet (A : Type) (Eq : A -> A -> Prop) (S : Is_Setoid A Eq) : Type := *)
-(*   { C : A -> Prop | is_equivalence_class Eq C }. *)
-
-(* Definition FactorSet (A : Type) (Eq : A -> A -> Prop) (S : Is_Setoid A Eq) : (C : equivalence_class A Eq S) -> Prop := fun (C : equivalence_class A Eq S) *)
-
-(* Definition setoid_eq_congr (A : Type) (Eq : A -> A -> Prop) (S : Is_Setoid A Eq) : *)
-(*   forall (f : A -> A) {x y : A}, Eq x y -> Eq (f x) (f y) := *)
-(*   fun (f : A -> A) (x y : A) (Heq : Eq x y) => *)
-(*     _. *)
-
-(* Предикат 1: Операция сохраняет отношение эквивалентности *)
+(* Предикаты для операции *)
 Definition Is_Congruence_2
   (A : Type) (eq : A -> A -> Prop) (op : A -> A -> A) : Prop :=
-  forall x1 x2 y1 y2 : A, eq x1 x2 -> eq y1 y2 -> eq (op x1 y1) (op x2 y2).
+  forall {x1 x2 y1 y2 : A}, eq x1 x2 -> eq y1 y2 -> eq (op x1 y1) (op x2 y2).
 
 Definition Is_Associative
   (A : Type) (eq : A -> A -> Prop) (op : A -> A -> A) : Prop :=
   forall x y z : A, eq (op (op x y) z) (op x (op y z)).
 
+Definition Is_Commutative (A : Type) (eq : A -> A -> Prop) (op : A -> A -> A) : Prop :=
+  forall x y : A, eq (op x y) (op y x).
+
+Definition Is_Identity_L (A : Type) (eq : A -> A -> Prop) (op : A -> A -> A) (e : A) : Prop := forall x : A, eq (op e x) x.
+
+Definition Is_Identity_R (A : Type) (eq : A -> A -> Prop) (op : A -> A -> A) (e : A) : Prop := forall x : A, eq (op x e) x.
+
+Definition Is_Inverse_L (A : Type) (eq : A -> A -> Prop) (op : A -> A -> A) (inv : A -> A) (e : A) : Prop := forall x : A, eq (op (inv x) x) e.
+
+Definition Is_Inverse_R (A : Type) (eq : A -> A -> Prop) (op : A -> A -> A) (inv : A -> A) (e : A) : Prop := forall x : A, eq (op x (inv x)) e.
+
 Class Semigroup (A : Type) `{HSetoid : Setoid A} : Type := {
   op : A -> A -> A;
-  semigroup_congruence_2 : Is_Congruence_2 A HSetoid.(eq) op;
-  semigroup_assoc : Is_Associative A HSetoid.(eq) op;
+  congruence_2 : Is_Congruence_2 A HSetoid.(eq) op;
+  assoc : Is_Associative A HSetoid.(eq) op;
 }.
 
-Class Monoid (A : Type) `{HSemigroup : Semigroup A} (e : A) : Type := {
-  id_left : forall a : A, HSemigroup.(eq) (HSemigroup.(op) e a) a;
-  id_right : forall a : A, HSemigroup.(eq) (HSemigroup.(op) e a) a;
+Definition semigroup_to_setoid (A : Type) `{H : Semigroup A} : Setoid A := HSetoid.
+
+Coercion semigroup_to_setoid : Semigroup >-> Setoid.
+#[global] Existing Instance semigroup_to_setoid.
+
+Class Monoid (A : Type) `{HSemigroup : Semigroup A} : Type := {
+  e : A;
+  id_left : Is_Identity_L A HSemigroup.(eq) HSemigroup.(op) e;
+  id_right : Is_Identity_R A HSemigroup.(eq) HSemigroup.(op) e;
 }.
 
-Definition Build_Monoid (A : Type) (Eq : A -> A -> Prop) (op : A -> A -> A) (e : A) (Hsemi : Is_Semigroup A Eq op) (Hunit : Is_Unit A Eq op e) : Is_Monoid A Eq op e :=
-  fun (P : Prop) (Constructor : Is_Semigroup A Eq op -> Is_Unit A Eq op e -> P) => Constructor Hsemi Hunit.
+Definition monoid_to_semigroup (A : Type) `{H : Monoid A} : Semigroup A := HSemigroup.
 
-Definition monoid_semigroup {A : Type} {Eq : A -> A -> Prop} {op : A -> A -> A} (e : A) (Hm : Is_Monoid A Eq op e) : Is_Semigroup A Eq op :=
-  Hm (Is_Semigroup A Eq op) (fun (semi : Is_Semigroup A Eq op) _ => semi).
+Coercion monoid_to_semigroup : Monoid >-> Semigroup.
+#[global] Existing Instance monoid_to_semigroup.
 
-Definition monoid_unit_proof (A : Type) (Eq : A -> A -> Prop) (op : A -> A -> A) (e : A) (Hm : Is_Monoid A Eq op e) : Is_Unit A Eq op e :=
-  Hm (Is_Unit A Eq op e)
-    (fun _ (H_unit : Is_Unit A Eq op e) => H_unit).
+Class Group (A : Type) `{HMonoid : Monoid A} : Type := {
+  inv : A -> A;
+  inv_left : Is_Inverse_L A eq op inv e;
+  inv_right : Is_Inverse_R A eq op inv e;
+}.
 
-Definition monoid_id_left
-  {A : Type}
-  {Eq : A -> A -> Prop}
-  {op : A -> A -> A}
-  {e : A}
-  (M : Is_Monoid A Eq op e) : forall a : A, Eq (op e a) a :=
-  let H_unit : Is_Unit A Eq op e := monoid_unit_proof A Eq op e M in
-  conj_elim1 H_unit.
+Definition group_to_monoid (A : Type) `{H : Group A} : Monoid A := HMonoid.
 
-Definition monoid_id_right
-  {A : Type}
-  {Eq : A -> A -> Prop}
-  {op : A -> A -> A}
-  {e : A}
-  (M : Is_Monoid A Eq op e) : forall a : A, Eq (op a e) a :=
-  let H_unit : Is_Unit A Eq op e := monoid_unit_proof A Eq op e M in
-  conj_elim2 H_unit.
+Coercion group_to_monoid : Group >-> Monoid.
+#[global] Existing Instance group_to_monoid.
 
-Definition e_unique : forall {A : Type} {Eq : A -> A -> Prop} {op : A -> A -> A} {e : A} (Hm : Is_Monoid A Eq op e),
-  forall e1 : A, Is_Unit A Eq op e1 -> Eq e e1 :=
-  fun (A : Type) (Eq : A -> A -> Prop) (op : A -> A -> A) (e : A) (Hm : Is_Monoid A Eq op e) (e1 : A) (e1_unit : Is_Unit A Eq op e1) =>
-    let e1_id_left : forall a : A, Eq (op e1 a) a := conj_elim1 e1_unit in
-    let e_id_right : forall a : A, Eq (op a e) a := monoid_id_right Hm in
-    let e1_e : Eq (op e1 e) e := e1_id_left e in
-    let e_e1 : Eq (op e1 e) e1 := e_id_right e1 in
-    let Hsemi : Is_Semigroup A Eq op := @monoid_semigroup A Eq op e Hm in
-    let Hsetoid : Is_Setoid A Eq := semigroup_setoid Hsemi in
-    (* Wrapper assignments to force implicit variable resolution *)
-    let eq_symm {x y : A} (H : Eq x y) : Eq y x := setoid_sym Hsetoid x y H in
-    let eq_trans {x y z : A} (H1 : Eq x y) (H2 : Eq y z) : Eq x z := setoid_trans Hsetoid x y z H1 H2 in
 
-    let H1 : Eq e (op e1 e) := eq_symm e1_e in
-    let H2 : Eq e e1 := eq_trans H1 e_e1 in
+Definition e_unique {A : Type} `{HMonoid : Monoid A} : forall e1 : A, Is_Identity_L A eq op e1 -> Is_Identity_R A eq op e1  -> eq e e1 :=
+  fun (e1 : A) (e1_id_left : Is_Identity_L A eq op e1) (e1_id_right : Is_Identity_R A eq op e1) =>
+    let e1_id_left1 : forall x : A, eq (op e1 x) x := e1_id_left in
+    let e_id_right : forall x : A, eq (op x HMonoid.(e)) x := id_right in
+    let e1_e : eq (op e1 HMonoid.(e)) HMonoid.(e) := e1_id_left1 e in
+    let e_e1 : eq (op e1 e) e1 := e_id_right e1 in
+    let H1 : eq e (op e1 e) := symm e1_e in
+    let H2 : eq e e1 := trans H1 e_e1 in
     H2.
 
 (* Отображение $f : A \to B$ является гомоморфизмом моноидов, если выполняются **три** условия:
